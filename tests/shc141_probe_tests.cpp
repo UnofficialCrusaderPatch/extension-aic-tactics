@@ -12,7 +12,7 @@ using AicTactics::SHC141::RecruitFunction;
 
 static const unsigned int ImageBase = 0x00400000;
 static const unsigned int ImageSize = 0x02091000;
-#pragma section(".aorigin", read, write, execute)
+#pragma section(".aorigin", read, write)
 __declspec(allocate(".aorigin")) unsigned char referenceSpace[ImageSize - 0x1000] = {0};
 static unsigned char units[0x10000];
 static unsigned char savedUnits[sizeof(units)];
