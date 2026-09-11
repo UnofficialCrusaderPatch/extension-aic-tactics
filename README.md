@@ -34,3 +34,11 @@ language identifiers: `ch`, `de`, `en`, `es`, `fa`, `fr`, `hu`, `ru`, `tr`.
 `ch` is UCP's Chinese identifier. Keep every description aligned with the actual
 available features and release status. In-game language and encoding are separate
 from the launcher's selected GUI language.
+
+Each description includes a setup guide with parameter meanings, defaults,
+recruitment examples, condition precedence and instructions for returning to
+Native behavior. Start with the [English guide](locale/description-en.md) or
+[German guide](locale/description-de.md); the same guide is available in all nine
+languages. These explain personality configuration under development, not new
+GUI controls or an installable release. Unfinished policy settings are identified
+as pending rather than presented as usable options.
