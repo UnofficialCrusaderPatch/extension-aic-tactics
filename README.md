@@ -47,3 +47,8 @@ The descriptions and guides document the configuration contract. Gameplay
 integration for the described parameters remains incomplete; no installable
 release or gameplay acceptance is claimed. Development status belongs here and
 in issue/PR records, not in the GUI parameter descriptions.
+
+For GUI review, the **Description preview ZIP** workflow attaches an artifact to
+the PR. Follow its [three-sentence test instructions](tools/description-preview/TESTING.md).
+The preview uses a separate plugin name and an empty configuration; it supplies
+no gameplay code and cannot satisfy an AI pack's `aic-tactics` dependency.
