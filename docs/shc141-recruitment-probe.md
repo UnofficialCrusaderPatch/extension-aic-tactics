@@ -56,9 +56,9 @@ reference executable and produces an ignored local image and JSON result.
 No original binary bytes belong in the repository or release artifact.
 
 The console test reserves address space in its own executable image. Its host
-code occupies the low, unused part; the original routines and game globals are
-copied at their unchanged preferred addresses above that host code. A guard
-rejects any host layout overlapping required routines. This avoids overwriting
+code follows the entire reserved original image; original routines and game
+globals are copied at their unchanged preferred addresses starting at RVA 0x1000.
+Guards verify both the reservation start and host-code placement. This avoids overwriting
 an unrelated allocation or mapping in the test process. No existing game process
 is opened or modified, and no game UI is launched.
 
@@ -80,3 +80,5 @@ Extreme test, multiplayer, save/replay acceptance or performance benchmark.
 The public Windows CI builds the ABI adapter/test host with its current compiler;
 it cannot execute the private original-image cases and does not replace the
 local MSVC2005 verification. Linux CI continues to test the portable policy core.
+
+The shared host also runs the [damage observation checks](shc141-damage-observation.md).
