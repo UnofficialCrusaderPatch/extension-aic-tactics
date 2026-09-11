@@ -37,6 +37,7 @@ record = {'reference': str(a.reference.resolve()), 'sha256': digest,
 root = Path(__file__).resolve().parents[1]
 record['sources'] = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in (
     'include/aic_tactics/shc141_recruitment.hpp', 'src/shc141_recruitment.cpp',
+    'include/aic_tactics/shc141_damage.hpp', 'src/shc141_damage.cpp', 'tests/shc141_damage_cases.cpp',
     'tests/shc141_probe_tests.cpp', 'tests/run_shc141_probe.py', 'tests/build_shc141_probe.ps1')}
 (a.output / 'probe-result.json').write_text(json.dumps(record, indent=2) + '\n')
 print(result.stdout, end='')

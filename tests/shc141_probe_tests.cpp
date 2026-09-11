@@ -18,6 +18,7 @@ static unsigned char units[0x10000];
 static unsigned char savedUnits[sizeof(units)];
 static unsigned char* savedImage;
 static int cases;
+void runDamageCases();
 
 static void require(bool condition, const char* message)
 {
@@ -92,8 +93,10 @@ int main(int argc, char** argv)
     require(argc == 2, "Use run_shc141_probe.py with the hash-verified reference executable");
     void* image = reinterpret_cast<void*>(ImageBase);
     const unsigned int reservationOffset = reinterpret_cast<unsigned int>(referenceSpace) - ImageBase;
-    require(reservationOffset >= 0x1000 && reservationOffset <= 0x50000,
-        "Reference reservation overlaps a required original function");
+    require(reservationOffset == 0x1000,
+        "Reference reservation must precede all test host code and original functions");
+    require(reinterpret_cast<unsigned int>(&main) >= ImageBase + ImageSize,
+        "Test host code must follow the complete reference image");
     FILE* input = std::fopen(argv[1], "rb");
     require(input != 0, "Cannot read reference image");
     require(std::fseek(input, reservationOffset, SEEK_SET) == 0, "Cannot seek past test host code");
@@ -148,6 +151,7 @@ int main(int argc, char** argv)
     absent.nonEuropean = 0;
     check(absent,1,70,1,false,false,0,0);
     std::printf("%d x86 original-instruction probe cases passed; no running-game acceptance claimed\n", cases);
+    runDamageCases();
     std::free(savedImage);
     return 0;
 }
