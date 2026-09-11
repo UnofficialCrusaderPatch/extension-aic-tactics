@@ -1,4 +1,4 @@
-local schema = require('config.recruitment')
+local schema = require('config.personality')
 local M = {}
 local owner = 'aic-tactics'
 
@@ -10,7 +10,7 @@ function M.register(loader, backend)
   local states = {}
   local function handles(ai, spec, resetting)
     if resetting then return states[ai] ~= nil end
-    if states[ai] and states[ai].RecruitPolicy == 'WeightedRoles' then return true end
+    if states[ai] and schema.active(states[ai]) then return true end
     for _, field in ipairs(schema.fields) do if spec[field] ~= nil then return true end end
     return false
   end
