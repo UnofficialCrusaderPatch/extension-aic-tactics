@@ -1,7 +1,8 @@
 # Recruitment configuration integration
 
-This draft schema version 1 implements authoring validation and the atomic
-loader provider. It requires loader PRs
+The recruitment record remains schema version 1 inside the aggregate
+personality envelope version 2. It implements authoring validation and the
+atomic loader provider. It requires loader PRs
 [18](https://github.com/UnofficialCrusaderPatch/extension-aicloader/pull/18) and
 [19](https://github.com/UnofficialCrusaderPatch/extension-aicloader/pull/19),
 and the calculation core in module PR #3. There is no module bootstrap or
@@ -70,7 +71,8 @@ decision adapter and precedes the draw.
 
 ## Application, getters and rollback
 
-The provider exclusively claims its five additional fields under `aic-tactics`.
+The provider exclusively claims these five fields and the two target fields
+under `aic-tactics`, sharing one transaction and backend candidate.
 Field collisions abort registration and remove only fields registered by that
 attempt. Configuration is stored separately for each AI character 1–16. It
 contains no per-player group, commitment, RNG or incident state.
@@ -85,7 +87,7 @@ both owners through the loader's transaction; failed rollback is fatal.
 
 Getters return stored authored values, with detached condition tables. Native
 getters still return the original AIC storage, not effective conditional weights.
-Ordinary Native updates without new fields decline this provider and retain the
+Fully Native updates without new fields decline this provider and retain the
 loader's existing best-effort path, including other legacy additional handlers.
 
 Selecting `RecruitPolicy=Native` alone disables this policy while retaining
@@ -94,7 +96,7 @@ setting any of those subordinate fields in an update whose resulting policy is
 Native is rejected, even for zero or an empty list. To resume WeightedRoles, the
 whole current candidate is revalidated against current native values. A whole
 `resetAIC` returns native fields to the loader's captured defaults and clears all
-five additional values for that character. This does not edit source files or
+recruitment and target values for that character. This does not edit source files or
 other characters. Atomic reset still requires other registered additional-field
 owners to support the loader transaction contract.
 
@@ -102,11 +104,14 @@ owners to support the loader transaction contract.
 
 `config.provider.register(loader, backend)` requires
 `backend.prepare(aiCharacter, detachedAuthored, compiled)` returning pure prepared
-`commit()` and `rollback()` operations. `compiled` has schemaVersion 1; mode 0/1
+`commit()` and `rollback()` operations. `compiled` has schemaVersion 2, with
+version-1 `recruitment` and `targeting` records. In `compiled.recruitment`, mode 0/1
 matches Native/WeightedRoles; base rows use Default/Weak/Strong order and weights
 use defense/raid/attack/sortie order. Conditions carry strength -1/0/1/2 and the
 calculation core's required/forbidden fact masks. Native has no compiled base
 rows, so validation does not reinterpret unusual supported original values.
+The target record and reset/default rules are documented in
+[target configuration](target-configuration.md).
 
 The eventual backend must reject unsupported native capabilities and prohibited
 live changes during preparation, before writes; prepare must not mutate native
