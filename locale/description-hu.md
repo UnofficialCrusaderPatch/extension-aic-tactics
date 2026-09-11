@@ -1,85 +1,28 @@
-Az AIC Tactics fejlesztésének célja, hogy az MI-személyiségek készítői igény szerint szabályozhassák a toborzást, a támadásokat és a portyázást.
+Toborzási és célpontválasztási beállításokkal bővíti az AIC-t. Új beállítások nélkül az MI viselkedése megmarad.
 
-A tervezett funkciók közé tartoznak a körülményektől függő toborzási és kitörési valószínűségek, a következő sereg előkészítése támadás közben, az ellenfél kiválasztása és a megtorlás, valamint a portyázó erők korlátozott számú csoportra osztása. A meglévő személyiségeknek meg kell őrizniük korábbi viselkedésüket, amíg készítőjük kifejezetten nem engedélyez egy új szabályt.
+### Toborzás
 
-Az új ellenfélválasztási szabályok alapértelmezés szerint a teljes támadás során megtartják ugyanazt a célpontot (`PerAttack`). A készítők az `UntilDefeated` választásával több támadáson át is megtarthatják az ellenfelet. A módosítatlan személyiségek megőrzik korábbi viselkedésüket, beleértve a Legacy által biztosított célpontállandóságot.
+- `RecruitPolicy`: a `Native` (alapérték) megtartja a meglévő toborzást. A `WeightedRoles` a védelem, portyák, fő sereg és kitörések között osztja el.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: kitörési súlyok normál, gyenge és erős MI-állapothoz. **0–100** közötti egész számok, alapérték **0**. A meglévő védelmi, portya- és támadási súlyokkal együtt minden szint összege **100** legyen. `WeightedRoles` szükséges; a csapatlisták, időközök és létszámkeretek megmaradnak.
+- `RecruitConditions`: legfeljebb **8** sorrendben vizsgált szabály, alapból üres. Az első illeszkedő szabály felülírja az erősségi szint súlyait. Mindegyikhez kell `When` és négy súly, összesen 100: `Defense`, `Raid`, `Attack`, `Sortie`. `WeightedRoles` szükséges.
 
-**Fejlesztés alatt: még nincs játékra kész kiadás.**
+A `When` feltételei: `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` (bázis veszélyben), `AttackActive` (támadás folyik), `DefenseIncomplete` (hiányos védelmi létszám), `EquipmentSurplus` (felszereléstöbblet). Minden megadott feltételnek egyeznie kell; a `true` teljesülést, a `false` annak hiányát követeli meg. Az üres `When` mindig illeszkedik.
 
-## Beállítási útmutató (fejlesztési előzetes)
+### Támadási célpontok
 
-Ezek egy MI-személyiség AIC-konfigurációjának mezői, nem új kezelőfelületi vezérlők. A példák a fejlesztés alatt álló konfigurációt magyarázzák; nem teljes MI-csomagok és nem játékra kész beállítások. A paraméterek nevét és értékét a felület nyelvétől függetlenül pontosan így kell megadni.
-
-### A meglévő viselkedés megőrzése
-
-Változatlan személyiségnél hagyd el az új mezőket. Alapértékek: `RecruitPolicy: Native`, `AttackTargetPolicy: Inherit`, `AttackTargetCommitment: Default`. A toborzás és a célpontválasztás külön kapcsolható be.
-
-### Ellenfél választása
-
-Az `AttackTargetPolicy` tervezett jelentései:
-
-| Érték | Jelentés |
+| `AttackTargetPolicy` | Célpont |
 | --- | --- |
-| `Inherit` | A személyiség eredeti `TargetChoice` beállítását használja (alapérték). |
-| `LowestPopulation` | A legkevesebb polgárral rendelkező ellenfelet részesíti előnyben. |
-| `FewestTroops` | A legkevesebb katonai egységgel rendelkező ellenfelet részesíti előnyben. |
-| `LowestCombatPower` | A legkisebb becsült katonai erőt részesíti előnyben, távolsági súlyozás nélkül. |
-| `Random` | Minden választható ellenfél azonos esélyt kap; ismétlés lehetséges. |
-| `LastAggressor` | A legutóbbi, feltételeknek megfelelő ellenséges eseményre reagál, nem minden találatra. |
+| `Inherit` (alapérték) | A meglévő `TargetChoice` szerint. |
+| `LowestPopulation` | A legkevesebb polgár. |
+| `FewestTroops` | A legkevesebb katonai egység. |
+| `LowestCombatPower` | A legkisebb becsült katonai erő, távolságtól függetlenül. |
+| `Random` | Véletlen választható ellenfél, egyenlő esélyekkel. |
+| `LastAggressor` | A megtorlás feltételeinek megfelelő legutóbbi támadó. |
 
-Az `AttackTargetCommitment: Default` új célpontválasztási szabályoknál `PerAttack`: a támadás indításakor választ, és végig megtartja a célpontot. `Inherit` mellett megőrzi a meglévő Native/Legacy-viselkedést. Az `UntilDefeated` kifejezett választásával több támadáson át is megtartható egy érvényes ellenfél. Érvénytelen célpont esetén előbb le kell zárni a folyamatban lévő támadást; a kivonult sereg nem válthat ellenfelet támadás közben.
+`AttackTargetCommitment`:
 
-Példa: véletlen ellenfél támadásonként, támadás közbeni váltás nélkül:
+- `Default`: új szabályoknál `PerAttack`; `Inherit` mellett a meglévő viselkedés.
+- `PerAttack`: azonos célpont az egész támadás alatt.
+- `UntilDefeated`: azonos célpont több támadáson át, amíg érvényes ellenfél marad.
 
-```json
-{
-  "AttackTargetPolicy": "Random",
-  "AttackTargetCommitment": "Default"
-}
-```
-
-### A toborzás elosztása
-
-A `RecruitPolicy: WeightedRoles` a védelem, portyák, fő támadósereg és kitörések között osztja el a toborzási döntéseket. A kitörő csapatok a várból kilépve közeli ellenfelekkel harcolnak. A meglévő időközök, csapatlisták és létszámkeretek megmaradnak. A súlyok a megengedett toborzási lehetőségekre hatnak, nem garantálják a kész sereg arányait.
-
-Mindhárom erősségi sort állítsd be: `Default`, `Weak`, `Strong`. Soronként négy egész súly kell, összesen 100. A `RecruitProbDef…`, `RecruitProbRaid…`, `RecruitProbAttack…` megmarad; a `RecruitProbSortie…` a kitörést adja hozzá, alapértéke 0. Nincs automatikus átskálázás. Példa, nem egyensúlyozási ajánlás:
-
-```json
-{
-  "RecruitPolicy": "WeightedRoles",
-  "RecruitProbDefDefault": 30,
-  "RecruitProbRaidDefault": 20,
-  "RecruitProbAttackDefault": 40,
-  "RecruitProbSortieDefault": 10,
-  "RecruitProbDefWeak": 60,
-  "RecruitProbRaidWeak": 10,
-  "RecruitProbAttackWeak": 20,
-  "RecruitProbSortieWeak": 10,
-  "RecruitProbDefStrong": 20,
-  "RecruitProbRaidStrong": 20,
-  "RecruitProbAttackStrong": 50,
-  "RecruitProbSortieStrong": 10
-}
-```
-
-### Feltételes toborzás (haladó)
-
-A `RecruitConditions` alapból üres lista, legfeljebb nyolc sorrendben vizsgált szabállyal. Mindegyikhez kell `When` és a négy súly: `Defense`, `Raid`, `Attack`, `Sortie`, összesen 100. Az első illeszkedő szabály váltja fel az erősségi sort; találat nélkül az eredeti sor érvényes.
-
-A `When` mezőben a `Strength` értéke `Default`, `Weak` vagy `Strong`. Igen/nem feltételek: `HomeUnderThreat` (veszélyben a bázis), `AttackActive` (támadás folyik), `DefenseIncomplete` (hiányos védelem), `EquipmentSurplus` (felszereléstöbblet). A `true` megköveteli az állapotot, a `false` annak hiányát; a kihagyott feltétel nem számít. Minden megadott feltételnek teljesülnie kell; az üres `When` mindig illeszkedik.
-
-### Módosítás vagy visszaállítás
-
-Az összetartozó mezőket együtt alkalmazd. A részleges frissítés megtartja a kihagyott értékeket, a korábbi `UntilDefeated` értéket is. Az automatikus célpontmegtartáshoz állíts be `Default` értéket. A szabályok kikapcsolása:
-
-```json
-{
-  "RecruitPolicy": "Native",
-  "AttackTargetPolicy": "Inherit",
-  "AttackTargetCommitment": "Default"
-}
-```
-
-Csak a `RecruitPolicy: Native` beállítására váltva a korábbi kitörési súlyok és szabályok inaktívan megmaradnak. `Native` mellett ne adj meg kitörési mezőket vagy szabályokat. A 0 kitörési súly `WeightedRoles` módban nem állítja vissza a Native toborzást.
-
-**Még hátravan:** játékintegráció, a fenyegetés, felszereléstöbblet és ellenfélszámlálás pontos natív meghatározása, megtorlási küszöbök, következő hullám előkészítése, osztott portyák és Legacy-opciók érvényesítése. Még nincs kiadásra kész Legacy-beállítási útmutató. A leírás nem igazolja a többjátékos, mentési vagy visszajátszási kompatibilitást.
+A részleges frissítés megtartja a kihagyott értékeket. Visszatérés a meglévő viselkedéshez: `RecruitPolicy: Native`, `AttackTargetPolicy: Inherit`, `AttackTargetCommitment: Default`. A korábbi kitörési súlyok és szabályok inaktívan megmaradnak; a `Native` módra váltáskor ne add meg őket.

@@ -35,10 +35,15 @@ language identifiers: `ch`, `de`, `en`, `es`, `fa`, `fr`, `hu`, `ru`, `tr`.
 available features and release status. In-game language and encoding are separate
 from the launcher's selected GUI language.
 
-Each description includes a setup guide with parameter meanings, defaults,
-recruitment examples, condition precedence and instructions for returning to
-Native behavior. Start with the [English guide](locale/description-en.md) or
-[German guide](locale/description-de.md); the same guide is available in all nine
-languages. These explain personality configuration under development, not new
-GUI controls or an installable release. Unfinished policy settings are identified
-as pending rather than presented as usable options.
+GUI descriptions are short parameter references: purpose, values, defaults and
+dependencies. Full examples are in separate author guides:
+[English](docs/configuration-en.md), [German](docs/configuration-de.md),
+[French](docs/configuration-fr.md), [Spanish](docs/configuration-es.md),
+[Hungarian](docs/configuration-hu.md), [Turkish](docs/configuration-tr.md),
+[Russian](docs/configuration-ru.md), [Chinese](docs/configuration-ch.md),
+[Persian](docs/configuration-fa.md).
+
+The descriptions and guides document the configuration contract. Gameplay
+integration for the described parameters remains incomplete; no installable
+release or gameplay acceptance is claimed. Development status belongs here and
+in issue/PR records, not in the GUI parameter descriptions.
