@@ -11,6 +11,11 @@ and bounded split raids. Existing personalities must keep their established
 behavior unless their author explicitly enables a new policy. Each subsystem
 is independently opt-in.
 
+New opponent policies default to PerAttack commitment; UntilDefeated is an
+explicit choice. Inherit with Default commitment preserves Native behavior,
+including existing Legacy target stability. This decision is tracked in
+[targeting issue #6](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/issues/6).
+
 One native module owns the four policies. AIC Loader retains field registration
 and update handling; AI Swapper retains personality selection and application.
 Faithful native reconstruction stays with OpenSHC, and save/replay integration
