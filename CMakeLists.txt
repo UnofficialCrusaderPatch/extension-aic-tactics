@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(aic_tactics_policy LANGUAGES CXX)
 
-add_library(aic_tactics_policy STATIC src/recruitment.cpp)
+add_library(aic_tactics_policy STATIC src/recruitment.cpp src/random.cpp)
 target_include_directories(aic_tactics_policy PUBLIC include)
 set_target_properties(aic_tactics_policy PROPERTIES CXX_STANDARD 98 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
 
@@ -16,6 +16,16 @@ else()
   target_compile_options(recruitment_tests PRIVATE -Wall -Wextra -Werror -pedantic -UNDEBUG)
 endif()
 add_test(NAME recruitment_policy COMMAND recruitment_tests)
+
+add_executable(random_tests tests/random_tests.cpp)
+target_link_libraries(random_tests PRIVATE aic_tactics_policy)
+set_target_properties(random_tests PROPERTIES CXX_STANDARD 98 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+if(MSVC)
+  target_compile_options(random_tests PRIVATE /UNDEBUG)
+else()
+  target_compile_options(random_tests PRIVATE -Wall -Wextra -Werror -pedantic -UNDEBUG)
+endif()
+add_test(NAME bounded_random_draw COMMAND random_tests)
 
 option(AIC_TACTICS_BUILD_SHC141_PROBE "Build the Microsoft x86 recruitment adapter and private reference test" OFF)
 if(AIC_TACTICS_BUILD_SHC141_PROBE)
