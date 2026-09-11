@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(aic_tactics_policy LANGUAGES CXX)
 
-add_library(aic_tactics_policy STATIC src/recruitment.cpp src/random.cpp)
+add_library(aic_tactics_policy STATIC src/recruitment.cpp src/random.cpp src/targets.cpp)
 target_include_directories(aic_tactics_policy PUBLIC include)
 set_target_properties(aic_tactics_policy PROPERTIES CXX_STANDARD 98 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
 
@@ -26,3 +26,13 @@ else()
   target_compile_options(random_tests PRIVATE -Wall -Wextra -Werror -pedantic -UNDEBUG)
 endif()
 add_test(NAME bounded_random_draw COMMAND random_tests)
+
+add_executable(target_tests tests/target_tests.cpp)
+target_link_libraries(target_tests PRIVATE aic_tactics_policy)
+set_target_properties(target_tests PROPERTIES CXX_STANDARD 98 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+if(MSVC)
+  target_compile_options(target_tests PRIVATE /UNDEBUG)
+else()
+  target_compile_options(target_tests PRIVATE -Wall -Wextra -Werror -pedantic -UNDEBUG)
+endif()
+add_test(NAME target_commitment COMMAND target_tests)
