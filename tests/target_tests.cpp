@@ -170,7 +170,13 @@ static void boundariesAndIsolation()
     assert(first.player == 0);
     context.players[3].population = 30;
     context.players[2].lordUID = 0;
-    assert(updateTarget(config, first, LaunchAttack, context, 0, 0) == InvalidTargetInput);
+    assert(updateTarget(config, first, LaunchAttack, context, 0, 0) == TargetSelected);
+    assert(first.player == 2 && first.lordUID == 0);
+    context.players[2].lordUID = -1;
+    assert(updateTarget(config, first, MaintainAttack, context, 0, 0) == TargetNeedsCleanup);
+    assert(updateTarget(config, first, FinishAttack, context, 0, 0) == TargetUnchanged);
+    assert(updateTarget(config, first, LaunchAttack, context, 0, 0) == TargetSelected);
+    assert(first.player == 2 && first.lordUID == -1);
 }
 
 int main()

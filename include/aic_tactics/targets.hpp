@@ -27,6 +27,7 @@ struct TargetConfig {
 // field explicitly, not compiler padding. Configuration remains per character.
 struct TargetState {
     int player;
+    // Native 32-bit UID is an opaque identity, not a positive numeric score.
     int lordUID;
     int attackActive;
 };

@@ -41,7 +41,9 @@ The native adapter supplies one coherent snapshot of player IDs 1 through 8.
 Self is excluded internally. The adapter must exclude allies, dead/absent or
 unsupported opponents, while including eligible human and AI players. It also
 supplies the verified lord UID; a reused player slot/lord cannot silently
-inherit an old commitment.
+inherit an old commitment. The native 32-bit UID is treated as an opaque
+identity, including zero and signed values; eligibility comes from the native
+owner rather than an invented UID-positivity rule.
 
 LowestPopulation, FewestTroops and LowestCombatPower minimize the supplied
 nonnegative metric, with lower player ID winning a tie. There is no distance

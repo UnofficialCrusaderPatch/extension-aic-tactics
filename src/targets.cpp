@@ -69,15 +69,11 @@ TargetStatus updateTarget(const TargetConfig& config, TargetState& state,
         config.commitment < DefaultCommitment || config.commitment > UntilDefeated ||
         context.owner < 1 || context.owner > 8 ||
         event < InitializeTargets || event > FinishAttack ||
-        state.player < 0 || state.player > 8 || state.lordUID < 0 ||
-        ((state.player == 0) != (state.lordUID == 0)) ||
+        state.player < 0 || state.player > 8 ||
+        (state.player == 0 && state.lordUID != 0) ||
         state.attackActive < 0 || state.attackActive > 1 ||
         (state.attackActive && !state.player))
         return InvalidTargetInput;
-    for (int player = 1; player <= 8; ++player)
-        if (eligible(context, player) && context.players[player].lordUID <= 0)
-            return InvalidTargetInput;
-
     const int commitment = config.commitment == DefaultCommitment ? PerAttack : config.commitment;
     const bool valid = validTarget(context, state);
     if (event == FinishAttack) {
