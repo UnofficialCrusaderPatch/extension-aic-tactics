@@ -3,7 +3,7 @@ Ergänzt deine AIC um Einstellungen für Rekrutierung und Angriffsziele. Ohne ne
 ### Rekrutierung
 
 - `RecruitPolicy`: `Native` (Standard) behält die bisherige Rekrutierung bei. `WeightedRoles` verteilt sie auf Verteidigung, Überfälle, Hauptarmee und Ausfälle.
-- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: Ausfallgewichte für den normalen, schwachen und starken KI-Zustand. Ganze Zahlen von **0–100**, Standard **0**. Zusammen mit den bisherigen Gewichten für Verteidigung, Überfälle und Angriff muss jede Stärkestufe **100** ergeben. Benötigt `WeightedRoles`; Truppenlisten, Intervalle und Kontingente gelten weiter.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: Gewichtung für Ausfalltruppen, die vor der Burg kämpfen, jeweils bei normaler, schwacher und starker KI. Ganze Zahlen von **0–100**, Standard **0**. Zusammen mit den bisherigen Gewichten für Verteidigung, Überfälle und Angriff muss jede Stärkestufe **100** ergeben. Benötigt `WeightedRoles`; Truppenlisten, Rekrutierungsintervalle und Truppenlimits gelten weiter.
 - `RecruitConditions`: bis zu **8** Regeln, standardmäßig leer. Die erste passende Regel ersetzt die Gewichte der Stärkestufe. Jede Regel enthält `When` und vier Gewichte mit Summe 100: `Defense`, `Raid`, `Attack`, `Sortie`. Benötigt `WeightedRoles`.
 
 In `When` kannst du `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` (Burg bedroht), `AttackActive` (Angriff läuft), `DefenseIncomplete` (Verteidigung unter Sollstärke) und `EquipmentSurplus` (Ausrüstung übrig) prüfen. Alle angegebenen Bedingungen müssen passen: `true` verlangt, dass sie zutreffen; `false`, dass sie nicht zutreffen. Ein leeres `When` passt immer.
@@ -25,4 +25,4 @@ In `When` kannst du `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` 
 - `PerAttack`: denselben Gegner während des gesamten Angriffs beibehalten.
 - `UntilDefeated`: denselben Gegner über mehrere Angriffe hinweg behalten, solange er ein gültiges Ziel ist.
 
-Teiländerungen behalten nicht angegebene Werte bei. Zurück zum bisherigen Verhalten: `RecruitPolicy: Native`, `AttackTargetPolicy: Inherit`, `AttackTargetCommitment: Default`. Frühere Ausfallgewichte und Regeln bleiben inaktiv gespeichert; gib sie beim Wechsel zu `Native` nicht mit an.
+Wenn du nur einzelne Werte änderst, bleiben die übrigen erhalten. Zurück zum bisherigen Verhalten: `RecruitPolicy: Native`, `AttackTargetPolicy: Inherit`, `AttackTargetCommitment: Default`. Bisherige Sortie-Werte und Regeln bleiben gespeichert, werden aber nicht angewendet; gib sie beim Wechsel zu `Native` nicht mit an.
