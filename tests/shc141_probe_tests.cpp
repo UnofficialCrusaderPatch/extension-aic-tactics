@@ -18,6 +18,7 @@ static unsigned char units[0x10000];
 static unsigned char savedUnits[sizeof(units)];
 static unsigned char* savedImage;
 static int cases;
+void runGroupCases();
 
 static void require(bool condition, const char* message)
 {
@@ -148,6 +149,7 @@ int main(int argc, char** argv)
     absent.nonEuropean = 0;
     check(absent,1,70,1,false,false,0,0);
     std::printf("%d x86 original-instruction probe cases passed; no running-game acceptance claimed\n", cases);
+    runGroupCases();
     std::free(savedImage);
     return 0;
 }

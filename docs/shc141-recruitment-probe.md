@@ -25,6 +25,21 @@ owned or able to recruit: the caller must use the native AIC building/scenario
 gates, quota checks, group capacity and valid ID/UID ownership. No role eligibility
 mask may be derived from affordability alone.
 
+`queryTribeAvailability` supplies a separate read-only admission query for the
+original tribe allocator at 0x5227E0. That owner scans IDs `1250-player`, then
+subtracts eight until the ID is no longer positive, selecting the first tribe
+whose state is zero. It does not borrow another player's empty slots. Player 1
+has 157 possible IDs; each other player has 156. The array's index zero is not
+an allocatable group. The query reports the next native ID and free count with
+at most 157 reads, without allocating or advancing the native UID counter.
+
+The query neither reserves an ID nor proves that an AIC role has a spare role
+slot or member capacity. Gather it once per coherent admission snapshot, reuse
+the result across roles, and allocate through the original owner only after
+selection. Intervening native allocation must invalidate the snapshot. Expanded
+or relocated pools need separate binding admission; the query does not raise
+limits or claim safe reserve/raid ownership.
+
 There is no gameplay hook or bootstrap in this change. The eventual binding
 must verify the original routines and all invoked helpers before supplying the
 service pointers. An already-detoured or otherwise unsupported callee cannot
@@ -52,6 +67,12 @@ player and building data. It compares the complete synthetic UnitsState and
 the reference address range before/after every query. Cases cover all admitted
 types, missing money/equipment/peasants, busy and state-zero peasants, horse
 availability, all player slots, and rejected types/arguments/services.
+Another 32 cases compare the query's predicted allocation with the original
+allocator for every player: empty partitions, a full own partition while others
+remain free, a hole after occupied candidates, and only the lowest native slot
+free. Queries preserve the full synthetic tribe state and native UID counter;
+actual allocation uses the original zeroing/owner/UID updates. Four argument
+checks reject invalid players, pointers and unknown pool layouts.
 
 This checks x86 calling convention and bounded state isolation. It is not a
 running-game compatibility result, full acquisition test, hook-composition test,
