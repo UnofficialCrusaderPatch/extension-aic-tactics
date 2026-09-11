@@ -10,14 +10,14 @@ Ajoute à votre AIC des réglages de recrutement et de ciblage. Sans nouveaux r�
 
 ### Cibles d'attaque
 
-| `AttackTargetPolicy` | Cible |
-| --- | --- |
-| `Inherit` (par défaut) | Selon le `TargetChoice` existant. |
-| `LowestPopulation` | Le moins de civils. |
-| `FewestTroops` | Le moins d'unités militaires. |
-| `LowestCombatPower` | La puissance militaire estimée la plus faible, sans tenir compte de la distance. |
-| `Random` | Un adversaire admissible au hasard, à chances égales. |
-| `LastAggressor` | Le dernier agresseur remplissant les critères de représailles. |
+`AttackTargetPolicy`:
+
+- `Inherit` (par défaut): Selon le `TargetChoice` existant.
+- `LowestPopulation`: Le moins de civils.
+- `FewestTroops`: Le moins d'unités militaires.
+- `LowestCombatPower`: La puissance militaire estimée la plus faible, sans tenir compte de la distance.
+- `Random`: Un adversaire admissible au hasard, à chances égales.
+- `LastAggressor`: Le dernier agresseur remplissant les critères de représailles.
 
 `AttackTargetCommitment` :
 

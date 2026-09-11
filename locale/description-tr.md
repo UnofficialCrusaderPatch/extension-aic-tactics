@@ -10,14 +10,14 @@ AIC'nize asker alımı ve saldırı hedefi ayarları ekler. Yeni ayar eklenmezse
 
 ### Saldırı hedefleri
 
-| `AttackTargetPolicy` | Hedef seçimi |
-| --- | --- |
-| `Inherit` (varsayılan) | Mevcut `TargetChoice` ayarına göre. |
-| `LowestPopulation` | En az sivil. |
-| `FewestTroops` | En az askerî birim. |
-| `LowestCombatPower` | Mesafeden bağımsız en düşük tahminî askerî güç. |
-| `Random` | Uygun rakipler arasından eşit olasılıkla rastgele seçim. |
-| `LastAggressor` | Misilleme koşullarını karşılayan son saldırgan. |
+`AttackTargetPolicy`:
+
+- `Inherit` (varsayılan): Mevcut `TargetChoice` ayarına göre.
+- `LowestPopulation`: En az sivil.
+- `FewestTroops`: En az askerî birim.
+- `LowestCombatPower`: Mesafeden bağımsız en düşük tahminî askerî güç.
+- `Random`: Uygun rakipler arasından eşit olasılıkla rastgele seçim.
+- `LastAggressor`: Misilleme koşullarını karşılayan son saldırgan.
 
 `AttackTargetCommitment`:
 

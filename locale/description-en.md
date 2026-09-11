@@ -10,14 +10,14 @@ Adds recruitment and attack-target settings to your AI's AIC. Without new settin
 
 ### Attack targets
 
-| `AttackTargetPolicy` | Selects |
-| --- | --- |
-| `Inherit` (default) | Existing `TargetChoice`. |
-| `LowestPopulation` | Fewest civilians. |
-| `FewestTroops` | Fewest military units. |
-| `LowestCombatPower` | Lowest estimated military strength, ignoring distance. |
-| `Random` | An eligible opponent at random, with equal chances. |
-| `LastAggressor` | Latest attacker meeting the retaliation criteria. |
+`AttackTargetPolicy`:
+
+- `Inherit` (default): Existing `TargetChoice`.
+- `LowestPopulation`: Fewest civilians.
+- `FewestTroops`: Fewest military units.
+- `LowestCombatPower`: Lowest estimated military strength, ignoring distance.
+- `Random`: An eligible opponent at random, with equal chances.
+- `LastAggressor`: Latest attacker meeting the retaliation criteria.
 
 `AttackTargetCommitment`:
 

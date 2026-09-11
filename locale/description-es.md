@@ -10,14 +10,14 @@ Añade ajustes de reclutamiento y objetivos de ataque a tu AIC. Sin ajustes nuev
 
 ### Objetivos de ataque
 
-| `AttackTargetPolicy` | Objetivo |
-| --- | --- |
-| `Inherit` (predeterminado) | Según el `TargetChoice` existente. |
-| `LowestPopulation` | Menos civiles. |
-| `FewestTroops` | Menos unidades militares. |
-| `LowestCombatPower` | Menor fuerza militar estimada, sin tener en cuenta la distancia. |
-| `Random` | Un oponente válido al azar, con la misma probabilidad para todos. |
-| `LastAggressor` | El último agresor que cumpla los criterios de represalia. |
+`AttackTargetPolicy`:
+
+- `Inherit` (predeterminado): Según el `TargetChoice` existente.
+- `LowestPopulation`: Menos civiles.
+- `FewestTroops`: Menos unidades militares.
+- `LowestCombatPower`: Menor fuerza militar estimada, sin tener en cuenta la distancia.
+- `Random`: Un oponente válido al azar, con la misma probabilidad para todos.
+- `LastAggressor`: El último agresor que cumpla los criterios de represalia.
 
 `AttackTargetCommitment`:
 

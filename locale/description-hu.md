@@ -10,14 +10,14 @@ A `When` feltételei: `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat
 
 ### Támadási célpontok
 
-| `AttackTargetPolicy` | Célpont |
-| --- | --- |
-| `Inherit` (alapérték) | A meglévő `TargetChoice` szerint. |
-| `LowestPopulation` | A legkevesebb polgár. |
-| `FewestTroops` | A legkevesebb katonai egység. |
-| `LowestCombatPower` | A legkisebb becsült katonai erő, távolságtól függetlenül. |
-| `Random` | Véletlen választható ellenfél, egyenlő esélyekkel. |
-| `LastAggressor` | A megtorlás feltételeinek megfelelő legutóbbi támadó. |
+`AttackTargetPolicy`:
+
+- `Inherit` (alapérték): A meglévő `TargetChoice` szerint.
+- `LowestPopulation`: A legkevesebb polgár.
+- `FewestTroops`: A legkevesebb katonai egység.
+- `LowestCombatPower`: A legkisebb becsült katonai erő, távolságtól függetlenül.
+- `Random`: Véletlen választható ellenfél, egyenlő esélyekkel.
+- `LastAggressor`: A megtorlás feltételeinek megfelelő legutóbbi támadó.
 
 `AttackTargetCommitment`:
 

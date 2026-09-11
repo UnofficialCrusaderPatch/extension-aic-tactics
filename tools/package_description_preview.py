@@ -23,6 +23,9 @@ def main():
             payload = (ROOT / name).read_bytes()
             text = payload.decode('utf-8')
             assert text.strip() and '\ufffd' not in text, name
+            if folder == 'locale':
+                assert not any(line.startswith('|') for line in text.splitlines()), (
+                    name + ': the launcher description renderer does not support tables')
             files[name] = payload
             if folder == 'docs':
                 examples = re.findall(r'```json\n(.*?)\n```', text.replace('\r\n', '\n'), re.S)

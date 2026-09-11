@@ -10,14 +10,14 @@
 
 ### 进攻目标
 
-| `AttackTargetPolicy` | 选择方式 |
-| --- | --- |
-| `Inherit`（默认） | 沿用现有 `TargetChoice`。 |
-| `LowestPopulation` | 平民最少的对手。 |
-| `FewestTroops` | 军事单位最少的对手。 |
-| `LowestCombatPower` | 估计军事实力最低的对手，不考虑距离。 |
-| `Random` | 从符合条件的对手中等概率随机选择。 |
-| `LastAggressor` | 最近一名符合反击条件的进攻者。 |
+`AttackTargetPolicy`:
+
+- `Inherit`（默认）: 沿用现有 `TargetChoice`。
+- `LowestPopulation`: 平民最少的对手。
+- `FewestTroops`: 军事单位最少的对手。
+- `LowestCombatPower`: 估计军事实力最低的对手，不考虑距离。
+- `Random`: 从符合条件的对手中等概率随机选择。
+- `LastAggressor`: 最近一名符合反击条件的进攻者。
 
 `AttackTargetCommitment`：
 

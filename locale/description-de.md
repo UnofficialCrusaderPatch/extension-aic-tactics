@@ -10,14 +10,14 @@ In `When` kannst du `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` 
 
 ### Angriffsziele
 
-| `AttackTargetPolicy` | Zielwahl |
-| --- | --- |
-| `Inherit` (Standard) | Bisherige Auswahl über `TargetChoice`. |
-| `LowestPopulation` | Gegner mit den wenigsten Zivilisten. |
-| `FewestTroops` | Gegner mit den wenigsten Militäreinheiten. |
-| `LowestCombatPower` | Geringste geschätzte Kampfstärke, unabhängig von der Entfernung. |
-| `Random` | Zufälliger Gegner; alle geeigneten Gegner haben dieselbe Chance. |
-| `LastAggressor` | Letzter Angreifer, der die Bedingungen für einen Gegenschlag erfüllt. |
+`AttackTargetPolicy`:
+
+- `Inherit` (Standard): Bisherige Auswahl über `TargetChoice`.
+- `LowestPopulation`: Gegner mit den wenigsten Zivilisten.
+- `FewestTroops`: Gegner mit den wenigsten Militäreinheiten.
+- `LowestCombatPower`: Geringste geschätzte Kampfstärke, unabhängig von der Entfernung.
+- `Random`: Zufälliger Gegner; alle geeigneten Gegner haben dieselbe Chance.
+- `LastAggressor`: Letzter Angreifer, der die Bedingungen für einen Gegenschlag erfüllt.
 
 `AttackTargetCommitment` legt fest, wie lange das Ziel bleibt:
 

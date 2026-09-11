@@ -10,14 +10,14 @@
 
 ### هدف‌های حمله
 
-| `AttackTargetPolicy` | انتخاب هدف |
-| --- | --- |
-| `Inherit` (پیش‌فرض) | طبق `TargetChoice` فعلی. |
-| `LowestPopulation` | کمترین جمعیت غیرنظامی. |
-| `FewestTroops` | کمترین تعداد واحد نظامی. |
-| `LowestCombatPower` | کمترین قدرت نظامی تخمینی، بدون در نظر گرفتن فاصله. |
-| `Random` | انتخاب تصادفی از حریف‌های واجد شرایط، با شانس برابر. |
-| `LastAggressor` | آخرین مهاجم واجد شرایط اقدام تلافی‌جویانه. |
+`AttackTargetPolicy`:
+
+- `Inherit` (پیش‌فرض): طبق `TargetChoice` فعلی.
+- `LowestPopulation`: کمترین جمعیت غیرنظامی.
+- `FewestTroops`: کمترین تعداد واحد نظامی.
+- `LowestCombatPower`: کمترین قدرت نظامی تخمینی، بدون در نظر گرفتن فاصله.
+- `Random`: انتخاب تصادفی از حریف‌های واجد شرایط، با شانس برابر.
+- `LastAggressor`: آخرین مهاجم واجد شرایط اقدام تلافی‌جویانه.
 
 `AttackTargetCommitment`:
 
