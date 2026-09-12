@@ -36,7 +36,7 @@ Dependent source checkpoints:
 
 - AIC Loader: `24ea47c20f62082f8a1b06969089898a8285add9`.
 - Map Extensions required-state API: `04449b7f7b38dccf52e376a5fe62cc230fa5f596`.
-- Recorder required-state capture/checkpoints: `87c0a103426c77f4a6ba01bfe5ce7e6c7f3c5658`.
+- Recorder required-state capture/checkpoints: `615e54c1a3e019af4d3b6f016e9c5d382ce392a2`.
 - Protocol admission: `a6d940357432bbd63b87bbb26e6e67d973090eb8`.
 - Unchanged Chat: `8f0c58a52cdc3aa5bca2cd4fd731ad1fcf1b9921`.
 
@@ -65,8 +65,14 @@ At the first checkpoint, Recorder failed because Map Extensions omitted the
 framework proxy metadata for its returned snapshot tables. Map commit 04449b7
 declares those detached copies; the regression reproduced the original failure
 through the actual installed proxy and passes on both Lua runtimes after the fix.
-The game was closed normally. The fix still needs an in-game checkpoint/replay
-rerun; this failed match is not gameplay or replay acceptance.
+The corrected package then ran to tick 1,118 with 17 recorded required-state
+checkpoints (ticks 64 through 1,088). All four allied pairs were verified in
+memory: 1/4 Wolf/Pig, 3/6 Saladin/Richard, 5/7 Wolf/Caliph, 2/8 Caliph/Saladin.
+The snapshot contained valid enemy selections but no active attack or new hires.
+Saving a replay copy exposed Recorder's rejection of native observer slot zero.
+Recorder 615e54c accepts that slot only for commandless single-player recordings;
+its full suite passes 410 tests and 2,386 subtests, with one skip. This correction
+still needs native save/playback verification. Both test games closed normally.
 
 Still required: actual multiplayer content/config admission, actual new-policy
 games and memory evidence, two complete reserve cycles, distinct/no-path raid
