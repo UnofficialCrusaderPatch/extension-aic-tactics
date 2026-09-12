@@ -20,8 +20,9 @@ The interval bridge additionally passes 11,520 original/Legacy interval, registe
 flag and stack comparisons with the 344-byte configuration layout.
 
 The integrated Lua suite passes 58 checks. Portable target and incident tests also
-compile and pass with MSVC2005. Map Extensions has six required-state tests,
-including read-only capture, strict validation and optional Native-only state.
+compile and pass with MSVC2005. Map Extensions has eight required-state tests,
+including read-only capture, strict validation, optional Native-only state and
+the installed framework proxy on Lua 5.4 and LuaJIT 2.1.
 Recorder's regression suite passed 405 tests and 2,386 subtests, with one skip.
 These tests do not replace native replay playback. Final boundary snapshot checks
 confirm that its digest matches the observation and remains unchanged after live
@@ -34,7 +35,7 @@ they do not measure game ticks or establish the full performance gate.
 Dependent source checkpoints:
 
 - AIC Loader: `24ea47c20f62082f8a1b06969089898a8285add9`.
-- Map Extensions required-state API: `6fc7800312dbdcc0e880657308a30fb8c2698422`.
+- Map Extensions required-state API: `04449b7f7b38dccf52e376a5fe62cc230fa5f596`.
 - Recorder required-state capture/checkpoints: `87c0a103426c77f4a6ba01bfe5ce7e6c7f3c5658`.
 - Protocol admission: `a6d940357432bbd63b87bbb26e6e67d973090eb8`.
 - Unchanged Chat: `8f0c58a52cdc3aa5bca2cd4fd731ad1fcf1b9921`.
@@ -56,7 +57,16 @@ all prerequisites and Recorder 87c0a10 loaded. Runtime preflight accepted the
 344-byte configuration and state ABI 7; Recorder installed its replay hooks.
 The private profile initially omitted UI's LuaJIT/cffi dependencies and their
 option defaults. Correcting that profile resolved startup without a production
-code change. This is startup evidence only; the match had not begun.
+code change. A subsequent Green Haven 8-player spectator match reached tick 65.
+Read-only memory confirmed the configured personalities and four adjacent allied
+pairs: players 1/2, 3/6, 4/8 and 5/7. No recruitment or combat had occurred.
+
+At the first checkpoint, Recorder failed because Map Extensions omitted the
+framework proxy metadata for its returned snapshot tables. Map commit 04449b7
+declares those detached copies; the regression reproduced the original failure
+through the actual installed proxy and passes on both Lua runtimes after the fix.
+The game was closed normally. The fix still needs an in-game checkpoint/replay
+rerun; this failed match is not gameplay or replay acceptance.
 
 Still required: actual multiplayer content/config admission, actual new-policy
 games and memory evidence, two complete reserve cycles, distinct/no-path raid
