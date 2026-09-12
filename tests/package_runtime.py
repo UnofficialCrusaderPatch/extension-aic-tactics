@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import zipfile
 import urllib.request
+import re
 from module_archives import archive_bytes, package_modules
 
 p = argparse.ArgumentParser()
@@ -24,7 +25,16 @@ for checkout in [root, a.loader, a.map_extensions, a.protocol, a.chat]:
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=checkout,text=True).strip():
         raise SystemExit('Commit source changes before packaging: ' + str(checkout))
 files = {}
-module = 'ucp/modules/aic-tactics-0.0.1/'
+def module_name(checkout, expected):
+    definition = (checkout/'definition.yml').read_text(encoding='utf-8')
+    name = re.search(r'^name: ([\w-]+)\s*$', definition, re.M)
+    version = re.search(r'^version: (\d+\.\d+\.\d+)\s*$', definition, re.M)
+    if not name or name[1] != expected or not version:
+        raise SystemExit('Invalid module definition: ' + str(checkout))
+    return name[1] + '-' + version[1]
+
+module_id = module_name(root, 'aic-tactics')
+module = 'ucp/modules/' + module_id + '/'
 for relative in ['definition.yml','options.yml']:
     files[module+relative] = (root/relative).read_bytes()
 for path in sorted(root.glob('*.lua')):
@@ -48,12 +58,12 @@ for name, data in sorted(files.items()):
         identity_files.append(relative.decode('utf-8'))
         identity.update(len(relative).to_bytes(4,'little')); identity.update(relative)
         identity.update(len(data).to_bytes(8,'little')); identity.update(data)
-files[module+'build-identity.lua'] = ("return {sha256='"+identity.hexdigest()+"', files={"
+files[module+'build-identity.lua'] = ("return {module='"+module_id+"', sha256='"+identity.hexdigest()+"', files={"
     + ','.join(json.dumps(name) for name in identity_files) + "}}\n").encode('ascii')
-loader = 'ucp/modules/aicloader-1.1.3/'
+loader = 'ucp/modules/' + module_name(a.loader, 'aicloader') + '/'
 for path in sorted(a.loader.glob('*.lua')):
     files[loader+path.name] = path.read_bytes()
-files[loader+'definition.yml'] = (a.loader/'definition.yml').read_bytes().replace(b'version: 1.1.2', b'version: 1.1.3')
+files[loader+'definition.yml'] = (a.loader/'definition.yml').read_bytes()
 files[loader+'options.yml'] = (a.loader/'options.yml').read_bytes()
 files[loader+'vanilla.json'] = (a.loader/'resources/vanilla.json').read_bytes()
 for path in sorted((a.loader/'locale').glob('*')):

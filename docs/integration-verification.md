@@ -34,7 +34,7 @@ they do not measure game ticks or establish the full performance gate.
 
 Dependent source checkpoints:
 
-- AIC Loader: `24ea47c20f62082f8a1b06969089898a8285add9`.
+- AIC Loader: `7e92bd4722d02a5e6f8111e24c751f4443361069`.
 - Map Extensions required-state API: `04449b7f7b38dccf52e376a5fe62cc230fa5f596`.
 - Recorder required-state capture/checkpoints: `7b6217fe256dacd8cc02e4ff1f67c67c96c2ed46` (0.50.5 preview).
 - Protocol admission: `a6d940357432bbd63b87bbb26e6e67d973090eb8`.
@@ -90,7 +90,7 @@ Review chain: [Map Extensions PR3](https://github.com/gynt/ucp-extension-map-ext
 [Recorder stacked PR3](https://github.com/Krarilotus/ucp_recorder/pull/3), based on
 the existing upstream Recorder PR46 owner. AIC integration is
 [PR17](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/pull/17),
-following focused recruitment completion PRs13–16. All remain drafts.
+following focused recruitment completion PRs13â€“16. All remain drafts.
 
 Still required: actual multiplayer content/config admission, actual new-policy
 games and memory evidence, two complete reserve cycles, distinct/no-path raid

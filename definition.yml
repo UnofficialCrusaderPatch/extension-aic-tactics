@@ -1,6 +1,6 @@
 name: aic-tactics
 display-name: AIC Tactics
-version: 0.0.1
+version: 0.0.2
 author: Krarilotus
 type: module
 game: [SHC==1.41]

@@ -1,6 +1,6 @@
 # AIC Tactics integration testing
 
-Copy `aic-tactics-0.0.1.zip` and the supplied dependency module ZIPs into `ucp/modules` without unpacking them, reopen the GUI, and enable AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
+Copy `aic-tactics-0.0.2.zip` and the supplied dependency module ZIPs into `ucp/modules` without unpacking them, reopen the GUI, and enable AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
 Merge one example fragment into the `aic` object of a copied personality and start a fresh process on the eight-player Green Haven spectator fixture, keeping neighbouring allied pairs and Vanilla Interpretation Castles.
 Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; Recorder 0.50.5 is optional for recording/playback checks and its ZIP also stays zipped.
 

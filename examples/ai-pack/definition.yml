@@ -4,7 +4,7 @@ version: 0.0.1
 type: plugin
 author: Krarilotus
 dependencies:
-  aic-tactics: '=0.0.1'
+  aic-tactics: '=0.0.2'
   aicloader: '^1.1.3'
 meta:
   version: 1.0.0

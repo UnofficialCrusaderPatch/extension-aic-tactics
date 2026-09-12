@@ -8,13 +8,15 @@ end
 function M.verify(identity)
   assert(type(identity) == 'table' and type(identity.sha256) == 'string' and #identity.sha256 == 64
     and type(identity.files) == 'table' and #identity.files <= 256, 'AIC Tactics: invalid package identity')
+  assert(type(identity.module) == 'string' and identity.module:match('^aic%-tactics%-%d+%.%d+%.%d+$'),
+    'AIC Tactics: invalid package module name')
   assert(type(sha) == 'table' and type(sha.sha256) == 'function', 'AIC Tactics requires framework SHA256 support')
   local chunks, previous, total = {}, '', 0
   for _, name in ipairs(identity.files) do
     assert(type(name) == 'string' and name:match('^[%w_/.-]+$') and not name:find('..', 1, true)
       and name:sub(1,1) ~= '/' and name > previous, 'AIC Tactics: invalid package file list')
     previous = name
-    local file = assert(io.open('ucp/modules/aic-tactics-0.0.1/' .. name, 'rb'))
+    local file = assert(io.open('ucp/modules/' .. identity.module .. '/' .. name, 'rb'))
     local data, readError = file:read(4 * 1024 * 1024 + 1)
     local closed = file:close()
     if data == nil and readError == nil then data = '' end
