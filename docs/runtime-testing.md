@@ -23,7 +23,7 @@ version are development prerequisites, not upstream release claims. No game or
 framework binary is bundled. The recorder change is a separate dependent PR;
 existing recorder versions must not be treated as compatible with this state API.
 
-For Recorder testing, also enable UI 1.0.1 with its LuaJIT 1.0.0 and cffi 1.0.0
+For Recorder testing, also enable UI 1.0.2 with its LuaJIT 1.0.0 and cffi 1.0.0
 dependencies, WinProc Handler 1.0.0, and the existing Legacy 2.15.2 saved-state
 prerequisite before Recorder. Let the GUI supply their option defaults. A manually
 written direct-launch profile must include those defaults from each module's

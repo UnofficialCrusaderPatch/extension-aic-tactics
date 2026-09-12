@@ -33,13 +33,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: cmake -S . -B build -A Win32 -DAIC_TACTICS_BUILD_SHC141_PROBE=ON
-      - run: cmake --build build --config Release
-      - run: ctest --test-dir build -C Release --output-on-failure
+      - run: ./build.ps1 -BuildType Release
+      - run: cmake --build build/store-native --config Release
+      - run: ctest --test-dir build/store-native -C Release --output-on-failure
       - uses: actions/checkout@v4
         with:
           repository: UnofficialCrusaderPatch/extension-aicloader
-          ref: 6ee4b1ada0ee75ecae4534f95c95bf40ecec2e04
+          ref: 82a9a1873d0c0abbf4575b2cb2621b7f58e9573a
           path: tests/deps/aicloader
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -74,7 +74,7 @@ jobs:
           path: tests/deps/files
           persist-credentials: false
       - if: github.event_name == 'workflow_dispatch'
-        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --files tests/deps/files --module-directory build/package/modules --output build/package/aic-tactics-combat-test.zip
+        run: python tests/package_runtime.py --dll build/store-native/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --files tests/deps/files --module-directory build/package/modules --output build/package/aic-tactics-combat-test.zip
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:

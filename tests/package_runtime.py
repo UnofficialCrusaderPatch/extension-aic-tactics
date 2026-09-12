@@ -8,6 +8,7 @@ import zipfile
 import urllib.request
 import re
 from module_archives import archive_bytes, package_modules
+from module_payload import module_payload
 
 p = argparse.ArgumentParser()
 p.add_argument('--dll', type=Path, required=True)
@@ -34,33 +35,9 @@ def module_name(checkout, expected):
         raise SystemExit('Invalid module definition: ' + str(checkout))
     return name[1] + '-' + version[1]
 
-module_id = module_name(root, 'aic-tactics')
+module_id, payload = module_payload(root, a.dll)
 module = 'ucp/modules/' + module_id + '/'
-for relative in ['definition.yml','options.yml']:
-    files[module+relative] = (root/relative).read_bytes()
-for path in sorted(root.glob('*.lua')):
-    files[module+path.name] = path.read_bytes()
-for path in sorted((root/'config').glob('*.lua')):
-    files[module+'config/'+path.name] = path.read_bytes()
-for path in sorted((root/'locale').glob('*.yml')):
-    files[module+'locale/'+path.name] = path.read_bytes()
-for path in sorted((root/'locale').glob('description-*.md')):
-    files[module+'locale/'+path.name] = path.read_bytes()
-for path in sorted((root/'docs').glob('configuration-*.md')):
-    files[module+'docs/'+path.name] = path.read_bytes()
-files[module+'aicTactics.dll'] = a.dll.read_bytes()
-# The identity excludes its own generated file. Length framing makes file names
-# and bytes unambiguous, independent of filesystem enumeration or ZIP metadata.
-identity = hashlib.sha256()
-identity_files = []
-for name, data in sorted(files.items()):
-    if name.startswith(module) and name != module+'build-identity.lua':
-        relative = name[len(module):].encode('utf-8')
-        identity_files.append(relative.decode('utf-8'))
-        identity.update(len(relative).to_bytes(4,'little')); identity.update(relative)
-        identity.update(len(data).to_bytes(8,'little')); identity.update(data)
-files[module+'build-identity.lua'] = ("return {module='"+module_id+"', sha256='"+identity.hexdigest()+"', files={"
-    + ','.join(json.dumps(name) for name in identity_files) + "}}\n").encode('ascii')
+files.update({module + name: data for name, data in payload.items()})
 loader = 'ucp/modules/' + module_name(a.loader, 'aicloader') + '/'
 for path in sorted(a.loader.glob('*.lua')):
     files[loader+path.name] = path.read_bytes()
