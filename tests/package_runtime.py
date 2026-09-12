@@ -14,10 +14,12 @@ a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
 files = {}
 module = 'ucp/modules/aic-tactics-0.0.1/'
-for relative in ['definition.yml','init.lua','native.lua']:
+for relative in ['definition.yml','init.lua','native.lua','options.yml']:
     files[module+relative] = (root/relative).read_bytes()
 for path in sorted((root/'config').glob('*.lua')):
     files[module+'config/'+path.name] = path.read_bytes()
+for path in sorted((root/'locale').glob('*.yml')):
+    files[module+'locale/'+path.name] = path.read_bytes()
 files[module+'aicTactics.dll'] = a.dll.read_bytes()
 loader = 'ucp/modules/aicloader-1.1.3/'
 for path in sorted(a.loader.glob('*.lua')):

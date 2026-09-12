@@ -1,0 +1,2 @@
+legacyRecruitInterval: Keep Legacy recruitment timing
+legacyRecruitInterval_descr: 'Replaces Legacy ai_recruitinterval for Native personalities: use interval 1. WeightedRoles keeps each personality’s AIC intervals. Turn the Legacy option OFF; leave this OFF if it was already disabled.'

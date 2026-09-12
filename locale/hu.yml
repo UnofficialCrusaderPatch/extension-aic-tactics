@@ -1,0 +1,2 @@
+legacyRecruitInterval: A Legacy toborzási ütemének megtartása
+legacyRecruitInterval_descr: 'A Legacy ai_recruitinterval beállítását helyettesíti: Native személyiségeknél 1-es időköz. A WeightedRoles az AIC időközeit használja. Kapcsold ki a Legacy beállítását; ha eddig sem használtad, ezt is hagyd kikapcsolva.'

@@ -6,6 +6,43 @@ function M.new()
     'AIC Tactics: incompatible native library')
   local installed = false
   local wallCounter
+  local intervalHook
+  local intervalSignature = '8B 84 AA 64 01 00 00 8B E8 F7 DD 1B ED 83 C5 02'
+  local function verifyInterval()
+    if intervalHook then
+      assert(core.readByte(0x4D3B41) == 0xE9
+        and core.readInteger(0x4D3B42) == intervalHook - 0x4D3B46,
+        'AIC Tactics: recruitment interval hook was replaced; restart with compatible modules')
+    else
+      assert(core.AOBScan(intervalSignature) == 0x4D3B41,
+        'AIC Tactics: turn off ucp2-legacy.ai_recruitinterval and restart; use legacyRecruitInterval to retain its Native behaviour')
+    end
+  end
+  function native.enableLegacyInterval()
+    if intervalHook then return end
+    verifyInterval()
+    intervalHook = core.allocateAssembly([[
+      pushfd
+      push ecx
+      mov eax, dword [edx + ebp * 4 + 0x164]
+      mov ecx, dword [esi + 0x115E0F8]
+      dec ecx
+      cmp ecx, 1
+      jb legacy
+      cmp ecx, 16
+      ja legacy
+      imul ecx, ecx, 280
+      cmp dword [ecx + configuration], 1
+      je finished
+legacy:
+      mov eax, 1
+finished:
+      pop ecx
+      popfd
+      jmp resume
+    ]], {configuration=native.configuration, resume=0x4D3B48})
+    core.writeCode(0x4D3B41, {0xE9, intervalHook - 0x4D3B46, 0x90, 0x90})
+  end
   function native.preflight()
   if installed then return end
   -- This adapter deliberately admits only the inspected SHC 1.41 image layout.
@@ -14,8 +51,7 @@ function M.new()
     'AIC Tactics: unsupported or already modified AI scheduler')
   assert(core.AOBScan('8B 86 F0 EE 15 01 85 C0 75 44 8B C7 69 C0 A4 02 00 00') == 0x4D3BA5,
     'AIC Tactics: unsupported recruitment opportunity')
-  assert(core.AOBScan('8B 84 AA 64 01 00 00 8B E8 F7 DD 1B ED 83 C5 02') == 0x4D3B41,
-    'AIC Tactics: turn off ucp2-legacy.ai_recruitinterval and restart; AIC intervals are authoritative')
+  verifyInterval()
 
   -- Consume the existing Legacy wall counter; do not install another counter.
   if core.readByte(0x4D3E6F) == 0xE9 then

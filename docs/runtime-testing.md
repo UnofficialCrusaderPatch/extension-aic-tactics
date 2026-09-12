@@ -51,9 +51,16 @@ still needs the package's qualifying-threat semantics before release.
 
 Native-to-Native loader updates retain the loader's existing lifecycle. Changes
 that enable or disable a new policy require a fresh process; unsynchronized live
-policy changes are rejected. Legacy source is unchanged. Requiring recruitinterval
-OFF preserves the declared baseline with that option OFF, but replacing an ON
-baseline for old personalities remains an outstanding compatibility requirement.
+policy changes are rejected. Legacy source is unchanged.
+
+When migrating a profile that enabled Legacy `ai_recruitinterval`, turn that option
+OFF and turn AIC Tactics `legacyRecruitInterval` ON. Native personalities then keep
+the former interval 1; WeightedRoles uses the personality's three AIC intervals.
+The authored AIC values and getters remain unchanged. If the Legacy option was
+already OFF, leave the replacement OFF (its default). This option does not change
+sortie timing, initial grace or the native attempt calculation. A clean process is
+required. The replacement has 11,520 FASM/x86 register/flags/stack checks; complete
+native command/RNG equivalence and multiplayer still require acceptance.
 
 ## GamerGrill evidence, 12 September
 

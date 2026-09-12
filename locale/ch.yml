@@ -1,0 +1,2 @@
+legacyRecruitInterval: 保留 Legacy 招募间隔
+legacyRecruitInterval_descr: '替代 Legacy 的 ai_recruitinterval：Native 个性使用间隔 1，WeightedRoles 仍使用各自的 AIC 间隔。请关闭 Legacy 中的该选项；如果原本未启用，也请关闭此选项。'

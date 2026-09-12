@@ -1,0 +1,2 @@
+legacyRecruitInterval: حفظ آهنگ سربازگیری Legacy
+legacyRecruitInterval_descr: 'جایگزین ai_recruitinterval در Legacy می‌شود: شخصیت‌های Native از فاصلهٔ ۱ استفاده می‌کنند. WeightedRoles فاصله‌های AIC را نگه می‌دارد. گزینهٔ Legacy را خاموش کنید؛ اگر قبلاً خاموش بود، این گزینه را هم خاموش بگذارید.'

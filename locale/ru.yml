@@ -1,0 +1,2 @@
+legacyRecruitInterval: Сохранить темп найма Legacy
+legacyRecruitInterval_descr: 'Заменяет ai_recruitinterval из Legacy: для личностей Native используется интервал 1. WeightedRoles сохраняет интервалы AIC. Отключите опцию Legacy; если она уже была отключена, оставьте эту опцию выключенной.'
