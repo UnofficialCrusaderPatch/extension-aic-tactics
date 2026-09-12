@@ -1,5 +1,17 @@
 name: Microsoft x86 adapter build
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      map_state_repository:
+        description: Repository containing the reviewed Map Extensions state prerequisite
+        required: true
+        type: string
+      map_state_ref:
+        description: Full commit SHA of the Map Extensions state prerequisite
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -21,9 +33,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --output build/package/aic-tactics-recruitment-test.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v4
+        if: github.event_name == 'workflow_dispatch'
         with:
-          name: aic-tactics-recruitment-test
-          path: build/package/aic-tactics-recruitment-test.zip
+          repository: ${{ inputs.map_state_repository }}
+          ref: ${{ inputs.map_state_ref }}
+          path: tests/deps/map-extensions
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --output build/package/aic-tactics-combat-test.zip
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: aic-tactics-combat-test
+          path: build/package/aic-tactics-combat-test.zip
           retention-days: 21

@@ -36,7 +36,7 @@ def lua(request):
         prepares=prepares+1
         local previous=backendStates[ai]
         return {commit=function()
-          commits=commits+1; backendStates[ai]=compiled
+          commits=commits+1; backendStates[ai]=compiled.recruitment
           if failCommit then error('injected backend failure') end
         end,rollback=function()backendStates[ai]=previous end}
       end}
@@ -160,7 +160,7 @@ def test_native_downgrade_and_per_character_reset(lua):
       assert(loader:getAICValue(1,'RecruitProbSortieDefault')==10)
       local count=prepares
       loader:setAICValue(1,'RecruitProbDefDefault',99)
-      assert(prepares==count and loader:getAICValue(1,'RecruitProbDefDefault')==99)
+      assert(prepares==count+1 and loader:getAICValue(1,'RecruitProbDefDefault')==99)
       assert(loader:overwriteAIC(1,{RecruitPolicy='WeightedRoles'})==false)
       loader:resetAIC(1)
       assert(loader:getAICValue(1,'RecruitProbSortieDefault')==0)
@@ -199,6 +199,8 @@ def test_backend_admission_rejects_live_update(lua):
       activate(); writes={}; matchRunning=true
       assert(loader:overwriteAIC(1,{RecruitProbDefDefault=35,RecruitProbSortieDefault=5})==false)
       assert(#writes==0 and commits==1)
+      assert(loader:overwriteAIC(2,{RecruitProbDefDefault=35,RecruitProbRaidDefault=25})==false)
+      assert(#writes==0 and commits==1 and loader:getAICValue(2,'RecruitProbDefDefault')==40)
     ''')
 
 def test_collision_preserves_installed_provider(lua):

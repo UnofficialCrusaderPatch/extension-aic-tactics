@@ -2,6 +2,23 @@ meta:
   version: 1.0.0
 options:
 - category: [AIC Tactics]
+  name: nativeTargetPolicy
+  header: '{{nativeTargetPolicy}}'
+  text: '{{nativeTargetPolicy_descr}}'
+  display: Choice
+  url: aic-tactics.nativeTargetPolicy
+  contents:
+    choices:
+    - name: Native
+      text: '{{nativeTargetPolicy_native}}'
+    - name: Nearest
+      text: '{{nativeTargetPolicy_nearest}}'
+    - name: Richest
+      text: '{{nativeTargetPolicy_richest}}'
+    - name: Weakest
+      text: '{{nativeTargetPolicy_weakest}}'
+    value: Native
+- category: [AIC Tactics]
   name: legacyRecruitInterval
   header: '{{legacyRecruitInterval}}'
   text: '{{legacyRecruitInterval_descr}}'

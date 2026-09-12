@@ -1,4 +1,4 @@
-local schema = require('config.recruitment')
+local schema = require('config.personality')
 local M = {}
 local owner = 'aic-tactics'
 
@@ -9,8 +9,11 @@ function M.register(loader, backend)
     'AIC Tactics requires a native configuration backend')
   local states = {}
   local function handles(ai, spec, resetting)
+    -- Once any personality opts in, every AIC mutation participates in the
+    -- same admission gate. A Native neighbour must not bypass match locking.
+    for _, state in pairs(states) do if schema.active(state) then return true end end
     if resetting then return states[ai] ~= nil end
-    if states[ai] and states[ai].RecruitPolicy == 'WeightedRoles' then return true end
+    if states[ai] and schema.active(states[ai]) then return true end
     for _, field in ipairs(schema.fields) do if spec[field] ~= nil then return true end end
     return false
   end

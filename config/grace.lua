@@ -15,7 +15,7 @@ function M.preflight()
     if name:match('^ucp2%-legacy%-') then
       local option = config.ai_recruitstate_initialtimer
       assert(not option or option.enabled ~= true,
-        'AIC Tactics: turn OFF Legacy ai_recruitstate_initialtimer; copy its months to nativeInitialDefenseMonths for Native personalities')
+        require('messages').legacyOff('ai_recruitstate_initialtimer', 'nativeInitialDefenseMonths'))
     end
   end
   assert(core.readInteger(0x4D34AB) == 0x7DA83D81 and core.readByte(0x4D34AF) == 0xFE

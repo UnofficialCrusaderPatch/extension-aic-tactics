@@ -9,7 +9,7 @@ def runtime():
     lua.globals().root = ROOT.as_posix()
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
-      package.loaded['aicTactics.dll']={configurationSize=288,configuration=0x3100000}
+      package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3100000}
       configFinal={}
       memory,writes,allocations={},{},{}
       memory[0x4D34AB]=0x7DA83D81;memory[0x4D34AF]=0xFE;memory[0x4D34B0]=1

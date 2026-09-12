@@ -198,6 +198,7 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
 
 bool eligible(Probe& probe, int player, int unitType,
     int behaviour, int cursor, Candidate& candidate) {
+    if (probe.role == AttackRole && !reserveRoleAvailable(probe.aic, player, behaviour)) return false;
     const int building = buildingFor(player, unitType);
     RecruitmentAvailability result;
     probe.observation->probeTypes[probe.role] = unitType;
@@ -473,8 +474,9 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         const bool initialDefense = defenseIncomplete && configuration.initialDefenseTicks > 0
             && memory<unsigned int>(0x1FE7DA8) < static_cast<unsigned int>(configuration.initialDefenseTicks);
         unsigned int facts = defenseIncomplete ? DefenseIncomplete : 0;
-        if (playerValue(player, 0x115E99C) != 0) facts |= AttackActive;
-        if (playerValue(player, 0x115F6E8) > 0) facts |= HomeUnderThreat;
+        if (playerValue(player, 0x115E99C) != 0 || committedAttackActive(player)
+            || reserveRecruitmentActive(player)) facts |= AttackActive;
+        if (qualifyingHomeThreat(player)) facts |= HomeUnderThreat;
         bool needsEquipmentFact = false;
         for (int row = 0; row < configuration.recruitment.conditionCount; ++row)
             if ((configuration.recruitment.conditions[row].requiredFacts
@@ -506,11 +508,12 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         }
         const int raidMaximum = reinterpret_cast<TwoIntQuery>(0x4D12A0)(aic, character - 1, player);
         probe.role = RaidRole;
-        if (!initialDefense && requested.eligibleWeights.values[RaidRole] > 0 && playerValue(player, 0x115EEE4) + recruited[RaidRole] < raidMaximum
+        if (!initialDefense && offensiveActionsAllowed(player) && requested.eligibleWeights.values[RaidRole] > 0 && playerValue(player, 0x115EEE4) + recruited[RaidRole] < raidMaximum
             && rosterCandidate(probe, aic, character, player, 0x1AC,
                 playerValue(player, 0x115EEFC), 8, 2, candidates[RaidRole])) mask |= 1U << RaidRole;
         probe.role = AttackRole;
-        if (!initialDefense && requested.eligibleWeights.values[AttackRole] > 0 && !(facts & AttackActive)) {
+        if (!initialDefense && requested.eligibleWeights.values[AttackRole] > 0
+            && (!(facts & AttackActive) || reserveRecruitmentActive(player))) {
             attackerCount = attackCandidates(probe, aic, character, player, recruitedAttack, attackers);
             if (attackerCount) mask |= 1U << AttackRole;
         }

@@ -2,7 +2,7 @@ local M = {}
 
 function M.new()
   local native = require('aicTactics.dll')
-  assert(type(native) == 'table' and native.configurationSize == 288,
+  assert(type(native) == 'table' and native.configurationSize == 344,
     'AIC Tactics: incompatible native library')
   local installed = false
   local wallCounter
@@ -16,7 +16,7 @@ function M.new()
         'AIC Tactics: recruitment interval hook was replaced; restart with compatible modules')
     else
       assert(core.AOBScan(intervalSignature) == 0x4D3B41,
-        'AIC Tactics: turn off ucp2-legacy.ai_recruitinterval and restart; use legacyRecruitInterval to retain its Native behaviour')
+        require('messages').legacyOff('ai_recruitinterval', 'legacyRecruitInterval'))
     end
   end
   function native.enableLegacyInterval()
@@ -49,7 +49,7 @@ finished:
   if installed then return end
   -- This adapter deliberately admits only the inspected SHC 1.41 image layout.
   -- Check every patched site before loading the DLL or making a patch.
-  assert(core.AOBScan('57 8B CB E8 20 81 FF FF 57 8B CB E8 48 82 FF FF 57 8B CB E8 90 E6 FF FF') == 0x4D5438,
+  assert(core.AOBScan('57 8B CB E8 20 81 FF FF 57 8B CB E8 48 82 FF FF') == 0x4D5438,
     'AIC Tactics: unsupported or already modified AI scheduler')
   assert(core.AOBScan('8B 86 F0 EE 15 01 85 C0 75 44 8B C7 69 C0 A4 02 00 00') == 0x4D3BA5,
     'AIC Tactics: unsupported recruitment opportunity')
@@ -66,7 +66,7 @@ finished:
       'AIC Tactics: unsupported wall-defense counter hook')
     wallCounter = core.readInteger(target + 7)
   else
-    error('AIC Tactics: enable ucp2-legacy.ai_defense and restart')
+    error(require('messages').legacyOn('ai_defense'))
   end
   end
 
@@ -153,6 +153,7 @@ handled:
   core.writeCode(0x4D5443, {0xE8, native.meleeSortie - 0x4D5448})
   installed = true
   end
+  require('combat-native').attach(native)
   return native
 end
 return M

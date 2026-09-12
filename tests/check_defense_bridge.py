@@ -22,6 +22,7 @@ p.add_argument('--reference',type=Path,required=True)
 p.add_argument('--legacy',type=Path,required=True)
 p.add_argument('--fasm',type=Path,required=True)
 p.add_argument('--output',type=Path,required=True)
+p.add_argument('--combat',action='store_true')
 a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 raw=a.reference.read_bytes()
 assert hashlib.sha256(raw).hexdigest()=='3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a'
@@ -54,7 +55,7 @@ def allocate(count):
     return answer
 def scan(pattern):
     expression=b''.join(b'.' if t=='?' else re.escape(bytes([int(t,16)])) for t in pattern.split())
-    matches=list(re.finditer(expression,raw,re.DOTALL));assert len(matches)==1
+    matches=list(re.finditer(expression,raw,re.DOTALL));assert len(matches)==1,(pattern,len(matches))
     return base+pe.get_rva_from_offset(matches[0].start())
 g=lua.globals()
 g.utils=lua.table_from({'itob':itob})
@@ -79,7 +80,7 @@ g.root=Path(__file__).resolve().parents[1].as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
 configFinal={}
-package.loaded['aicTactics.dll']={configurationSize=288,configuration=0x3050000,
+package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new()
 native.activateComposition();native.activateComposition()
@@ -125,3 +126,96 @@ result={'cases':cases,'source':'actual native.lua wrappers and unchanged Legacy 
     'scope':'Original census effects, registers, flags, stack and added callback arguments; C++ calls replaced by ABI spies'}
 (a.output/'result.json').write_text(json.dumps(result,indent=2)+'\n')
 print(json.dumps(result))
+
+if a.combat:
+    # Reuse the same reference image, actual Lua assembler and register oracle.
+    names=['resetCombatCensus','countCombatUnit','completeCombatCensus','commitOpponent',
+        'preserveRandomWaveRequirement','isReserveUnit','observedUnitDamage','observedEntityDamage',
+        'observedFireDamage','updateOffensiveArmy','selectOpponent','updateOffensiveRaids',
+        'returnFromAttack','recruitWithReserve','reserveRecruitType','resetRaidBuildingCensus',
+        'countRaidBuilding','completeRaidBuildingCensus']
+    native=g.native
+    functions={name:0x3070100+i*32 for i,name in enumerate(names)}
+    for name,address in functions.items(): native[name]=address
+    for index,name in enumerate(['originalUnitDamage','originalEntityDamage','originalFireDamage','legacyTargetPolicy']):
+        native[name]=0x306F000+index*4
+    g.core.writeInteger=put
+    sites=[(0x5798EF,7,'resetCombatCensus',None),(0x579940,8,'countCombatUnit',UC_X86_REG_EBP),
+        (0x579DDC,5,'completeCombatCensus',None),(0x422EE2,5,'resetRaidBuildingCensus',None),
+        (0x422F56,8,'countRaidBuilding',UC_X86_REG_EDX),(0x42331B,8,'completeRaidBuildingCensus',None),
+        (0x4D4A62,6,'commitOpponent',UC_X86_REG_ESI),(0x4CDD47,6,'preserveRandomWaveRequirement',UC_X86_REG_ESI),
+        (0x4D40F2,7,'isReserveUnit',UC_X86_REG_EDI)]
+    original_combat={site:bytes(uc.mem_read(site,length)) for site,length,_,_ in sites}
+    native.activateCombat(); native.activateRaids(); native.activateCombat(); native.activateRaids()
+    wrapped_combat={site:bytes(uc.mem_read(site,length)) for site,length,_,_ in sites}
+    returns={'commitOpponent':1,'preserveRandomWaveRequirement':0,'isReserveUnit':0}
+    combat_calls=[]
+    inverse={address:name for name,address in functions.items()}
+    def combat_spy(machine,address,size,user):
+        if address not in inverse:return
+        name=inverse[address];sp=machine.reg_read(UC_X86_REG_ESP)
+        args=(get(sp+4),) if name in ['countCombatUnit','countRaidBuilding','commitOpponent',
+            'preserveRandomWaveRequirement','isReserveUnit'] else ()
+        combat_calls.append((name,)+args)
+        for register in registers[:7]:machine.reg_write(register,0xDEADBEEF)
+        machine.reg_write(UC_X86_REG_EAX,returns.get(name,0))
+        machine.reg_write(UC_X86_REG_EFLAGS,0x202)
+        machine.reg_write(UC_X86_REG_EIP,get(sp)&0xFFFFFFFF);machine.reg_write(UC_X86_REG_ESP,sp+4)
+    uc.hook_add(UC_HOOK_CODE,combat_spy)
+    combat_cases=0
+    for site,length,name,arg in sites:
+        for player in range(1,9):
+            for flags in [0x202,0x247,0xA92]:
+                initial=[0x1387F38,0x98765432,0xCC001101,player,0x1387F38,player*0x39F4,3,0x308F000,flags]
+                if name=='commitOpponent':initial[4]=player
+                if name=='preserveRandomWaveRequirement':initial[4]=player*0x39F4
+                locations=[0xEE0FC8,initial[4]+4,initial[5]+0x115F768,initial[4]+0x115F698]
+                locations=[address for address in locations if 0x400000<=address<0x2491000]
+                results=[]
+                for patch in [original_combat,wrapped_combat]:
+                    uc.mem_write(site,patch[site]);uc.ctl_remove_cache(site,site+length)
+                    combat_calls.clear()
+                    for address in locations:put(address,123)
+                    uc.mem_write(initial[7],b'caller frame')
+                    for register,value in zip(registers,initial):uc.reg_write(register,value)
+                    uc.emu_start(site,site+length,count=200)
+                    results.append(([uc.reg_read(register) for register in registers],[get(address) for address in locations]))
+                    assert bytes(uc.mem_read(initial[7],12))==b'caller frame'
+                    expected=[] if patch is original_combat else [(name,)+((initial[registers.index(arg)],) if arg else ())]
+                    assert combat_calls==expected,(name,combat_calls,expected)
+                assert results[0]==results[1],(hex(site),player,flags,results)
+                combat_cases+=1
+                skips={'commitOpponent':(0,0x4D4AB5),'preserveRandomWaveRequirement':(1,site+length),
+                    'isReserveUnit':(1,0x4D4117)}
+                if name in skips:
+                    previous=returns[name];returns[name],end=skips[name]
+                    uc.mem_write(site,wrapped_combat[site]);uc.ctl_remove_cache(site,site+length)
+                    for address in locations:put(address,123)
+                    for register,value in zip(registers,initial):uc.reg_write(register,value)
+                    combat_calls.clear();uc.emu_start(site,end,count=200)
+                    assert [uc.reg_read(register) for register in registers]==initial,(name,'skip registers')
+                    assert all(get(address)==123 for address in locations),(name,'skip wrote displaced store')
+                    assert combat_calls==[(name,initial[registers.index(arg)])]
+                    returns[name]=previous;combat_cases+=1
+    # Damage wrappers call these original prologues through relocated trampolines.
+    for site,length,original_name in [(0x531220,6,'originalUnitDamage'),
+        (0x531920,7,'originalEntityDamage'),(0x532460,5,'originalFireDamage')]:
+        displaced=pe.get_data(site-base,length)
+        trampoline=get(native[original_name])
+        patched=bytes(uc.mem_read(site,length))
+        for flags in [0x202,0x247,0xA92]:
+            results=[]
+            for entry in [site,trampoline]:
+                uc.mem_write(site,displaced);uc.ctl_remove_cache(site,site+length)
+                initial=[0x12345678,0x98765432,0x1387F38,3,0x11223344,0x55667788,0xABCD,0x308F000,flags]
+                uc.mem_write(initial[7]-64,bytes(range(128)))
+                for register,value in zip(registers,initial):uc.reg_write(register,value)
+                uc.emu_start(entry,site+length,count=30)
+                results.append(([uc.reg_read(register) for register in registers],bytes(uc.mem_read(initial[7]-64,128))))
+            assert results[0]==results[1],(original_name,flags)
+            combat_cases+=1
+        uc.mem_write(site,patched);uc.ctl_remove_cache(site,site+length)
+    result={'cases':combat_cases,'source':'actual combat-native.lua wrappers',
+        'scope':'Original displaced effects, callback arguments, registers, flags and stack; C++ ABI spies'}
+    (a.output/'combat-result.json').write_text(json.dumps(result,indent=2)+'\n')
+    print(json.dumps(result))

@@ -18,9 +18,18 @@ static unsigned char units[0x10000];
 static unsigned char savedUnits[sizeof(units)];
 static unsigned char* savedImage;
 static int cases;
+static LONG WINAPI nativeException(EXCEPTION_POINTERS* info)
+{
+    std::fprintf(stderr, "Native fixture exception %08lX at %08lX (ESP %08lX)\n",
+        info->ExceptionRecord->ExceptionCode, info->ContextRecord->Eip, info->ContextRecord->Esp);
+    std::fflush(stderr);
+    return EXCEPTION_EXECUTE_HANDLER;
+}
 void runGroupCases();
 #ifdef AIC_RUNTIME_TESTS
 void runRuntimeCases();
+void runDamageCases(unsigned int reservationOffset);
+void runCombatCases();
 #endif
 
 static void require(bool condition, const char* message)
@@ -94,6 +103,9 @@ static void check(const RecruitmentServices& services, int player, int unit,
 
 int main(int argc, char** argv)
 {
+    std::setvbuf(stdout, 0, _IONBF, 0);
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+    SetUnhandledExceptionFilter(nativeException);
     require(argc == 2, "Use run_shc141_probe.py with the hash-verified reference executable");
     void* image = reinterpret_cast<void*>(ImageBase);
     const unsigned int reservationOffset = reinterpret_cast<unsigned int>(referenceSpace) - ImageBase;
@@ -153,9 +165,13 @@ int main(int argc, char** argv)
     absent.nonEuropean = 0;
     check(absent,1,70,1,false,false,0,0);
     std::printf("%d x86 original-instruction probe cases passed; no running-game acceptance claimed\n", cases);
+#ifdef AIC_RUNTIME_TESTS
+    runDamageCases(reservationOffset);
+#endif
     runGroupCases();
 #ifdef AIC_RUNTIME_TESTS
     runRuntimeCases();
+    runCombatCases();
 #endif
     std::free(savedImage);
     return 0;

@@ -2,3 +2,9 @@ legacyRecruitInterval: A Legacy toborzási ütemének megtartása
 legacyRecruitInterval_descr: 'A Legacy ai_recruitinterval beállítását helyettesíti: Native személyiségeknél 1-es időköz. A WeightedRoles az AIC időközeit használja. Kapcsold ki a Legacy beállítását; ha eddig sem használtad, ezt is hagyd kikapcsolva.'
 nativeInitialDefenseMonths: A Native MI-k kezdeti védelmi időszaka
 nativeInitialDefenseMonths_descr: '0–30 hónap, alapérték 6. Másold ide a Legacy kezdeti időzítőjének értékét, majd kapcsold ki azt a Legacy-beállítást. WeightedRoles esetén a RecruitInitialDefenseMonths érvényes.'
+nativeTargetPolicy: "Célválasztás Native MI-knél"
+nativeTargetPolicy_descr: "A Legacy ai_attacktarget helyettesítője. Másold ide a választását, és új célválasztási szabályoknál kapcsold ki azt a Legacy opciót. Native esetén a TargetChoice marad."
+nativeTargetPolicy_native: "Meglévő TargetChoice"
+nativeTargetPolicy_nearest: "Legközelebbi"
+nativeTargetPolicy_richest: "Leggazdagabb"
+nativeTargetPolicy_weakest: "Leggyengébb"

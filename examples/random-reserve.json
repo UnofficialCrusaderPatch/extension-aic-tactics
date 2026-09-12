@@ -1,0 +1,10 @@
+{
+  "AttackPreparation": "DuringAttack",
+  "AttackTargetPolicy": "Random",
+  "AttackTargetCommitment": "UntilDefeated",
+  "RaidTargetPolicy": "NearestReachable",
+  "RaidGroupCount": 2,
+  "RaidMinGroupSize": 4,
+  "RaidRiskTolerance": "Medium",
+  "RaidEnemyScope": "PrimeTarget"
+}

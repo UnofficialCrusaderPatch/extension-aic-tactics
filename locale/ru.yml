@@ -2,3 +2,9 @@ legacyRecruitInterval: Сохранить темп найма Legacy
 legacyRecruitInterval_descr: 'Заменяет ai_recruitinterval из Legacy: для личностей Native используется интервал 1. WeightedRoles сохраняет интервалы AIC. Отключите опцию Legacy; если она уже была отключена, оставьте эту опцию выключенной.'
 nativeInitialDefenseMonths: Начальный период обороны для ИИ Native
 nativeInitialDefenseMonths_descr: '0–30 месяцев, по умолчанию 6. Перенесите сюда прежнее значение начального таймера Legacy и отключите эту настройку Legacy. Для WeightedRoles действует RecruitInitialDefenseMonths.'
+nativeTargetPolicy: "Выбор цели для Native ИИ"
+nativeTargetPolicy_descr: "Заменяет Legacy ai_attacktarget. Перенесите его выбор сюда и отключите эту опцию Legacy для новых правил выбора цели. Native сохраняет TargetChoice."
+nativeTargetPolicy_native: "Исходный TargetChoice"
+nativeTargetPolicy_nearest: "Ближайший"
+nativeTargetPolicy_richest: "Самый богатый"
+nativeTargetPolicy_weakest: "Самый слабый"
