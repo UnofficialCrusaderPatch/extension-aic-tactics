@@ -85,6 +85,34 @@ membership bits. This does not verify the later open-subrole fallback correction
 which has original-instruction regression coverage only.
 DLL SHA256: `04e2fe6f731f92f8b3f0939896497f4f2d802789f3938079acacccea08a4c873`.
 
+The local MSVC2005 build at 858752d also exercised the interval replacement in
+the real game. With `legacyRecruitInterval` ON, 24 snapshots showed the two
+WeightedRoles Wolves' counters cycling through 0..3 for their authored interval
+4; the six Native slots' counters stayed at 0. Stored AIC intervals were unchanged.
+The Wolves hired four/seven sortie Pikemen with verified owners and membership.
+This is a cadence check, not complete Native command/RNG equivalence.
+DLL SHA256: `da2adec0630de96d70993e5977cae152718cc768121cac0b05d7b0e7dd656baa`.
+
+The same build ran a 100% Raid test with Spearmen and `RaidUnitsBase=8`,
+`RaidUnitsRandom=0`. Restart Mission preserved the neighbouring teams and
+reinitialized native raid adjustments to -3/0. Both Wolves reached their effective
+quotas of five/eight. At tick 4307, player 5's unit 509/UID 28870 had native role 2
+and belonged to group 1229/UID 56582, size 8, with matching membership. Later
+casualties and replacement recruitment were observed; at tick 5469 player 1's
+latest recruit UID 102791 belonged to group 1241/UID 114333, size 3. A reused
+player 5 unit ID correctly failed the diagnostic UID check.
+
+Use a fresh match or Restart Mission when testing changed raid size parameters.
+The native quota is the base plus a saved per-player adjustment; loading an old
+save preserves that adjustment. Native initialization can reduce the quota when
+the selected target has less than 500 gold, even with `RaidUnitsRandom=0`.
+The extension retains this rule. An earlier test loaded old adjustments -2/-21,
+producing quotas 6/-13; that is not an eight-unit acceptance fixture.
+
+The fresh raid run was saved as `aicraid` and reloaded with the same configuration.
+No black terrain patches appeared in the inspected view. This does not explain
+the older sortie save's corruption or establish full saved-state equivalence.
+
 Native team IDs and keep-entry coordinates confirmed neighbouring allied pairs:
 players 1/2 Wolf/Caliph at (130,265)/(196,329); 3/4 Saladin/Pig at
 (321,203)/(257,278); 5/6 Wolf/Richard at (77,195)/(141,130); 7/8 Saladin/Caliph
@@ -92,6 +120,6 @@ at (203,69)/(268,129). Distances are about 92, 99, 91 and 88 tiles, respectively
 These coordinates pin this saved fixture, not newly randomized games.
 
 The Native slots bypassed policy observations; that alone is not a proof of native
-decision/RNG equivalence. Raid recruitment, new target behaviour, reserves,
+decision/RNG equivalence. New target behaviour, reserves,
 split raids, multiplayer, replay restoration and full-match performance have not
 passed in-game acceptance.
