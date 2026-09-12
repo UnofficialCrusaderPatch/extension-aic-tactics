@@ -27,9 +27,6 @@ function M.new(native)
     local words = {compiled.mode, #compiled.conditions}
     for index = 1, 8 do
       local row = compiled.conditions[index]
-      -- Equipment-deficit accounting is not yet exposed by this development backend.
-      assert(not row or (row.requiredFacts < 8 and row.forbiddenFacts < 8),
-        'AIC Tactics: EquipmentSurplus native accounting is not implemented in this build')
       for _, value in ipairs(row and {row.strength, row.requiredFacts, row.forbiddenFacts,
           row.weights[1], row.weights[2], row.weights[3], row.weights[4]} or {0,0,0,0,0,0,0}) do
         words[#words + 1] = value

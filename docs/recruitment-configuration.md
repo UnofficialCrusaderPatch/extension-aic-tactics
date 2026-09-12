@@ -38,8 +38,9 @@ All supplied predicates must match. False requires absence; omission ignores
 that fact. The first matching row takes precedence, otherwise the current
 strength's base row applies. An empty `When` matches every decision. Unknown
 keys, sparse lists, missing weights, invalid types and later invalid rows
-are rejected. Native definitions of threat and surplus are still investigation
-gates; parsing those names does not advertise them as playable features.
+are rejected. [EquipmentSurplus](equipment-surplus.md) accounts for complete
+usable kits beyond home-defense deficits. Qualifying-threat integration still
+needs completion; the current runtime uses native nervous state for that fact.
 
 ```json
 {
