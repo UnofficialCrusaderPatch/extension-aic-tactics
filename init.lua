@@ -10,6 +10,9 @@ return {
       'AIC Tactics: legacyRecruitInterval must be boolean')
     require('config.provider').register(modules.aicloader, require('config.backend').new(native))
     if legacyInterval then native.enableLegacyInterval() end
+    self.recruitmentState = require('state').new(native, legacyInterval)
+    assert(modules['map-extensions'], 'AIC Tactics requires Map Extensions for saved policy state')
+      :registerSection('aic-tactics', self.recruitmentState.callbacks)
     log(INFO, string.format('[aic-tactics] configuration=0x%X size=%d observations=0x%X size=%d',
       native.configuration, native.configurationSize, native.observations, native.observationSize))
     enabled = true

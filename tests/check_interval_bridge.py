@@ -23,7 +23,7 @@ lua=LuaRuntime(unpack_returned_tuples=True)
 lua.globals().root=root.as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
-package.loaded['aicTactics.dll']={configurationSize=280,configuration=0x3100000}
+package.loaded['aicTactics.dll']={configurationSize=284,configuration=0x3100000}
 core={AOBScan=function()return 0x4D3B41 end,
  allocateAssembly=function(text,symbols) assembly=text;bindings=symbols;return 0x3000000 end,
  writeCode=function(address,code)site=address;patch=code end}
@@ -53,7 +53,7 @@ for player in range(1,9):
     for interval in [-1,0,1,4,2147483647]:
      for flags in [0x202,0x247,0xA92]:
       uc.mem_write(0x115E0F8+player*0x39F4,struct.pack('<i',character+1))
-      uc.mem_write(0x3100000+character*280,struct.pack('<i',mode))
+      uc.mem_write(0x3100000+character*284,struct.pack('<i',mode))
       index=character*169+strength
       uc.mem_write(0x2300000+index*4+0x164,struct.pack('<i',interval))
       initial=[0x12345678,0x98765432,0xCC001101,0x2300000,player*0x39F4,

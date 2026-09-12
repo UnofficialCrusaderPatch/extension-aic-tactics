@@ -1,11 +1,11 @@
 local M = {}
 
 function M.new(native)
-  assert(native.configurationSize == 280, 'AIC Tactics: unsupported configuration ABI')
+  assert(native.configurationSize == 284, 'AIC Tactics: unsupported configuration ABI')
   local function readRecord(ai)
     local result = {}
     local address = native.configuration + ai * native.configurationSize
-    for index = 0, 69 do result[index + 1] = core.readInteger(address + index * 4) end
+    for index = 0, 70 do result[index + 1] = core.readInteger(address + index * 4) end
     return result
   end
   local function writeRecord(ai, words)
@@ -18,11 +18,12 @@ function M.new(native)
   end
   return {prepare = function(ai, authored, compiled)
     assert(ai >= 1 and ai <= 16 and ai == math.floor(ai), 'Invalid AI character')
-    assert(compiled.schemaVersion == 1, 'Unsupported recruitment schema')
+    assert(compiled.schemaVersion == 2, 'Unsupported recruitment schema')
     local previous = readRecord(ai)
     local changesPolicy = compiled.mode ~= 0 or previous[1] ~= 0
     if changesPolicy then admission() end
     if compiled.mode == 1 then native.preflight() end
+    if compiled.mode == 1 and compiled.defenseComposition == 1 then native.preflightComposition() end
     local words = {compiled.mode, #compiled.conditions}
     for index = 1, 8 do
       local row = compiled.conditions[index]
@@ -39,9 +40,11 @@ function M.new(native)
         words[#words + 1] = compiled.baseRows[strength] and compiled.baseRows[strength][role] or 0
       end
     end
+    words[#words + 1] = compiled.defenseComposition
     return {commit = function()
       if changesPolicy then admission() end
       if compiled.mode == 1 then native.activate() end
+      if compiled.mode == 1 and compiled.defenseComposition == 1 then native.activateComposition() end
       writeRecord(ai, words)
     end,
       rollback = function() writeRecord(ai, previous) end}

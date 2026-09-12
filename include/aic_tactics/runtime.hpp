@@ -2,6 +2,7 @@
 #define AIC_TACTICS_RUNTIME_HPP
 
 #include "aic_tactics/recruitment.hpp"
+#include "aic_tactics/composition.hpp"
 
 namespace AicTactics {
 namespace SHC141 {
@@ -9,6 +10,7 @@ namespace SHC141 {
 struct CharacterConfiguration {
     RecruitmentPolicy recruitment;
     RoleWeights baseRows[3];
+    int defenseComposition;
 };
 
 // Diagnostic counters are observation only; policy never reads them.
@@ -42,6 +44,12 @@ extern CharacterConfiguration configurations[17];
 extern RecruitmentObservation observations[9];
 extern int configurationLocked;
 extern int* legacyWallCounts;
+extern int defenseTypeCounts[9][80];
+extern unsigned int defenseCensusTick;
+extern int defenseCensusValid;
+void __cdecl resetDefenseCensus();
+void __cdecl countDefenseUnit(int player, int unitType);
+void __cdecl invalidateDefenseCensus();
 
 // Called after the original interval/peasant/spending gate. Nonzero means
 // this opportunity was handled; zero resumes the original instructions.
