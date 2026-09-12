@@ -201,12 +201,19 @@ The private `tests/check_grace_native.py` runner now accepts `--variant SHC` or
 hashes remain in the research tests only. Exact-build harness addresses stay
 in test code. No new game, MP, replay or performance acceptance is claimed.
 
-Source version 0.0.3 requires Loader 1.1.4 and Protocol 1.1.1. No 0.0.3 tester
+Source version 0.0.3 requires Loader 1.1.4 and Protocol 1.1.2 (which requires
+Files 1.4.0 for shared asset traversal). No 0.0.3 tester
 bundle is published while the remaining native integration is incomplete.
 
 Remaining acceptance includes the complete installed framework/Legacy baseline,
 all reused field/layout paths in active games, applicable language/distribution
 fixtures, native-default equivalence, mixed personalities, physical two-peer MP,
 save/load, Recorder state restore/replay and measured whole-game performance.
-The Recorder resolver and shared asset-admission ownership identified in the
-original audit also remain open. Passing component tests does not finish those.
+Shared asset traversal is now owned by [Files PR11](https://github.com/UnofficialCrusaderPatch/extension-files/pull/11),
+used by [Protocol 1.1.2](https://github.com/Krarilotus/ucp-extension-protocol/pull/1)
+and [Recorder 0.50.6](https://github.com/Krarilotus/ucp_recorder/pull/4).
+Their portable tests and CI pass; installed bundle acceptance remains pending.
+[Recorder's Windows-service correction](https://github.com/Krarilotus/ucp_recorder/pull/5)
+uses the existing RPS export resolver and passes a native console check with
+the installed Lua/RPS/CFFI binaries. Recorder's game-address port is still
+unfinished. Passing component tests does not finish that or gameplay acceptance.

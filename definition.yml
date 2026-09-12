@@ -10,5 +10,5 @@ dependencies:
   aicloader: ^1.1.4
   ucp2-legacy: ^2.15.1
   map-extensions: ^1.1.0
-  protocol: ^1.1.1
+  protocol: ^1.1.2
   chat: ^1.0.0
