@@ -12,9 +12,12 @@ p.add_argument('--loader', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
 a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
+for checkout in [root, a.loader]:
+    if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=checkout,text=True).strip():
+        raise SystemExit('Commit source changes before packaging: ' + str(checkout))
 files = {}
 module = 'ucp/modules/aic-tactics-0.0.1/'
-for relative in ['definition.yml','init.lua','native.lua','options.yml']:
+for relative in ['definition.yml','init.lua','native.lua','state.lua','options.yml']:
     files[module+relative] = (root/relative).read_bytes()
 for path in sorted((root/'config').glob('*.lua')):
     files[module+'config/'+path.name] = path.read_bytes()
@@ -27,6 +30,7 @@ for path in sorted(a.loader.glob('*.lua')):
 files[loader+'definition.yml'] = (a.loader/'definition.yml').read_bytes().replace(b'version: 1.1.2', b'version: 1.1.3')
 files[loader+'options.yml'] = (a.loader/'options.yml').read_bytes()
 files['AIC-TACTICS-TESTING.md'] = (root/'docs/runtime-testing.md').read_bytes()
+files['AIC-TACTICS-COMPOSITION.md'] = (root/'docs/defense-composition.md').read_bytes()
 files['sortie-test-aic-fragment.json'] = json.dumps({'RecruitPolicy':'WeightedRoles', **{
     'RecruitProb'+role+strength: 100 if role=='Sortie' else 0
     for strength in ['Default','Weak','Strong'] for role in ['Def','Raid','Attack','Sortie']}}, indent=2).encode()+b'\n'

@@ -9,7 +9,7 @@ def runtime():
     lua.globals().root = ROOT.as_posix()
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
-      package.loaded['aicTactics.dll']={configurationSize=280,configuration=0x3100000}
+      package.loaded['aicTactics.dll']={configurationSize=284,configuration=0x3100000}
       memory,writes,allocations={},{},{}
       core={readByte=function(a)return memory[a] end,readInteger=function(a)return memory[a] end,
         AOBScan=function(pattern)

@@ -151,5 +151,43 @@ void runRuntimeCases() {
     check(observations[1].probeTypes[AttackRole]==22,
         "all subroles full lost original main-roster fallback");
     check(observations[1].purchaseResource==17,"native fallback failed to request its equipment");
+
+    fixture(1,4,1000,19);
+    configurations[4].defenseComposition=PreserveSlots;
+    for(int strength=0;strength<3;++strength) {
+        configurations[4].baseRows[strength].values[SortieRole]=0;
+        configurations[4].baseRows[strength].values[DefenseRole]=100;
+    }
+    at<int>(aic+0x170)=10; at<int>(aic+0x180)=10;
+    at<int>(aic+0x184)=22; at<int>(aic+0x188)=22; at<int>(aic+0x18C)=24;
+    at<int>(0x115EEE0+0x39F4)=7;
+    resetDefenseCensus();
+    for(int count=0;count<7;++count) countDefenseUnit(1,22);
+    countDefenseUnit(0,22); countDefenseUnit(9,22); countDefenseUnit(1,80);
+    check(defenseTypeCounts[1][22]==7,"defense census ownership/bounds mismatch");
+    opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==24,"full repeated archer shares stole spear seats");
+    check(observations[1].purchaseResource==19,"vacant spear share failed to request spears");
+    countDefenseUnit(1,24); countDefenseUnit(1,24); countDefenseUnit(1,24);
+    at<int>(0x115EEE0+0x39F4)=10;
+    opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"filled composition recruited above total quota");
+    at<int>(0x115EEE0+0x39F4)=7;
+    resetDefenseCensus();
+    for(int count=0;count<7;++count) countDefenseUnit(1,22);
+    at<int>(0x1FE7DA8)+=2;
+    opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"stale census admitted composition recruit");
+    resetDefenseCensus(); // Native total and composition census intentionally disagree.
+    opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"incomplete census admitted composition recruit");
+    for(int count=0;count<7;++count) countDefenseUnit(1,22);
+    invalidateDefenseCensus(); opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"invalidated load cache admitted composition recruit");
+    configurations[4].baseRows[0].values[DefenseRole]=50;
+    configurations[4].baseRows[0].values[SortieRole]=50;
+    at<int>(0x115C2C8+0x39F4+17*4)=0;
+    opportunity(1);
+    check(observations[1].probeTypes[SortieRole]==22,"vacant defense shares stalled another role");
     std::printf("%d production runtime/original-instruction checks passed; no new running-game acceptance implied\n",cases);
 }

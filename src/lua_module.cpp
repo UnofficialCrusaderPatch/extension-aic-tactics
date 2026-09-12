@@ -19,13 +19,18 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
     if (!createTable || !pushNumber || !setField) return 0;
     using namespace AicTactics::SHC141;
     const char* names[] = {"configuration", "configurationSize", "observations", "observationSize",
-        "configurationLocked", "legacyWallCounts", "recruitOpportunity", "rangedSortie", "meleeSortie"};
+        "configurationLocked", "legacyWallCounts", "recruitOpportunity", "rangedSortie", "meleeSortie",
+        "resetDefenseCensus", "countDefenseUnit", "invalidateDefenseCensus", "defenseTypeCounts",
+        "defenseCensusTick", "defenseCensusValid"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
         reinterpret_cast<unsigned int>(&configurationLocked), reinterpret_cast<unsigned int>(&legacyWallCounts),
         reinterpret_cast<unsigned int>(&recruitOpportunity), reinterpret_cast<unsigned int>(&rangedSortie),
-        reinterpret_cast<unsigned int>(&meleeSortie)};
+        reinterpret_cast<unsigned int>(&meleeSortie), reinterpret_cast<unsigned int>(&resetDefenseCensus),
+        reinterpret_cast<unsigned int>(&countDefenseUnit), reinterpret_cast<unsigned int>(&invalidateDefenseCensus),
+        reinterpret_cast<unsigned int>(defenseTypeCounts), reinterpret_cast<unsigned int>(&defenseCensusTick),
+        reinterpret_cast<unsigned int>(&defenseCensusValid)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);

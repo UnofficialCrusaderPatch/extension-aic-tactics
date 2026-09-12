@@ -11,6 +11,9 @@ CharacterConfiguration configurations[17];
 RecruitmentObservation observations[9];
 int configurationLocked;
 int* legacyWallCounts;
+int defenseTypeCounts[9][80];
+unsigned int defenseCensusTick;
+int defenseCensusValid;
 
 namespace {
 const unsigned int PlayerStride = 0x39F4;
@@ -90,6 +93,9 @@ struct Probe {
     int freeGroups;
     void* aic;
     int character;
+    int defenseMaximum;
+    int recruitedWalls;
+    const int* recruitedTypes;
 };
 
 bool groupRangeAvailable(int player, int first, int count, int freeGroups, bool smallest) {
@@ -132,7 +138,8 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
         first = index < 1 ? 180 : index < 2 ? 181 : index < 7 ? 182
             : index < 12 ? 183 : index < 15 ? 184 : 185;
     } else {
-        const int walls = legacyWallCounts ? legacyWallCounts[player] : playerValue(player, 0x115EEE0);
+        const int walls = (legacyWallCounts ? legacyWallCounts[player] : playerValue(player, 0x115EEE0))
+            + probe.recruitedWalls;
         if (walls >= aicValue(probe.aic, probe.character, 0x180)) {
             first = 170;
             count = aicValue(probe.aic, probe.character, 0x174);
@@ -197,7 +204,14 @@ bool rosterCandidate(Probe& native, void* aic, int character,
     if (cursor < 0 || cursor >= length) cursor = 0;
     for (int i = 0; i < length; ++i) {
         const int index = (cursor + i) % length;
-        if (eligible(native, player, aicValue(aic, character, offset + index * 4),
+        const int unitType = aicValue(aic, character, offset + index * 4);
+        if (native.role == DefenseRole && configurations[character - 1].defenseComposition == PreserveSlots) {
+            int roster[8];
+            for (int slot = 0; slot < 8; ++slot) roster[slot] = aicValue(aic, character, offset + slot * 4);
+            if (unitType < 1 || unitType >= 80 || defenseTypeCounts[player][unitType] + native.recruitedTypes[unitType]
+                >= defenseTypeQuota(roster, native.defenseMaximum, unitType)) continue;
+        }
+        if (eligible(native, player, unitType,
             behaviour, index + 1, result)) return true;
     }
     return false;
@@ -234,10 +248,11 @@ int attackCandidates(Probe& native, void* aic, int character,
     return count;
 }
 
-void assign(void* aic, int player, int character, int role, const Candidate& candidate, int unit) {
+void assign(void* aic, int player, int character, int role, const Candidate& candidate, int unit, int recruitedWalls) {
     if (role == DefenseRole) {
         playerValue(player, 0x115EEF8) = candidate.cursor;
-        const int walls = legacyWallCounts ? legacyWallCounts[player] : playerValue(player, 0x115EEE0);
+        const int walls = (legacyWallCounts ? legacyWallCounts[player] : playerValue(player, 0x115EEE0))
+            + recruitedWalls;
         reinterpret_cast<PlayerAction>(walls < aicValue(aic, character, 0x180) ? 0x4D2660 : 0x4D2730)(aic, unit);
     } else if (role == RaidRole) {
         playerValue(player, 0x115EEFC) = candidate.cursor;
@@ -252,6 +267,23 @@ void assign(void* aic, int player, int character, int role, const Candidate& can
     }
 }
 } // namespace
+
+void __cdecl invalidateDefenseCensus() {
+    defenseCensusValid = false;
+}
+
+void __cdecl resetDefenseCensus() {
+    std::memset(defenseTypeCounts, 0, sizeof(defenseTypeCounts));
+    defenseCensusTick = memory<unsigned int>(0x1FE7DA8);
+    defenseCensusValid = true;
+}
+
+void __cdecl countDefenseUnit(int player, int unitType) {
+    if (player < 1 || player > 8 || unitType < 1 || unitType >= 80 || !active(player)) return;
+    const int character = playerValue(player, 0x115E0F8);
+    if (configurations[character - 1].defenseComposition == PreserveSlots)
+        ++defenseTypeCounts[player][unitType];
+}
 
 void __fastcall rangedSortie(void* aic, void*, int player) {
     if (!active(player)) reinterpret_cast<PlayerAction>(0x4CD560)(aic, player);
@@ -272,6 +304,15 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
     int recruited[4] = {0, 0, 0, 0};
     int recruitedAttack[11] = {0};
     int ranged = 0, melee = 0;
+    int recruitedWalls = 0;
+    int recruitedTypes[80] = {0};
+    bool compositionReady = true;
+    if (configuration.defenseComposition == PreserveSlots) {
+        int censusTotal = 0;
+        for (int type = 1; type < 80; ++type) censusTotal += defenseTypeCounts[player][type];
+        compositionReady = defenseCensusValid && memory<unsigned int>(0x1FE7DA8) - defenseCensusTick <= 1
+            && censusTotal == playerValue(player, 0x115EEE0);
+    }
     for (int attempt = 0; attempt < attempts; ++attempt) {
         ++observation.sequence;
         observation.tick = memory<int>(0x1FE7DA8);
@@ -288,6 +329,8 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         probe.observation = &observation;
         probe.aic = aic;
         probe.character = character;
+        probe.recruitedWalls = recruitedWalls;
+        probe.recruitedTypes = recruitedTypes;
         for (int r = 0; r < 4; ++r) {
             probe.missingResource[r] = 0;
             observation.probeReasons[r] = -2;
@@ -301,6 +344,8 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         if (memory<int>(0x1FE7D78) == 3 && memory<int>(0x1FE9CA4) == 1 && memory<int>(0x1FE9CAC) == 2)
             defenseMaximum = defenseMaximum * 4 / 3;
         if (playerValue(player, 0x115F6E8) > 0) defenseMaximum *= 4;
+        probe.defenseMaximum = defenseMaximum <= 0 ? 0
+            : defenseMaximum > 0x7FFFFFFF ? 0x7FFFFFFF : static_cast<int>(defenseMaximum);
         const bool defenseIncomplete = static_cast<__int64>(playerValue(player, 0x115EEE0)) + recruited[DefenseRole] < defenseMaximum;
         unsigned int facts = defenseIncomplete ? DefenseIncomplete : 0;
         if (playerValue(player, 0x115E99C) != 0) facts |= AttackActive;
@@ -319,7 +364,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         if (playerValue(player, 0x115E964) <= 0 || playerValue(player, 0x115F76C) == 0) break;
 
         probe.role = DefenseRole;
-        if (requested.eligibleWeights.values[DefenseRole] > 0 && defenseIncomplete && rosterCandidate(probe, aic, character, player, 0x184,
+        if (requested.eligibleWeights.values[DefenseRole] > 0 && defenseIncomplete && compositionReady && rosterCandidate(probe, aic, character, player, 0x184,
             playerValue(player, 0x115EEF8), 8, 1, candidates[DefenseRole])) mask |= 1U << DefenseRole;
         const int raidMaximum = reinterpret_cast<TwoIntQuery>(0x4D12A0)(aic, character - 1, player);
         probe.role = RaidRole;
@@ -383,7 +428,12 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         const int unit = (european ? native.european : native.nonEuropean)(native.units,
             candidate.unitType, candidate.building, player, 0);
         if (!unit) break;
-        assign(aic, player, character, role, candidate, unit);
+        assign(aic, player, character, role, candidate, unit, recruitedWalls);
+        if (role == DefenseRole) {
+            if (configuration.defenseComposition == PreserveSlots)
+                ++recruitedTypes[candidate.unitType];
+            if (memory<short>(0x1388976 + unit * 0x490) == 1) ++recruitedWalls;
+        }
         observation.unit = unit;
         observation.unitType = candidate.unitType;
         observation.hireUID = memory<unsigned int>(0x13885E4 + unit * 0x490);
