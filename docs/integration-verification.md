@@ -35,7 +35,7 @@ Dependent source checkpoints:
 
 - AIC Loader: `24ea47c20f62082f8a1b06969089898a8285add9`.
 - Map Extensions required-state API: `6fc7800312dbdcc0e880657308a30fb8c2698422`.
-- Recorder required-state capture/checkpoints: `b2688f18bfb929738ac4778aec40b92f93c4b69e`.
+- Recorder required-state capture/checkpoints: `87c0a103426c77f4a6ba01bfe5ce7e6c7f3c5658`.
 - Protocol admission: `a6d940357432bbd63b87bbb26e6e67d973090eb8`.
 - Unchanged Chat: `8f0c58a52cdc3aa5bca2cd4fd731ad1fcf1b9921`.
 
@@ -50,6 +50,13 @@ comparisons, including registers, flags, stack, RNG, SP/MP and fail-closed branc
 Its consensus tests cover all eight peers, missing/mismatched replies, stale
 rosters, host migration and malformed/non-lobby messages. These are transport
 test doubles, not physical-peer admission evidence.
+
+The packaged 8eeaf4b source reached the SHC 1.41 skirmish menu on GamerGrill with
+all prerequisites and Recorder 87c0a10 loaded. Runtime preflight accepted the
+344-byte configuration and state ABI 7; Recorder installed its replay hooks.
+The private profile initially omitted UI's LuaJIT/cffi dependencies and their
+option defaults. Correcting that profile resolved startup without a production
+code change. This is startup evidence only; the match had not begun.
 
 Still required: actual multiplayer content/config admission, actual new-policy
 games and memory evidence, two complete reserve cycles, distinct/no-path raid
