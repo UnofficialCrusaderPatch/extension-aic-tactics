@@ -14,6 +14,7 @@ def backend():
       core={readInteger=function(a)return memory[a] or 0 end,
         writeInteger=function(a,v)memory[a]=v end}
       native={configuration=10000,configurationSize=344,configurationLocked=20000,
+        game={gameTick=0x1FE7DA8},
         preflight=function()end,activate=function()end,preflightComposition=function()end,activateComposition=function()end,
         preflightCombat=function()end,activateCombat=function()end,
         preflightTargets=function()end,preflightRaids=function()end,activateRaids=function()end}

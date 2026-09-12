@@ -79,6 +79,8 @@ g.core.allocateAssembly=assemble
 g.root=Path(__file__).resolve().parents[1].as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
+package.loaded['native-bindings']={initialize=function()end} -- defense bridge only
+package.loaded['config.grace']={preflight=function()end}
 configFinal={}
 package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}

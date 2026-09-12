@@ -2,6 +2,7 @@
 #define AIC_TACTICS_RUNTIME_HPP
 
 #include "aic_tactics/recruitment.hpp"
+#include "aic_tactics/native_bindings.hpp"
 #include "aic_tactics/composition.hpp"
 #include "aic_tactics/combat.hpp"
 #include "aic_tactics/army.hpp"

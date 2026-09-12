@@ -11,12 +11,19 @@ def runtime():
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       configFinal={['ucp2-legacy-2.15.1']={ai_recruitstate_initialtimer={enabled=false}}}
-      memory={[0x4D34AB]=0x7DA83D81,[0x4D34AF]=0xFE,[0x4D34B0]=1,
-        [0x4D34B1]=4800,[0x4D34B5]=0x7D,[0x4D34B6]=8}
+      -- Deliberately moved instruction/data addresses: this is a Lua contract
+      -- fixture. Real SHC/Extreme contexts are checked separately.
+      site=0x18000000
+      memory={}
       writes=0
       core={readInteger=function(a)return memory[a] end,readByte=function(a)return memory[a] end,
-        writeInteger=function(a,v)assert(a==0x4D34B1);memory[a]=v;writes=writes+1 end}
+        AOBScan=function() return site end,scanForAOB=function() return nil end,
+        writeInteger=function(a,v)assert(a==site+36);memory[a]=v;writes=writes+1 end}
+      for i=0,49 do memory[site+i]=i end
+      memory[site+9]=0x19000002;memory[site+17]=0x19000000
+      memory[site+26]=0x200;memory[site+32]=0x19000100;memory[site+36]=4800
       grace=require('config.grace')
+      grace.resolveNative()
     ''')
     return lua
 
@@ -26,9 +33,9 @@ def test_native_default_and_explicit_legacy_migration():
       grace.configure(6);assert(writes==0)
       for months=0,30 do
         grace.configure(months);grace.preflight()
-        assert(memory[0x4D34B1]==months*800)
+        assert(memory[site+36]==months*800)
       end
-      memory[0x4D34B1]=1
+      memory[site+36]=1
       assert(not pcall(grace.preflight))
     ''')
 
@@ -50,8 +57,10 @@ def test_legacy_enabled_even_at_original_value_rejected():
 def test_foreign_code_rejected_before_migration():
     runtime().execute('''
       for address,value in pairs(memory) do
-        memory[address]=0
-        assert(not pcall(grace.configure,0) and writes==0)
-        memory[address]=value
+        if address<site+37 or address>=site+40 then
+          memory[address]=value+1
+          assert(not pcall(grace.configure,0) and writes==0)
+          memory[address]=value
+        end
       end
     ''')

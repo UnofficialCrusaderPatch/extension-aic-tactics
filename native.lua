@@ -4,6 +4,7 @@ function M.new()
   local native = require('aicTactics.dll')
   assert(type(native) == 'table' and native.configurationSize == 344,
     'AIC Tactics: incompatible native library')
+  require('native-bindings').initialize(native)
   local installed = false
   local wallCounter
   local intervalHook

@@ -23,6 +23,7 @@ lua=LuaRuntime(unpack_returned_tuples=True)
 lua.globals().root=root.as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
+package.loaded['native-bindings']={initialize=function()end} -- interval bridge only
 package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3100000}
 core={AOBScan=function()return 0x4D3B41 end,
  allocateAssembly=function(text,symbols) assembly=text;bindings=symbols;return 0x3000000 end,

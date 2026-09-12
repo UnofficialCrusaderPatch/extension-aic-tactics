@@ -14,6 +14,14 @@ int* legacyWallCounts;
 int defenseTypeCounts[9][80];
 unsigned int defenseCensusTick;
 int defenseCensusValid;
+NativeBindings nativeBindings;
+
+int nativeRandom(void*) {
+    const int result = *reinterpret_cast<unsigned short*>(nativeBindings.rngValue);
+    typedef int (__thiscall *Next)(void*);
+    reinterpret_cast<Next>(nativeBindings.rngNext)(reinterpret_cast<void*>(nativeBindings.rngState));
+    return result;
+}
 
 namespace {
 const unsigned int PlayerStride = 0x39F4;
@@ -34,13 +42,6 @@ bool active(int player) {
     const int character = playerValue(player, 0x115E0F8);
     return character >= 2 && character <= 17
         && configurations[character - 1].recruitment.mode == WeightedRoles;
-}
-
-int takeRandom(void*) {
-    const int result = memory<unsigned short>(0x1A279C2);
-    typedef int (__thiscall *Next)(void*);
-    reinterpret_cast<Next>(0x46A7D0)(reinterpret_cast<void*>(0x1A279C0));
-    return result;
 }
 
 int buildingFor(int player, int unitType) {
@@ -395,7 +396,7 @@ void __cdecl invalidateDefenseCensus() {
 
 void __cdecl resetDefenseCensus() {
     std::memset(defenseTypeCounts, 0, sizeof(defenseTypeCounts));
-    defenseCensusTick = memory<unsigned int>(0x1FE7DA8);
+    defenseCensusTick = memory<unsigned int>(nativeBindings.gameTick);
     defenseCensusValid = true;
 }
 
@@ -432,12 +433,12 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
     if (configuration.defenseComposition == PreserveSlots) {
         int censusTotal = 0;
         for (int type = 1; type < 80; ++type) censusTotal += defenseTypeCounts[player][type];
-        compositionReady = defenseCensusValid && memory<unsigned int>(0x1FE7DA8) - defenseCensusTick <= 1
+        compositionReady = defenseCensusValid && memory<unsigned int>(nativeBindings.gameTick) - defenseCensusTick <= 1
             && censusTotal == playerValue(player, 0x115EEE0);
     }
     for (int attempt = 0; attempt < attempts; ++attempt) {
         ++observation.sequence;
-        observation.tick = memory<int>(0x1FE7DA8);
+        observation.tick = memory<int>(nativeBindings.gameTick);
         observation.character = character - 1;
         observation.strength = strength;
         observation.attempts = attempts;
@@ -472,7 +473,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
             : defenseMaximum > 0x7FFFFFFF ? 0x7FFFFFFF : static_cast<int>(defenseMaximum);
         const bool defenseIncomplete = static_cast<__int64>(playerValue(player, 0x115EEE0)) + recruited[DefenseRole] < defenseMaximum;
         const bool initialDefense = defenseIncomplete && configuration.initialDefenseTicks > 0
-            && memory<unsigned int>(0x1FE7DA8) < static_cast<unsigned int>(configuration.initialDefenseTicks);
+            && memory<unsigned int>(nativeBindings.gameTick) < static_cast<unsigned int>(configuration.initialDefenseTicks);
         unsigned int facts = defenseIncomplete ? DefenseIncomplete : 0;
         if (playerValue(player, 0x115E99C) != 0 || committedAttackActive(player)
             || reserveRecruitmentActive(player)) facts |= AttackActive;
@@ -552,7 +553,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
                 facts, mask, plan) != DrawRecruitmentRole) break;
         observation.condition = plan.conditionIndex;
         BoundedDraw draw;
-        if (drawBounded(plan.totalWeight, takeRandom, 0, draw) != DrawSucceeded) break;
+        if (drawBounded(plan.totalWeight, nativeRandom, 0, draw) != DrawSucceeded) break;
         observation.rngSamples = draw.samplesConsumed;
         const int role = selectRecruitmentRole(plan, draw.ticket);
         if (role < 0 || role > 3) break;
@@ -560,13 +561,13 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         ++observation.decisions[role];
         if (role == DefenseRole) {
             BoundedDraw unitDraw;
-            if (drawBounded(defenderCount, takeRandom, 0, unitDraw) != DrawSucceeded) break;
+            if (drawBounded(defenderCount, nativeRandom, 0, unitDraw) != DrawSucceeded) break;
             observation.rngSamples += unitDraw.samplesConsumed;
             candidates[role] = defenders[unitDraw.ticket];
         }
         if (role == AttackRole) {
             BoundedDraw unitDraw;
-            if (drawBounded(attackerCount, takeRandom, 0, unitDraw) != DrawSucceeded) break;
+            if (drawBounded(attackerCount, nativeRandom, 0, unitDraw) != DrawSucceeded) break;
             observation.rngSamples += unitDraw.samplesConsumed;
             candidates[role] = attackers[unitDraw.ticket];
         }

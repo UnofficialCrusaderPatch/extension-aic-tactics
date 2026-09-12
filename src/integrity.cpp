@@ -42,10 +42,10 @@ template<class Sink> void visitIntegrity(Sink& digest, int legacyInterval)
 {
     digest.word(1); // aic-tactics-word-digest-v1
     digest.word(legacyInterval ? 1U : 0U);
-    digest.word(*reinterpret_cast<const unsigned int*>(0x4D34B1));
+    digest.word(*reinterpret_cast<const unsigned int*>(nativeBindings.initialDefenseTicks));
     digest.word(static_cast<unsigned int>(legacyTargetPolicy));
     digest.block(configurations + 1, sizeof(CharacterConfiguration) * 16);
-    digest.block(reinterpret_cast<const void*>(0x23FC8E8 + 676), 676 * 16);
+    digest.block(reinterpret_cast<const void*>(nativeBindings.aicRecords), 676 * 16);
     digest.word(defenseCensusTick);
     digest.word(static_cast<unsigned int>(defenseCensusValid));
     digest.block(defenseTypeCounts, sizeof(defenseTypeCounts));

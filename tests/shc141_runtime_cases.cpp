@@ -8,6 +8,17 @@
 using namespace AicTactics;
 using namespace AicTactics::SHC141;
 namespace {
+// Exact-build research fixture only. Production obtains these from UCP/Loader.
+struct BindFixture {
+    BindFixture() {
+        nativeBindings.gameTick = 0x1FE7DA8;
+        nativeBindings.rngState = 0x1A279C0;
+        nativeBindings.rngValue = 0x1A279C2;
+        nativeBindings.rngNext = 0x46A7D0;
+        nativeBindings.initialDefenseTicks = 0x4D34B1;
+        nativeBindings.aicRecords = 0x23FC8E8 + 676;
+    }
+} bindFixture;
 int cases;
 template<class T> T& at(unsigned int address) { return *reinterpret_cast<T*>(address); }
 void check(bool value, const char* message) {

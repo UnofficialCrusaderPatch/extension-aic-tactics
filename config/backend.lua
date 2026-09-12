@@ -14,7 +14,7 @@ function M.new(native)
     for index = 1, #words do core.writeInteger(address + (index - 1) * 4, words[index]) end
   end
   local function admission()
-    assert(not multiplayerLocked and core.readInteger(native.configurationLocked) == 0 and core.readInteger(0x1FE7DA8) == 0,
+    assert(not multiplayerLocked and core.readInteger(native.configurationLocked) == 0 and core.readInteger(native.game.gameTick) == 0,
       'AIC Tactics: personality changes require a fresh game process')
   end
   local function anyPolicyActive()

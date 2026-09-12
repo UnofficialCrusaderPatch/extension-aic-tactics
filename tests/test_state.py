@@ -11,6 +11,7 @@ def state():
       package.path=root..'/?.lua;'..package.path
       memory,writes={},0
       native={configurationSize=344,configuration=10000,defenseTypeCounts=20000,
+        game={gameTick=0x1FE7DA8,initialDefenseTicks=0x4D34B1,aicRecords=0x23FC8E8+676},
         defenseCensusTick=23000,defenseCensusValid=23004, legacyTargetPolicy=23008,
         incidentSize=2632,combatCensusTick=24000,combatCensusValid=24004,
         combatCensus=25000,targetStates=26000,targetLifecycle=27000,incidents=30000,

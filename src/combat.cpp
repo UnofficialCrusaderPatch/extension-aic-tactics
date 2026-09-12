@@ -26,14 +26,6 @@ int combatValues[80];
 typedef void (__thiscall *PlayerAction)(void*, int);
 typedef int (__thiscall *PlayerQuery)(void*, int);
 
-int takeRandom(void*)
-{
-    const int result = at<unsigned short>(0x1A279C2);
-    typedef int (__thiscall *Next)(void*);
-    reinterpret_cast<Next>(0x46A7D0)(reinterpret_cast<void*>(0x1A279C0));
-    return result;
-}
-
 int playerValue(int player, unsigned int address) { return at<int>(address + player * PlayerStride); }
 const CharacterConfiguration* configuration(int player)
 {
@@ -99,7 +91,7 @@ void finishObservedDamage(DamageProbe& probe)
     const CharacterConfiguration* config = configuration(damage.victimOwner);
     if (!config) return;
     IncidentInput input;
-    input.tick = at<unsigned int>(0x1FE7DA8);
+    input.tick = at<unsigned int>(nativeBindings.gameTick);
     input.attacker = damage.sourceOwner;
     input.hostile = hostile(damage.victimOwner, damage.sourceOwner) ? 1 : 0;
     input.healthLost = damage.healthLost;
@@ -165,7 +157,7 @@ void __cdecl completeCombatCensus()
 {
     completeReserveCensus();
     configurationLocked = 1;
-    combatCensusTick = at<unsigned int>(0x1FE7DA8);
+    combatCensusTick = at<unsigned int>(nativeBindings.gameTick);
     combatCensusValid = 1;
     for (int player = 1; player <= 8; ++player) {
         const CharacterConfiguration* config = configuration(player);
@@ -182,12 +174,12 @@ void __cdecl completeCombatCensus()
         TargetContext context;
         if (!readTargetContext(player, context)) continue;
         if (targetLifecycle[player] & 2) {
-            updateTarget(config->combat.targeting, targetStates[player], FinishAttack, context, takeRandom, 0);
+            updateTarget(config->combat.targeting, targetStates[player], FinishAttack, context, nativeRandom, 0);
             targetLifecycle[player] &= ~2;
         }
         if (!(targetLifecycle[player] & 1)) {
             const TargetStatus result = updateTarget(config->combat.targeting, targetStates[player],
-                InitializeTargets, context, takeRandom, 0);
+                InitializeTargets, context, nativeRandom, 0);
             if (result != InvalidTargetInput && result != TargetRandomFailure) targetLifecycle[player] |= 1;
         }
     }
@@ -200,7 +192,7 @@ bool qualifyingHomeThreat(int player)
     int hostilePlayers[9] = {0};
     for (int other = 1; other <= 8; ++other) hostilePlayers[other] = hostile(player, other) ? 1 : 0;
     return homeUnderThreat(config->combat.provocation, incidents[player],
-        at<unsigned int>(0x1FE7DA8), hostilePlayers);
+        at<unsigned int>(nativeBindings.gameTick), hostilePlayers);
 }
 
 bool offensiveActionsAllowed(int player)
@@ -226,7 +218,7 @@ bool readTargetContext(int player, TargetContext& context)
     std::memset(&context, 0, sizeof(context));
     context.owner = player;
     if (player < 1 || player > 8 || !combatCensusValid
-        || at<unsigned int>(0x1FE7DA8) - combatCensusTick > 1) return false;
+        || at<unsigned int>(nativeBindings.gameTick) - combatCensusTick > 1) return false;
     context.nativeFallback = playerValue(player, 0x115E9D0);
     for (int other = 1; other <= 8; ++other) {
         if (!hostile(player, other)) continue;
@@ -243,7 +235,7 @@ bool readTargetContext(int player, TargetContext& context)
         opponent.troops = census.troops;
         opponent.combatPower = playerValue(other, 0x115F6E0);
         opponent.qualifiedIncident = incidents[player].enemies[other].qualified != 0;
-        opponent.incidentAge = at<unsigned int>(0x1FE7DA8) - incidents[player].enemies[other].qualifiedTick;
+        opponent.incidentAge = at<unsigned int>(nativeBindings.gameTick) - incidents[player].enemies[other].qualifiedTick;
     }
     return true;
 }
@@ -287,11 +279,11 @@ int __cdecl commitOpponent(int player)
     const CharacterConfiguration* config = configuration(player);
     TargetState& state = targetStates[player];
     if (targetLifecycle[player] & 2) {
-        updateTarget(config->combat.targeting, state, FinishAttack, context, takeRandom, 0);
+        updateTarget(config->combat.targeting, state, FinishAttack, context, nativeRandom, 0);
         targetLifecycle[player] &= ~2;
     }
     const TargetStatus status = updateTarget(config->combat.targeting, state,
-        state.attackActive ? MaintainAttack : LaunchAttack, context, takeRandom, 0);
+        state.attackActive ? MaintainAttack : LaunchAttack, context, nativeRandom, 0);
     if (status != TargetSelected && status != TargetUnchanged) return 0;
     if (!state.player) return 0;
     at<int>(0x115E9CC + player * PlayerStride) = state.player;
@@ -312,7 +304,7 @@ void __fastcall selectOpponent(void* aic, void*, int player)
     TargetState& state = targetStates[player];
     if (state.attackActive) {
         reinterpret_cast<PlayerAction>(0x4D3780)(aic, player);
-        if (updateTarget(config->combat.targeting, state, MaintainAttack, context, takeRandom, 0)
+        if (updateTarget(config->combat.targeting, state, MaintainAttack, context, nativeRandom, 0)
             == TargetNeedsCleanup) {
             if (playerValue(player, 0x115E99C) != 9) at<int>(0x115E99C + player * PlayerStride) = 8;
             at<int>(0x115E9D0 + player * PlayerStride) = 0;
@@ -333,14 +325,14 @@ void __fastcall selectOpponent(void* aic, void*, int player)
     context.nativeFallback = playerValue(player, 0x115E9D0);
     if (config->combat.targeting.policy == RandomTarget) {
         if (config->combat.targeting.commitment == UntilDefeated) {
-            updateTarget(config->combat.targeting, state, InitializeTargets, context, takeRandom, 0);
+            updateTarget(config->combat.targeting, state, InitializeTargets, context, nativeRandom, 0);
             if (state.player) at<int>(0x115E9D0 + player * PlayerStride) = state.player;
         }
         return; // PerAttack draws only after the admitted native readiness call.
     }
     TargetState preview = {0, 0, 0};
     const TargetStatus result = updateTarget(config->combat.targeting, preview,
-        LaunchAttack, context, takeRandom, 0);
+        LaunchAttack, context, nativeRandom, 0);
     if (result == TargetSelected || result == NoTarget)
         at<int>(0x115E9D0 + player * PlayerStride) = preview.player;
 }
@@ -361,7 +353,7 @@ void __fastcall updateOffensiveArmy(void* aic, void*, int player)
     TargetState& state = targetStates[player];
     if (state.attackActive) {
         const TargetStatus status = updateTarget(config->combat.targeting, state,
-            MaintainAttack, context, takeRandom, 0);
+            MaintainAttack, context, nativeRandom, 0);
         if (status == TargetNeedsCleanup) {
             if (playerValue(player, 0x115E99C) != 9) at<int>(0x115E99C + player * PlayerStride) = 8;
             at<int>(0x115E9D0 + player * PlayerStride) = 0;

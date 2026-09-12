@@ -44,10 +44,10 @@ function M.new(native, legacyInterval, fingerprint)
     return false
   end
   local function identity()
-    return header .. fingerprint .. word(legacyInterval and 1 or 0) .. word(core.readInteger(0x4D34B1))
+    return header .. fingerprint .. word(legacyInterval and 1 or 0) .. word(core.readInteger(native.game.initialDefenseTicks))
       .. word(core.readInteger(native.legacyTargetPolicy))
       .. core.readString(native.configuration + 344, configurationBytes)
-      .. core.readString(0x23FC8E8 + 676, aicBytes)
+      .. core.readString(native.game.aicRecords, aicBytes)
   end
   local function capture()
     local result = {identity(), word(core.readInteger(native.defenseCensusTick)),
@@ -105,7 +105,7 @@ function M.new(native, legacyInterval, fingerprint)
     raids.restore(raidValues)
   end
   local function validateAbsent()
-    assert(not active() or core.readInteger(0x1FE7DA8) == 0,
+    assert(not active() or core.readInteger(native.game.gameTick) == 0,
       'AIC Tactics: this old save has no policy state; start a new match with these parameters')
   end
   local function initialize()

@@ -9,6 +9,10 @@ def runtime():
     lua.globals().root = ROOT.as_posix()
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
+      -- This fixture isolates interval ownership. Shared native discovery has
+      -- its own real-executable and failure-before-write checks.
+      package.loaded['native-bindings']={initialize=function()end}
+      package.loaded['config.grace']={preflight=function()end}
       package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3100000}
       configFinal={}
       memory,writes,allocations={},{},{}

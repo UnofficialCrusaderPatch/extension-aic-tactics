@@ -146,8 +146,8 @@ struct Candidate { int id; unsigned int uid; int tile; int score; };
 bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& config, int probeBudget)
 {
     RaidGroup& group = raidStates[player].groups[index];
-    if (!combatCensusValid || at<unsigned int>(0x1FE7DA8) - combatCensusTick > 1
-        || !raidBuildingCensusValid || at<unsigned int>(0x1FE7DA8) - raidBuildingCensusTick > 1) return false;
+    if (!combatCensusValid || at<unsigned int>(nativeBindings.gameTick) - combatCensusTick > 1
+        || !raidBuildingCensusValid || at<unsigned int>(nativeBindings.gameTick) - raidBuildingCensusTick > 1) return false;
     const int leader = at<short>(Tribes + group.tribe.id * 0x334 + 0x5A);
     if (leader <= 0 || leader >= 2500) return false;
     const unsigned int unit = Units + leader * 0x490;
@@ -371,7 +371,7 @@ void __cdecl countRaidBuilding(int building)
 
 void __cdecl completeRaidBuildingCensus()
 {
-    raidBuildingCensusTick = at<unsigned int>(0x1FE7DA8);
+    raidBuildingCensusTick = at<unsigned int>(nativeBindings.gameTick);
     raidBuildingCensusValid = 1;
 }
 
