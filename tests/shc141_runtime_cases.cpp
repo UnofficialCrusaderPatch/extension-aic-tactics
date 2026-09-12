@@ -133,5 +133,23 @@ void runRuntimeCases() {
     at<int>(0x1667F78+0x2C+1249*0x334)=2;
     opportunity(1);
     check(observations[1].probeReasons[SortieRole]==-3,"foreign group owner admitted");
+    fixture(1,4,1000,17);
+    for(int strength=0;strength<3;++strength) {
+        configurations[4].baseRows[strength].values[SortieRole]=0;
+        configurations[4].baseRows[strength].values[AttackRole]=100;
+    }
+    const unsigned int aic=0x23FC8E8+4*0x2A4;
+    at<int>(aic+0x288)=22;
+    at<int>(aic+0x23C)=1;
+    at<int>(0x115F71C+0x39F4)=1;
+    opportunity(1);
+    check(observations[1].probeTypes[AttackRole]==30,
+        "unavailable open subrole incorrectly enabled main-roster fallback above its quota");
+    check(observations[1].purchaseResource==0,"unavailable subrole ordered fallback equipment");
+    at<int>(aic+0x23C)=0;
+    opportunity(1);
+    check(observations[1].probeTypes[AttackRole]==22,
+        "all subroles full lost original main-roster fallback");
+    check(observations[1].purchaseResource==17,"native fallback failed to request its equipment");
     std::printf("%d production runtime/original-instruction checks passed; no new running-game acceptance implied\n",cases);
 }

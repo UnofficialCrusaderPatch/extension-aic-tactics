@@ -210,6 +210,7 @@ int attackCandidates(Probe& native, void* aic, int character,
     const int maximumOffsets[10] = {0x23C, 0x244, 0x250, 0x24C, 0x254,
         0x258, 0x260, 0x26C, 0x278, 0x280};
     int count = 0;
+    bool openSubrole = false;
     for (int index = 0; index < 10; ++index) {
         int maximum = aicValue(aic, character, maximumOffsets[index]);
         if (index == 0) {
@@ -222,11 +223,12 @@ int attackCandidates(Probe& native, void* aic, int character,
             const int target = playerValue(player, 0x115E9D0);
             if (target < 1 || target > 8 || playerValue(target, 0x115F764) <= 5) continue;
         }
+        openSubrole = true;
         const int behaviour = index + 10;
         const int unitType = reinterpret_cast<TwoIntQuery>(0x4CC250)(aic, player, behaviour);
         if (eligible(native, player, unitType, behaviour, -1, results[count])) ++count;
     }
-    if ((count == 0 || static_cast<__int64>(playerValue(player, 0x115E9C8)) + recruited[10] < aicValue(aic, character, 0x298))
+    if ((!openSubrole || static_cast<__int64>(playerValue(player, 0x115E9C8)) + recruited[10] < aicValue(aic, character, 0x298))
         && rosterCandidate(native, aic, character, player, 0x288,
             playerValue(player, 0x115EF00), 4, 20, results[count])) ++count;
     return count;
