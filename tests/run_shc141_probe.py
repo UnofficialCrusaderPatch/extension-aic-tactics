@@ -39,6 +39,10 @@ record['sources'] = {name: hashlib.sha256((root / name).read_bytes()).hexdigest(
     'include/aic_tactics/shc141_recruitment.hpp', 'src/shc141_recruitment.cpp',
     'include/aic_tactics/shc141_groups.hpp', 'src/shc141_groups.cpp', 'tests/shc141_group_cases.cpp',
     'tests/shc141_probe_tests.cpp', 'tests/run_shc141_probe.py', 'tests/build_shc141_probe.ps1')}
+if 'runtime' in a.test_exe.name:
+    for name in ('include/aic_tactics/runtime.hpp','src/runtime.cpp','src/recruitment.cpp','src/random.cpp',
+                 'tests/shc141_runtime_cases.cpp','tests/build_runtime_tests.ps1'):
+        record['sources'][name] = hashlib.sha256((root/name).read_bytes()).hexdigest()
 (a.output / 'probe-result.json').write_text(json.dumps(record, indent=2) + '\n')
 print(result.stdout, end='')
 print(result.stderr, end='')

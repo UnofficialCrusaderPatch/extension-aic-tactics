@@ -12,3 +12,18 @@ jobs:
       - run: cmake -S . -B build -A Win32 -DAIC_TACTICS_BUILD_SHC141_PROBE=ON
       - run: cmake --build build --config Release
       - run: ctest --test-dir build -C Release --output-on-failure
+      - uses: actions/checkout@v4
+        with:
+          repository: UnofficialCrusaderPatch/extension-aicloader
+          ref: 24ea47c20f62082f8a1b06969089898a8285add9
+          path: tests/deps/aicloader
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --output build/package/aic-tactics-recruitment-test.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aic-tactics-recruitment-test
+          path: build/package/aic-tactics-recruitment-test.zip
+          retention-days: 21
