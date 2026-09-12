@@ -11,6 +11,7 @@ struct CharacterConfiguration {
     RecruitmentPolicy recruitment;
     RoleWeights baseRows[3];
     int defenseComposition;
+    int initialDefenseTicks;
 };
 
 // Diagnostic counters are observation only; policy never reads them.

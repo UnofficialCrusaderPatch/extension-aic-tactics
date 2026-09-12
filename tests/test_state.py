@@ -10,7 +10,7 @@ def state():
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       memory,writes={},0
-      native={configurationSize=284,configuration=10000,defenseTypeCounts=20000,
+      native={configurationSize=288,configuration=10000,defenseTypeCounts=20000,
         defenseCensusTick=23000,defenseCensusValid=23004}
       core={readInteger=function(a)return memory[a] or 0 end,
         readString=function(a,n)
@@ -25,8 +25,8 @@ def state():
         writeInteger=function(a,v)memory[a]=v;writes=writes+1 end,
         setMemory=function(a,v,n)for i=0,n-1,4 do memory[a+i]=v end end}
       state=require('state').new(native,true)
-      memory[native.configuration+4*284]=1
-      memory[native.configuration+4*284+280]=1
+      memory[native.configuration+4*288]=1
+      memory[native.configuration+4*288+280]=1
       memory[native.defenseCensusTick]=1234
       memory[native.defenseCensusValid]=1
       memory[native.defenseTypeCounts+(80+22)*4]=7
@@ -54,13 +54,19 @@ def test_bad_payload_and_configuration_do_not_write():
       for _,bad in ipairs({bytes:sub(2),bytes..'x','bad'}) do
         assert(not pcall(state.restore,bad) and writes==0)
       end
-      memory[native.configuration+4*284+280]=0
+      memory[native.configuration+4*288+280]=0
       assert(not pcall(state.restore,bytes) and writes==0)
-      memory[native.configuration+4*284+280]=1
+      memory[native.configuration+4*288+280]=1
       memory[0x23FC8E8+676+0x184]=24
       assert(not pcall(state.restore,bytes) and writes==0)
       memory[0x23FC8E8+676+0x184]=0
       assert(not pcall(require('state').new(native,false).restore,bytes) and writes==0)
+      memory[0x4D34B1]=800
+      assert(not pcall(state.restore,bytes) and writes==0)
+      memory[0x4D34B1]=0
+      memory[native.configuration+4*288+284]=800
+      assert(not pcall(state.restore,bytes) and writes==0)
+      memory[native.configuration+4*288+284]=0
       local bad=bytes:sub(1,#bytes-4)..string.char(255,255,255,127)
       assert(not pcall(state.restore,bad) and writes==0)
     ''')
@@ -75,7 +81,7 @@ def test_native_old_save_and_new_match_initialization():
       assert(memory[native.defenseCensusValid]==0)
       assert(memory[native.defenseTypeCounts+(80+22)*4]==0)
       memory[0x1FE7DA8]=1000
-      memory[native.configuration+4*284]=0
+      memory[native.configuration+4*288]=0
       state.callbacks.initialize()
       assert(memory[native.defenseCensusValid]==0)
     ''')

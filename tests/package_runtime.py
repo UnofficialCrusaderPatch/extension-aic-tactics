@@ -30,6 +30,7 @@ for path in sorted(a.loader.glob('*.lua')):
 files[loader+'definition.yml'] = (a.loader/'definition.yml').read_bytes().replace(b'version: 1.1.2', b'version: 1.1.3')
 files[loader+'options.yml'] = (a.loader/'options.yml').read_bytes()
 files['AIC-TACTICS-TESTING.md'] = (root/'docs/runtime-testing.md').read_bytes()
+files['AIC-TACTICS-GRACE.md'] = (root/'docs/recruitment-grace.md').read_bytes()
 files['AIC-TACTICS-COMPOSITION.md'] = (root/'docs/defense-composition.md').read_bytes()
 files['sortie-test-aic-fragment.json'] = json.dumps({'RecruitPolicy':'WeightedRoles', **{
     'RecruitProb'+role+strength: 100 if role=='Sortie' else 0

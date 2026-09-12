@@ -9,8 +9,11 @@ def runtime():
     lua.globals().root = ROOT.as_posix()
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
-      package.loaded['aicTactics.dll']={configurationSize=284,configuration=0x3100000}
+      package.loaded['aicTactics.dll']={configurationSize=288,configuration=0x3100000}
+      configFinal={}
       memory,writes,allocations={},{},{}
+      memory[0x4D34AB]=0x7DA83D81;memory[0x4D34AF]=0xFE;memory[0x4D34B0]=1
+      memory[0x4D34B1]=4800;memory[0x4D34B5]=0x7D;memory[0x4D34B6]=8
       core={readByte=function(a)return memory[a] end,readInteger=function(a)return memory[a] end,
         AOBScan=function(pattern)
           if pattern:sub(1,5)=='57 8B' then return 0x4D5438 end

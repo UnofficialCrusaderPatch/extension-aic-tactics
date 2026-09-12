@@ -1,10 +1,10 @@
 local M = {}
-M.version = 2
+M.version = 3
 
 M.fields = {
   'RecruitPolicy', 'RecruitProbSortieDefault', 'RecruitProbSortieWeak',
   'RecruitProbSortieStrong', 'RecruitConditions',
-  'DefRecruitComposition',
+  'DefRecruitComposition', 'RecruitInitialDefenseMonths',
 }
 local strengths = {'Default', 'Weak', 'Strong'}
 local strengthNumbers = {Default = 0, Weak = 1, Strong = 2}
@@ -64,7 +64,7 @@ end
 function M.defaults()
   return {RecruitPolicy = 'Native', RecruitProbSortieDefault = 0,
     RecruitProbSortieWeak = 0, RecruitProbSortieStrong = 0, RecruitConditions = {},
-    DefRecruitComposition = 'Native'}
+    DefRecruitComposition = 'Native', RecruitInitialDefenseMonths = 6}
 end
 
 function M.prepare(previous, spec, readNative, resetting)
@@ -86,13 +86,15 @@ function M.prepare(previous, spec, readNative, resetting)
     local field = 'RecruitProbSortie' .. strength
     integer(candidate[field], 0, 100, field)
   end
+  integer(candidate.RecruitInitialDefenseMonths, 0, 30, 'RecruitInitialDefenseMonths')
   local rows
   assert(candidate.DefRecruitComposition == 'Native' or candidate.DefRecruitComposition == 'PreserveSlots',
     'DefRecruitComposition must be Native or PreserveSlots')
   candidate.RecruitConditions, rows = conditions(candidate.RecruitConditions)
   local compiled = {schemaVersion = M.version, mode = mode == 'Native' and 0 or 1,
     conditions = rows, baseRows = {},
-    defenseComposition = candidate.DefRecruitComposition == 'PreserveSlots' and 1 or 0}
+    defenseComposition = candidate.DefRecruitComposition == 'PreserveSlots' and 1 or 0,
+    initialDefenseTicks = candidate.RecruitInitialDefenseMonths * 800}
   if mode == 'WeightedRoles' then
     for index, strength in ipairs(strengths) do
       local weights = {

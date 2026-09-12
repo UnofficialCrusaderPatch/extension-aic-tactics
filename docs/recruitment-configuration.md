@@ -1,13 +1,13 @@
 # Recruitment configuration integration
 
-This draft schema version 1 implements authoring validation and the atomic
-loader provider. It requires loader PRs
+Schema version 3 implements authoring validation and the atomic loader provider.
+It requires loader PRs
 [18](https://github.com/UnofficialCrusaderPatch/extension-aicloader/pull/18) and
 [19](https://github.com/UnofficialCrusaderPatch/extension-aicloader/pull/19),
-and the calculation core in module PR #3. There is no module bootstrap or
-gameplay-ready artifact yet. Native eligibility/facts, acquisition, RNG, save
-and replay adapters remain required. Tests use the real loader with mocked
-memory and a transactional backend; they do not establish native acceptance.
+and the calculation core in module PR #3. The native recruitment adapter is
+integrated; see [runtime testing](runtime-testing.md) for tested revisions and
+remaining acceptance. Loader tests use mocked memory and do not establish
+native acceptance on their own.
 
 ## Authored fields
 
@@ -18,6 +18,8 @@ memory and a transactional backend; they do not establish native acceptance.
 | `RecruitProbSortieWeak` | Integer 0–100 | 0 |
 | `RecruitProbSortieStrong` | Integer 0–100 | 0 |
 | `RecruitConditions` | Dense ordered list of 0–8 complete rows | Empty list |
+| `DefRecruitComposition` | `Native`, `PreserveSlots` | `Native` |
+| `RecruitInitialDefenseMonths` | Integer 0–30 | 6 |
 
 For each strength class, the base row combines the existing
 `RecruitProbDef<State>`, `RecruitProbRaid<State>` and
@@ -70,7 +72,7 @@ decision adapter and precedes the draw.
 
 ## Application, getters and rollback
 
-The provider exclusively claims its five additional fields under `aic-tactics`.
+The provider exclusively claims its seven additional fields under `aic-tactics`.
 Field collisions abort registration and remove only fields registered by that
 attempt. Configuration is stored separately for each AI character 1–16. It
 contains no per-player group, commitment, RNG or incident state.

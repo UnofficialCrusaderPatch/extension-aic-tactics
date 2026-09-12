@@ -168,6 +168,23 @@ def test_native_downgrade_and_per_character_reset(lua):
       assert(loader:getAICValue(2,'RecruitPolicy')=='WeightedRoles' and backendStates[2].mode==1)
     ''')
 
+
+def test_grace_get_set_retention_and_reset(lua):
+    lua.execute('''
+      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==6)
+      activate()
+      loader:setAICValue(1,'RecruitInitialDefenseMonths',0)
+      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==0)
+      assert(backendStates[1].initialDefenseTicks==0)
+      assert(loader:overwriteAIC(1,{RecruitPolicy='Native'}))
+      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==0)
+      assert(loader:overwriteAIC(1,{RecruitPolicy='WeightedRoles'}))
+      assert(backendStates[1].initialDefenseTicks==0)
+      loader:resetAIC(1)
+      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==6)
+      assert(loader:getAICValue(1,'RecruitPolicy')=='Native')
+    ''')
+
 def test_native_legacy_handler_stays_best_effort(lua):
     lua.execute('''
       local stored=0

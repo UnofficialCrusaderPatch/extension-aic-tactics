@@ -347,6 +347,8 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         probe.defenseMaximum = defenseMaximum <= 0 ? 0
             : defenseMaximum > 0x7FFFFFFF ? 0x7FFFFFFF : static_cast<int>(defenseMaximum);
         const bool defenseIncomplete = static_cast<__int64>(playerValue(player, 0x115EEE0)) + recruited[DefenseRole] < defenseMaximum;
+        const bool initialDefense = defenseIncomplete && configuration.initialDefenseTicks > 0
+            && memory<unsigned int>(0x1FE7DA8) < static_cast<unsigned int>(configuration.initialDefenseTicks);
         unsigned int facts = defenseIncomplete ? DefenseIncomplete : 0;
         if (playerValue(player, 0x115E99C) != 0) facts |= AttackActive;
         if (playerValue(player, 0x115F6E8) > 0) facts |= HomeUnderThreat;
@@ -368,11 +370,11 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
             playerValue(player, 0x115EEF8), 8, 1, candidates[DefenseRole])) mask |= 1U << DefenseRole;
         const int raidMaximum = reinterpret_cast<TwoIntQuery>(0x4D12A0)(aic, character - 1, player);
         probe.role = RaidRole;
-        if (requested.eligibleWeights.values[RaidRole] > 0 && playerValue(player, 0x115EEE4) + recruited[RaidRole] < raidMaximum
+        if (!initialDefense && requested.eligibleWeights.values[RaidRole] > 0 && playerValue(player, 0x115EEE4) + recruited[RaidRole] < raidMaximum
             && rosterCandidate(probe, aic, character, player, 0x1AC,
                 playerValue(player, 0x115EEFC), 8, 2, candidates[RaidRole])) mask |= 1U << RaidRole;
         probe.role = AttackRole;
-        if (requested.eligibleWeights.values[AttackRole] > 0 && !(facts & AttackActive)) {
+        if (!initialDefense && requested.eligibleWeights.values[AttackRole] > 0 && !(facts & AttackActive)) {
             attackerCount = attackCandidates(probe, aic, character, player, recruitedAttack, attackers);
             if (attackerCount) mask |= 1U << AttackRole;
         }

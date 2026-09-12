@@ -1,2 +1,4 @@
 legacyRecruitInterval: Conserver le rythme de recrutement Legacy
 legacyRecruitInterval_descr: 'Remplace ai_recruitinterval de Legacy pour les personnalités Native : intervalle 1. WeightedRoles conserve les intervalles AIC. Désactivez l’option Legacy ; laissez celle-ci désactivée si vous ne l’utilisiez pas.'
+nativeInitialDefenseMonths: Période de défense initiale des IA Native
+nativeInitialDefenseMonths_descr: '0–30 mois, 6 par défaut. Recopiez ici la durée initiale de Legacy, puis désactivez cette option Legacy. WeightedRoles utilise RecruitInitialDefenseMonths.'

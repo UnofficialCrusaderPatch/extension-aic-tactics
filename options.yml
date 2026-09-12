@@ -10,3 +10,14 @@ options:
   contents:
     value: false
     type: boolean
+- category: [AIC Tactics]
+  name: nativeInitialDefenseMonths
+  header: '{{nativeInitialDefenseMonths}}'
+  text: '{{nativeInitialDefenseMonths_descr}}'
+  display: Number
+  url: aic-tactics.nativeInitialDefenseMonths
+  contents:
+    type: integer
+    value: 6
+    min: 0
+    max: 30

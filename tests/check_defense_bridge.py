@@ -78,7 +78,8 @@ g.core.allocateAssembly=assemble
 g.root=Path(__file__).resolve().parents[1].as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
-package.loaded['aicTactics.dll']={configurationSize=284,configuration=0x3050000,
+configFinal={}
+package.loaded['aicTactics.dll']={configurationSize=288,configuration=0x3050000,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new()
 native.activateComposition();native.activateComposition()

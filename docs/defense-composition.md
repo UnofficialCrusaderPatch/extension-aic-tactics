@@ -48,11 +48,11 @@ and the census tick/validity/type counts. Comparing exact configuration bytes
 prevents an old raid adjustment or a composition census from silently being used
 with a different authored policy. Observation counters are excluded.
 
-The current format is `AICTACT` plus byte 2, followed by little-endian 32-bit
-interval setting, 4,544 compiled-policy bytes, 10,816 native-AIC bytes, census tick,
-validity and 720 counts. Total: 18,260 bytes before Map Extensions compression.
-The native configuration ABI is now 284 bytes per character; Lua and DLL reject
-the previous 280-byte ABI. This is an unreleased format change, not a migration
+The current format is `AICTACT` plus byte 3, followed by little-endian 32-bit
+interval setting, native initial timer, 4,608 compiled-policy bytes, 10,816 native-AIC
+bytes, census tick, validity and 720 counts. Total: 18,328 bytes before compression.
+The native configuration ABI is now 288 bytes per character; Lua and DLL reject
+earlier ABIs. This is an unreleased format change, not a migration
 promise for earlier development saves.
 
 Old saves remain loadable with Native recruitment. A new match initializes empty
