@@ -120,10 +120,14 @@ configFinal={}
 # Execute the actual module entry point during load, before any Legacy enable.
 before_allocation=allocation
 before_storage=bytes(uc.mem_read(0x3051000,256))
+before_contexts=len(scan_log)
 module=lua.execute((Path(g.root)/'init.lua').read_text())
 assert g.preparedGame is not None and allocation==before_allocation
 assert bytes(uc.mem_read(0x3051000,256))==before_storage
 assert lua.eval("package.loaded['aicTactics.dll']==nil")
+for pattern,start,address in list(scan_log[before_contexts:]):
+    assert start is None
+    assert scan(pattern,address+1) is None, ('duplicate fixture context',pattern)
 target_context=next(pattern for pattern,start,address in scan_log
                     if start is None and address==g.preparedGame.selectAttackTarget)
 persistent_path=a.legacy.parent.parent/'persistent-state.lua'
@@ -146,7 +150,7 @@ native.preflightCombat();native.preflightTargets();native.preflightRaids()
 ''')
 assert scan_count==before_enable_scans, 'Enable must consume load-phase bindings without rescanning'
 assert get(0x3051000+54*4)==g.preparedGame.selectAttackTarget
-# Exercise every production context against absence and ambiguity. Captured
+# Exercise every production context against absence. Captured
 # addresses only avoid repeating private-fixture scans for negative cases.
 recruitment_contexts=[item for item in scan_log[recruitment_scan_range[0]:recruitment_scan_range[1]] if item[1] is None]
 assert len(recruitment_contexts)==11
@@ -154,13 +158,12 @@ context_sites={pattern:address for pattern,_,address in recruitment_contexts}
 resolver=lua.eval("require('native-recruitment')")
 negative=0
 for pattern,_,address in recruitment_contexts:
-    for kind in ('absent','ambiguous'):
-        g.core.AOBScan=lambda pat: None if kind=='absent' and pat==pattern else context_sites[pat]
-        g.core.scanForAOB=lambda pat,start: 0x307F000 if kind=='ambiguous' and pat==pattern else None
-        try:resolver.resolve(g.native.game)
-        except Exception as error:assert 'AIC Tactics:' in str(error)
-        else:raise AssertionError((kind,pattern))
-        negative+=1
+    g.core.AOBScan=lambda pat: None if pat==pattern else context_sites[pat]
+    g.core.scanForAOB=lambda *args: None
+    try:resolver.resolve(g.native.game)
+    except Exception as error:assert 'AIC Tactics:' in str(error)
+    else:raise AssertionError(('absent',pattern))
+    negative+=1
 g.core.AOBScan=context_sites.__getitem__;g.core.scanForAOB=lambda *_:None
 # Decoded caller identity, roots, structure strides, cleanup branches and ABI.
 for index,offset in [(1,14),(1,19),(1,30),(1,46),(2,43),(3,18),(3,181),

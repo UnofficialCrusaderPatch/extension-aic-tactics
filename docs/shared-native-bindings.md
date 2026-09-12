@@ -279,3 +279,21 @@ second scan. All six reference images pass, including 128 original Legacy
 target-commitment cases, 480 census comparisons, 297 combat gateway cases and
 91 occupied-hook/call rejection cases per image. These are instruction-level
 composition checks; the corrected signed module still needs live-game acceptance.
+
+
+## Existing UCP 3.0.7 scanner (source 0.0.7)
+
+User direction supersedes the provisional newer-scanner prerequisite above.
+`native-context.find` uses the shipped `core.AOBScan(signature)` and its cache,
+matching unchanged Legacy `port/ai_assaultswitch.lua`. Actual framework
+`content/ucp/code/core.lua` and `data/cache.lua` were inspected: unbounded
+AOBScan uses cache.AOB.retrieve, which revalidates cached matches. There is no
+extension cache, second full-process scan, optional newer API or fixed address
+fallback. Binding discovery still runs before Legacy enable; complete identifying
+signatures, decoded cross-owner ABI/layout checks and occupied-hook checks remain.
+
+Uniqueness of identifying contexts is checked against supported images in offline
+fixtures. Stock AOBScan returns its first match; the extension does not claim an
+exhaustive runtime duplicate search on arbitrary modified executables. The extra
+runtime duplicate search in earlier previews caused the observed startup stall.
+The stock-runtime startup/composition check is pending for this revision.

@@ -77,7 +77,7 @@ bound = resolve()
 for name, value in reference_values.items():
     assert bound[name] == value, (name, hex(bound[name]), hex(value))
 contexts = [item for item in scans if item[1] is None]
-assert len(contexts) == 8 and len(scans) == 16
+assert len(contexts) == 8 and len(scans) == 8
 assert bound['tribeMemberWords'] == (bound['unitCapacity'] + 15) // 16
 
 
@@ -91,27 +91,31 @@ def resolve_actions(read=get, find=scan, second=scan, byte=None):
 
 
 action_bindings = resolve_actions()
-action_contexts = [item for item in scans[len(contexts) * 2:] if item[1] is None]
+action_contexts = [item for item in scans[len(contexts):] if item[1] is None]
 assert len(action_contexts) == 12
 
-# Reject absent/ambiguous contexts and incompatible decoded layout before any
+# Establish uniqueness over each supported private image offline. Runtime uses
+# stock UCP's cached first-match API, with the decoded consistency checks below.
+for pattern, _, address in contexts + action_contexts:
+    assert scan(pattern, address + 1) is None, ('duplicate fixture context', pattern)
+
+# Reject absent contexts and incompatible decoded layout before any
 # native call. Exercise actual signatures above; reuse found sites below solely
 # to isolate negative operand handling without repeating private fixture scans.
 sites = {pattern: address for pattern, _, address in contexts}
 negative = 0
 for pattern, _, address in contexts:
-    for kind in ('absent', 'ambiguous'):
-        def find(pat):
-            return None if kind == 'absent' and pat == pattern else sites[pat]
-        def second(pat, start):
-            return scratch if kind == 'ambiguous' and pat == pattern else None
-        try:
-            resolve(find=find, second=second)
-        except Exception as error:
-            assert 'AIC Tactics:' in str(error)
-        else:
-            raise AssertionError((kind, pattern))
-        negative += 1
+    def find(pat):
+        return None if pat == pattern else sites[pat]
+    def second(pat, start):
+        return None
+    try:
+        resolve(find=find, second=second)
+    except Exception as error:
+        assert 'AIC Tactics:' in str(error)
+    else:
+        raise AssertionError(('absent', pattern))
+    negative += 1
 
 mutations = [(0, 51, 10001), (0, 101, 1), (1, 9, 1251), (1, 42, 0),
              (1, 63, 0), (2, 89, 0), (2, 190, 0), (3, 31, 0),
@@ -132,18 +136,17 @@ for index, offset, value in mutations:
 action_sites = {pattern: address for pattern, _, address in action_contexts}
 action_negative = 0
 for pattern, _, address in action_contexts:
-    for kind in ('absent', 'ambiguous'):
-        def find(pat):
-            return None if kind == 'absent' and pat == pattern else action_sites[pat]
-        def second(pat, start):
-            return scratch if kind == 'ambiguous' and pat == pattern else None
-        try:
-            resolve_actions(find=find, second=second)
-        except Exception as error:
-            assert 'AIC Tactics:' in str(error)
-        else:
-            raise AssertionError(('action', kind, pattern))
-        action_negative += 1
+    def find(pat):
+        return None if pat == pattern else action_sites[pat]
+    def second(pat, start):
+        return None
+    try:
+        resolve_actions(find=find, second=second)
+    except Exception as error:
+        assert 'AIC Tactics:' in str(error)
+    else:
+        raise AssertionError(('action', 'absent', pattern))
+    action_negative += 1
 
 for index, offset in ((0, 16), (0, 79), (1, 32), (2, 31), (3, 43), (4, 53),
                       (5, 47), (6, 18), (7, 60), (8, 93), (9, 31), (10, 21), (11, 9)):

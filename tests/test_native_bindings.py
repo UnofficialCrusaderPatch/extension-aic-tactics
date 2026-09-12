@@ -59,7 +59,7 @@ def test_binding_contract_failure_does_not_write_native_memory(invalid):
     ''')
 
 
-@pytest.mark.parametrize('invalid', ['absent','zero','duplicate','rng'])
+@pytest.mark.parametrize('invalid', ['absent','zero','error','rng'])
 def test_native_context_failure_has_no_pointer_fallback(invalid):
     lua = LuaRuntime()
     lua.globals().root = ROOT.as_posix()
@@ -67,10 +67,11 @@ def test_native_context_failure_has_no_pointer_fallback(invalid):
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       core={AOBScan=function()
+          if invalid=='error' then error('framework discovery failed') end
           if invalid=='absent' then return nil end
           return invalid=='zero' and 0 or 10000
         end,
-        scanForAOB=function()return invalid=='duplicate' and 20000 or nil end,
+        scanForAOB=function()error('unexpected uncached scan') end,
         readInteger=function()return 10000 end}
       local ok,why=pcall(require('config.grace').resolveNative)
       assert(not ok and why:find('AIC Tactics:',1,true))

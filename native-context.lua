@@ -1,18 +1,12 @@
 local M = {}
 
--- Prefer UCP's main-executable uniqueness owner when available. Stock 3.0.7
--- retains its existing cached discovery and full-process ambiguity check.
--- No address fallback or per-tick cache is maintained by the extension.
+-- Use the same cached discovery entry point as established UCP 3.0.7 modules.
+-- Complete identifying contexts and decoded ABI/layout checks remain in each
+-- binding owner. Do not follow a successful match with a full-process rescan.
 function M.find(name, signature)
-  if type(core.AOBScanUnique)=='function' then
-    local site=core.AOBScanUnique(signature,'AIC Tactics: '..name)
-    assert(type(site)=='number' and site>0,'AIC Tactics: missing native '..name)
-    return site
-  end
-  local ok, site = pcall(core.AOBScan, signature)
-  assert(ok and type(site) == 'number' and site > 0, 'AIC Tactics: missing native '..name)
-  local second = core.scanForAOB(signature, site + 1)
-  assert(second == nil or second == 0, 'AIC Tactics: ambiguous native '..name)
+  local ok,site=pcall(core.AOBScan,signature)
+  assert(ok and type(site)=='number' and site>0 and site%1==0,
+    'AIC Tactics: missing native '..name)
   return site
 end
 

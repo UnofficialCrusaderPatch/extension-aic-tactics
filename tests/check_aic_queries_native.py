@@ -82,16 +82,17 @@ owner=lua.eval("(require('native-aic-queries'))")
 bound=owner.resolve(g.game)
 contexts=[item for item in scans[start:] if item[1] is None]
 assert len(contexts)==9
+for pattern,_,address in contexts:
+    assert scan(pattern,address+1) is None, ('duplicate fixture context',pattern)
 sites={pattern:address for pattern,_,address in contexts}
 negative=0
 for pattern,_,address in contexts:
-    for kind in ('absent','ambiguous'):
-        g.core.AOBScan=lambda pat:None if kind=='absent' and pat==pattern else sites[pat]
-        g.core.scanForAOB=lambda pat,start:scratch if kind=='ambiguous' and pat==pattern else None
-        try:owner.resolve(g.game)
-        except Exception as error:assert 'AIC Tactics:' in str(error)
-        else:raise AssertionError((kind,pattern))
-        negative+=1
+    g.core.AOBScan=lambda pat:None if pat==pattern else sites[pat]
+    g.core.scanForAOB=lambda *args: None
+    try:owner.resolve(g.game)
+    except Exception as error:assert 'AIC Tactics:' in str(error)
+    else:raise AssertionError(('absent',pattern))
+    negative+=1
 g.core.AOBScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
 for index,offset in [(1,22),(1,27),(2,12),(2,289),(3,22),(4,2),(4,44),
                      (5,13),(5,118),(6,30),(7,142),(8,46)]:
@@ -190,13 +191,12 @@ if a.combat_output:
     sites={pattern:address for pattern,_,address in contexts}
     negative=0
     for pattern,_,address in contexts:
-        for kind in ('absent','ambiguous'):
-            g.core.AOBScan=lambda pat:None if kind=='absent' and pat==pattern else sites[pat]
-            g.core.scanForAOB=lambda pat,start:scratch if kind=='ambiguous' and pat==pattern else None
-            try:combat_owner.resolve(g.game)
-            except Exception as error:assert 'AIC Tactics:' in str(error)
-            else:raise AssertionError(('combat',kind,pattern))
-            negative+=1
+        g.core.AOBScan=lambda pat:None if pat==pattern else sites[pat]
+        g.core.scanForAOB=lambda *args: None
+        try:combat_owner.resolve(g.game)
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError(('combat','absent',pattern))
+        negative+=1
     g.core.AOBScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
     for index,offset in [(0,18),(0,86),(0,326),(1,25),(2,132),(2,226),(3,84),
             (4,122),(4,160),(5,49),(6,19),(6,28),(7,22),(7,27),(7,127),(8,28),
