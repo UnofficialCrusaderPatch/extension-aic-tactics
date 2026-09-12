@@ -1,0 +1,12 @@
+meta:
+  version: 1.0.0
+options:
+- category: [AIC Tactics]
+  name: legacyRecruitInterval
+  header: '{{legacyRecruitInterval}}'
+  text: '{{legacyRecruitInterval_descr}}'
+  display: UCP2Switch
+  url: aic-tactics.legacyRecruitInterval
+  contents:
+    value: false
+    type: boolean
