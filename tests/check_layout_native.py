@@ -4,6 +4,7 @@ Private licensed executable required; this is a component test, not gameplay.
 """
 import argparse
 import hashlib
+from executable_fixtures import digest as fixture_digest
 import json
 from pathlib import Path
 import re
@@ -22,15 +23,15 @@ a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
 raw = a.reference.read_bytes()
 expected = {
-    'SHC': ('3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a',
+    'SHC': (
             dict(units=0x1387F38, unitCapacity=2500, tribes=0x1667F78, tribeStride=0x334,
                  entities=0x2350314, entityCapacity=3000, players=0x115BDF8, teams=0x117D548)),
-    'SHCE': ('55648e6b05d67d37a5773fe699bbb17a2d6ad4de1bb9dbded9a21caef82bd7fb',
+    'SHCE': (
              dict(units=0x145CA28, unitCapacity=10000, tribes=0x1F9AFC0, tribeStride=0x688,
                   entities=0x2DE3814, entityCapacity=6000, players=0x11EEA38, teams=0x1210188)),
 }
-digest, reference_values = expected[a.variant]
-assert hashlib.sha256(raw).hexdigest() == digest
+reference_values = expected[a.variant]
+digest = fixture_digest(raw,a.variant)
 pe = pefile.PE(data=raw)
 base = pe.OPTIONAL_HEADER.ImageBase
 image = pe.get_memory_mapped_image()

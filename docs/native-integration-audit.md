@@ -1,5 +1,23 @@
 # UCP integration audit, 12 September 2026
 
+## Correction status
+
+The findings below describe the published 0.0.2 bundle and its original revisions.
+Source 0.0.3 now uses runtime bindings and native layout/ABI checks; its component
+tests pass on six local/official EFIGS/Polish Crusader 1.41 and Extreme 1.41.1-E
+fixtures. See [current bindings and evidence](shared-native-bindings.md).
+Recorder's dependent [binding stack through PR25](https://github.com/Krarilotus/ucp_recorder/pull/25)
+replaces the fixed profiles and temporary header/hash whitelist, reuses the
+framework version API and consolidates context verification. Required shared
+capabilities remain in Loader, Files, Map, Protocol and UI.
+
+The old 0.0.2 download is still SHC-only. No corrected combined bundle, live
+match/save/replay, physical multiplayer or whole-game performance acceptance is
+claimed here. Licensing/provenance, combined architecture review, CI/review and
+normal merges remain release work.
+
+## Original bundle findings
+
 **Result: the current bundle does not meet the native integration release
 requirements. Do not test AIC Tactics 0.0.2 with Extreme.** Its manifest correctly
 declares only SHC 1.41, but its fixed runtime bindings must still be corrected

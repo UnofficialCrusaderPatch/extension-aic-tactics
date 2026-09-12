@@ -5,6 +5,7 @@ This is hook/register/flags evidence, not gameplay or save/load acceptance.
 """
 import argparse
 import hashlib
+from executable_fixtures import digest as fixture_digest
 import json
 from pathlib import Path
 import re
@@ -26,7 +27,7 @@ p.add_argument('--combat',action='store_true')
 p.add_argument('--variant',choices=['SHC','SHCE'],default='SHC')
 a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 raw=a.reference.read_bytes()
-assert hashlib.sha256(raw).hexdigest()=={'SHC':'3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a','SHCE':'55648e6b05d67d37a5773fe699bbb17a2d6ad4de1bb9dbded9a21caef82bd7fb'}[a.variant]
+reference_digest=fixture_digest(raw,a.variant)
 
 pe=pefile.PE(data=raw);uc=Uc(UC_ARCH_X86,UC_MODE_32)
 base=pe.OPTIONAL_HEADER.ImageBase

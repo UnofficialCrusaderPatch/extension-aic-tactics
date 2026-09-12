@@ -1,6 +1,7 @@
 """Reference-byte compatibility and actual calendar instructions; no game launch."""
 import argparse
 import hashlib
+from executable_fixtures import digest as fixture_digest
 import json
 from pathlib import Path
 import re
@@ -19,14 +20,14 @@ p.add_argument('--variant', choices=('SHC','SHCE'), default='SHC')
 a = p.parse_args()
 raw = a.reference.read_bytes()
 fixtures = {
-    'SHC': ('3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a',
+    'SHC': (
         dict(gameTick=0x1FE7DA8,rngState=0x1A279C0,rngValue=0x1A279C2,rngNext=0x46A7D0,
              initialDefenseTicks=0x4D34B1,aicRecords=0x23FC8E8+676)),
-    'SHCE': ('55648e6b05d67d37a5773fe699bbb17a2d6ad4de1bb9dbded9a21caef82bd7fb',
+    'SHCE': (
         dict(gameTick=0x2A7B2A8,rngState=0x24BAEC0,rngValue=0x24BAEC2,rngNext=0x46A9F0)),
 }
-expected_hash, bindings = fixtures[a.variant]
-assert hashlib.sha256(raw).hexdigest() == expected_hash
+bindings = fixtures[a.variant]
+expected_hash = fixture_digest(raw,a.variant)
 pe = pefile.PE(data=raw)
 uc = Uc(UC_ARCH_X86, UC_MODE_32)
 base = pe.OPTIONAL_HEADER.ImageBase

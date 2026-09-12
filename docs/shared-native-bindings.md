@@ -215,5 +215,24 @@ and [Recorder 0.50.6](https://github.com/Krarilotus/ucp_recorder/pull/4).
 Their portable tests and CI pass; installed bundle acceptance remains pending.
 [Recorder's Windows-service correction](https://github.com/Krarilotus/ucp_recorder/pull/5)
 uses the existing RPS export resolver and passes a native console check with
-the installed Lua/RPS/CFFI binaries. Recorder's game-address port is still
-unfinished. Passing component tests does not finish that or gameplay acceptance.
+the installed Lua/RPS/CFFI binaries. Recorder's game-address correction now reaches
+[PR25](https://github.com/Krarilotus/ucp_recorder/pull/25), source 0.50.27, with the
+fixed profiles/header whitelist removed and shared context helpers consolidated.
+Combined architecture review and gameplay acceptance remain unfinished.
+
+## Official distribution fixtures
+
+The same component runners now also pass on official EFIGS and Polish Crusader
+1.41 and Extreme 1.41.1-E images. Together with the two original local images,
+this covers six reference executables. `tests/executable_fixtures.py` records
+their identities for reproducible research; the production module never imports
+that file or uses those hashes for runtime binding.
+
+Each additional image passed original allocation/membership/removal/assignment,
+recruitment role and raid-limit queries, building filters, combat-value/price
+queries, native lifecycle early returns, unchanged Legacy census and target
+selection comparisons, actual FASM gateways and their negative binding tests.
+Grace checks compare all 31 Legacy month settings and Loader's actual storage
+metadata. The Extreme grace runner does not execute a calendar; none of these
+checks claims active-army behavior, live multiplayer or save/replay acceptance.
+The additional fixtures required no production signature or layout change.
