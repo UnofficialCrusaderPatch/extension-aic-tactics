@@ -91,7 +91,7 @@ void returnHome(void* aic, int player, RaidGroup& group)
     group.building = 0;
     group.buildingUID = 0;
     if (validGroup(group.tribe, player)) {
-        reinterpret_cast<TwoAction>(0x4CD110)(aic, group.tribe.id, player);
+        reinterpret_cast<TwoAction>(nativeBindings.returnTribe)(aic, group.tribe.id, player);
         at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
         at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuilding) = 0;
         at<unsigned int>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuildingUID) = 0;
@@ -101,7 +101,7 @@ void returnHome(void* aic, int player, RaidGroup& group)
 void attack(RaidGroup& group)
 {
     typedef void (__thiscall *Relay)(void*, int, int, int, unsigned int, int);
-    reinterpret_cast<Relay>(0x5371E0)(reinterpret_cast<void*>(nativeBindings.units),
+    reinterpret_cast<Relay>(nativeBindings.relayRaidOrder)(reinterpret_cast<void*>(nativeBindings.units),
         group.tribe.id, 9, group.building, group.buildingUID, 0);
     at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuilding) = static_cast<short>(group.building);
     at<unsigned int>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuildingUID) = group.buildingUID;
@@ -206,7 +206,7 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
                 else if (config.focus != AnyRaidFocus && config.focus == category(type)) score -= 128;
                 score += penalty;
             }
-            const int tile = at<int>(0x2337300 + y * 12) + x;
+            const int tile = at<int>(nativeBindings.mapRows + y * 12) + x;
             if (tile <= 0 || tile >= 160000) continue;
             Candidate candidate = {building, uid, tile, score};
             int position = 0;
@@ -283,7 +283,7 @@ void fillGroups(void* aic, int player, int desired, const RaidConfiguration& con
                 target.tribe.uid = at<unsigned int>(Tribes + target.tribe.id * nativeBindings.tribeStride + 0x34);
                 target.building = 0; target.buildingUID = 0; target.pathCursor = 0;
             }
-            reinterpret_cast<TwoAction>(0x525A70)(reinterpret_cast<void*>(Tribes), id, source.id);
+            reinterpret_cast<TwoAction>(nativeBindings.removeUnitFromTribe)(reinterpret_cast<void*>(Tribes), id, source.id);
             reinterpret_cast<TwoAction>(nativeBindings.addUnitToTribe)(reinterpret_cast<void*>(Tribes), id, target.tribe.id);
             // Keep census snapshots immutable between native census phases.
             // Newly formed groups wait for that census before choosing a target.
@@ -425,7 +425,7 @@ bool updateSplitRaids(void* aic, int player)
         if (leader <= 0 || leader >= static_cast<int>(nativeBindings.unitCapacity)) return true;
         const unsigned int unit = Units + leader * 0x490;
         if (at<short>(unit + 0x2D8) != group.tribe.id || at<unsigned int>(unit + 0x2E4) != group.tribe.uid) return true;
-        const int tile = at<int>(0x2337300 + y * 12) + x;
+        const int tile = at<int>(nativeBindings.mapRows + y * 12) + x;
         if (tile <= 0 || tile >= 160000) { returnHome(aic, player, group); return true; }
         if (!reinterpret_cast<TwoQuery>(nativeBindings.tribePath)(aic, group.tribe.id, tile)) {
             returnHome(aic, player, group);

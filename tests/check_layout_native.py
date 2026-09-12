@@ -66,6 +66,8 @@ def short(address, value):
 
 def resolve(read=get, find=scan, second=scan):
     lua = LuaRuntime()
+    lua.globals().root = root.as_posix()
+    lua.execute("package.path=root..'/?.lua;'..package.path")
     lua.globals().core = lua.table_from({'readInteger': read, 'AOBScan': find, 'scanForAOB': second})
     return dict(lua.execute((root / 'native-layout.lua').read_text()).resolve().items())
 
@@ -76,6 +78,20 @@ for name, value in reference_values.items():
 contexts = [item for item in scans if item[1] is None]
 assert len(contexts) == 8 and len(scans) == 16
 assert bound['tribeMemberWords'] == (bound['unitCapacity'] + 15) // 16
+
+
+def resolve_actions(read=get, find=scan, second=scan, byte=None):
+    lua = LuaRuntime()
+    lua.globals().root = root.as_posix()
+    lua.execute("package.path=root..'/?.lua;'..package.path")
+    lua.globals().core = lua.table_from({'readInteger': read, 'AOBScan': find, 'scanForAOB': second,
+        'readByte': byte or (lambda address: uc.mem_read(address, 1)[0])})
+    return dict(lua.execute((root / 'native-group-actions.lua').read_text()).resolve(lua.table_from(bound)).items())
+
+
+action_bindings = resolve_actions()
+action_contexts = [item for item in scans[len(contexts) * 2:] if item[1] is None]
+assert len(action_contexts) == 12
 
 # Reject absent/ambiguous contexts and incompatible decoded layout before any
 # native call. Exercise actual signatures above; reuse found sites below solely
@@ -111,6 +127,43 @@ for index, offset, value in mutations:
     else:
         raise AssertionError(('operand', index, offset))
     negative += 1
+
+action_sites = {pattern: address for pattern, _, address in action_contexts}
+action_negative = 0
+for pattern, _, address in action_contexts:
+    for kind in ('absent', 'ambiguous'):
+        def find(pat):
+            return None if kind == 'absent' and pat == pattern else action_sites[pat]
+        def second(pat, start):
+            return scratch if kind == 'ambiguous' and pat == pattern else None
+        try:
+            resolve_actions(find=find, second=second)
+        except Exception as error:
+            assert 'AIC Tactics:' in str(error)
+        else:
+            raise AssertionError(('action', kind, pattern))
+        action_negative += 1
+
+for index, offset in ((0, 16), (0, 79), (1, 32), (2, 31), (3, 43), (4, 53),
+                      (5, 47), (6, 18), (7, 60), (8, 93), (9, 31), (10, 21), (11, 9)):
+    address = action_contexts[index][2] + offset
+    try:
+        resolve_actions(read=lambda target: 0 if target == address else get(target),
+                        find=action_sites.__getitem__, second=lambda *_: None)
+    except Exception as error:
+        assert 'AIC Tactics:' in str(error)
+    else:
+        raise AssertionError(('action operand', index, offset))
+    action_negative += 1
+try:
+    relay = action_bindings['relayRaidOrder']
+    resolve_actions(read=lambda target: 0 if target == relay + 6 else get(target),
+                    find=action_sites.__getitem__, second=lambda *_: None)
+except Exception as error:
+    assert 'AIC Tactics:' in str(error)
+else:
+    raise AssertionError('wrong group-order relay target admitted')
+action_negative += 1
 
 
 def call(function, owner, *args):
@@ -164,10 +217,50 @@ for unit in (1, 15, 16, bound['unitCapacity'] - 1):
 assert get(record + 0x5C) & 0xFFFF == membership_checks
 assert get(record + 0x5A) & 0xFFFF == 1
 
+for unit in (bound['unitCapacity'] - 1, 16, 15, 1):
+    call(action_bindings['removeUnitFromTribe'], tribes, unit, group)
+    bits = struct.unpack('<H', uc.mem_read(record + 0x60 + (unit // 16) * 2, 2))[0]
+    assert not (bits & (1 << (unit % 16)))
+assert get(record + 0x5C) & 0xFFFF == 0
+assert get(record + 0x40) & 0xFFFF == 3
+for order in (7, 9):
+    call(action_bindings['relayRaidOrder'], bound['units'], group, order, 0, 0, 0)
+call(action_bindings['returnTribe'], scratch + 0x1000, group, 1)
+
+assignment_checks = 0
+aic = scratch + 0x1000
+for function, role in [('assignMoatDigger', 5), ('wallDefense', 1),
+                       ('patrolDefense', 4), ('assignRaider', 2), ('assignAttacker', 20)]:
+    uc.mem_write(tribes, bytes(0x28 + 1250 * stride))
+    uc.mem_write(bound['players'], bytes(9 * 0x39F4))
+    uc.mem_write(aic, bytes(17 * 676))
+    put(aic + 676 + 0x174, 1)  # Native patrol group count
+    put(aic + 676 + 0x29C, 1)  # Native main-army group count
+    put(bound['players'] + 0x39F4 + 0x2300, 2)
+    unit = bound['unitCapacity'] - 1
+    unit_record = bound['unitRecords'] + unit * 0x490
+    uc.mem_write(unit_record, bytes(0x490))
+    short(unit_record + 0x8C, 2)
+    short(unit_record + 0x8E, 22)
+    short(unit_record + 0x96, 1)
+    put(unit_record + 0x3C8, 100)
+    args = (unit, role) if function == 'assignAttacker' else (unit,)
+    call(action_bindings[function], aic, *args)
+    assert struct.unpack('<h', uc.mem_read(unit_record + 0x42A, 2))[0] == role
+    destination = struct.unpack('<h', uc.mem_read(unit_record + 0x2D8, 2))[0]
+    assert 0 < destination < 1250, (function, destination)
+    record = tribes + destination * stride
+    assert get(record + 0x2C) == 1 and get(record + 0x34) == get(unit_record + 0x2E4)
+    assert get(record + 0x5C) & 0xFFFF == 1
+    assignment_checks += 1
+
 result = dict(variant=a.variant, referenceSHA256=digest, resolved=bound,
               uniqueContexts=len(contexts), negativeResolutionChecks=negative,
               nativeAllocationCases=allocation_checks, nativeMembershipCases=membership_checks,
-              scope='Actual Lua discovery and original native allocation/membership, including high IDs. No running-game, MP or replay acceptance.')
+              resolvedGroupActions=action_bindings, uniqueActionContexts=len(action_contexts),
+              negativeActionResolutionChecks=action_negative, nativeRemovalCases=4,
+              nativeAssignmentCases=assignment_checks, emptyGroupOrderABICases=3,
+              scope='Actual Lua discovery and original native allocation, membership, removal and assignment, including high IDs; empty-group order ABI. No running-game, MP, pathfinding or replay acceptance.')
 a.output.parent.mkdir(parents=True, exist_ok=True)
 a.output.write_text(json.dumps(result, indent=2) + '\n')
 print(json.dumps(result))

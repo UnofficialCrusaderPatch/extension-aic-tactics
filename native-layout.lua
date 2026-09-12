@@ -2,13 +2,7 @@ local M = {}
 
 -- This module owns AIC's native layout binding, not allocation or a second pool.
 -- All discovery uses the framework; consumers receive the result once at init.
-local function unique(name, signature)
-  local site = core.AOBScan(signature)
-  assert(type(site) == 'number' and site > 0, 'AIC Tactics: missing native '..name)
-  local second = core.scanForAOB(signature, site + 1)
-  assert(second == nil or second == 0, 'AIC Tactics: ambiguous native '..name)
-  return site
-end
+local unique = require('native-context').find
 
 function M.resolve()
   local read = core.readInteger

@@ -35,6 +35,18 @@ struct BindFixture {
         nativeBindings.entities = 0x2350314;
         nativeBindings.entityCapacity = 3000;
         nativeBindings.teams = 0x117D548;
+        nativeBindings.assignMoatDigger = 0x4CC840;
+        nativeBindings.wallDefense = 0x4D2660;
+        nativeBindings.patrolDefense = 0x4D2730;
+        nativeBindings.assignRaider = 0x4D2790;
+        nativeBindings.assignAttacker = 0x4D27E0;
+        nativeBindings.findSortieGroup = 0x4CC910;
+        nativeBindings.findAttackGroup = 0x4CCD20;
+        nativeBindings.returnTribe = 0x4CD110;
+        nativeBindings.removeUnitFromTribe = 0x525A70;
+        nativeBindings.relayRaidOrder = 0x5371E0;
+        nativeBindings.mapRows = 0x2337300;
+        nativeBindings.attackGroupSlots = 0xB3EC1C;
     }
 } bindFixture;
 int cases;

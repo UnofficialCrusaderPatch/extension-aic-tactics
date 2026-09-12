@@ -20,7 +20,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 96-byte
+`native-bindings.lua` passes the resolved values into the DLL's 144-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -66,6 +66,20 @@ Legacy source is unchanged. Inspected `ai_attackwave.lua` patches the native
 wall/building/breach dispatch sites, outside these eight contexts. Full enabled
 Legacy composition testing remains part of the unfinished hook integration.
 
+`native-group-actions.lua` adds twelve contexts for the native assignment,
+group-selection/removal, return and raid-order boundaries. Full assignment and
+membership functions identify the intended role and ABI; decoded operands must
+agree with the already resolved player/unit/tribe roots, stride, IDs and UIDs.
+Allocator and membership call targets must agree with the existing bindings.
+The native building-attack and movement callers must use the same five-argument
+order relay, whose jump must reach the identified native group dispatcher.
+The game still owns group allocation, movement and order submission.
+
+Raid map rows and offensive role-to-group slots are decoded from those native
+consumers. C++ no longer casts fixed addresses for these group actions/tables.
+`native-context.lua` shares the framework uniqueness/call checks across layout,
+group actions and recruitment; it adds no private scan cache or patch manager.
+
 Validation performed:
 
 - Actual SHC and Extreme instruction images resolve the complete context and
@@ -79,6 +93,11 @@ Validation performed:
   fixture; each passes 30 negative resolution/operand checks, 32 original
   allocator cases and four original membership cases including the last valid
   unit ID. It verifies native stack cleanup, membership, group UID and leader.
+- Its group-action checks resolve twelve additional contexts per executable,
+  reject 38 absent/ambiguous/inconsistent action bindings, and execute four
+  native removals plus five native role assignments using the final valid unit
+  ID. Empty-group order/return calls check stack cleanup separately; active
+  pathfinding and battlefield orders still require the gameplay acceptance.
 - Classic MSVC2005 SP1 native harness passes 2,380 runtime, 98 acquisition,
   37 damage, 13 damage-validation, three production projectile-attribution,
   32 tribe-allocation, four tribe-input and 65 combat/reserve/raid-layout checks.
@@ -86,7 +105,7 @@ Validation performed:
   consumer evidence, separately from the original Extreme instruction tests.
 - Three additional save-state tests cover high IDs/cursors, rejection beyond
   the native boundary and index reconstruction using resolved roots/stride.
-- Seventy-three prior AIC Python/Lua tests and forty Loader tests passed. The initial
+- Seventy-six AIC Python/Lua tests and forty Loader tests passed. The initial
   full AIC run lacked `AICLOADER_TEST_ROOT`; rerunning with the actual prerequisite
   checkout passed.
 

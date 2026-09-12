@@ -31,6 +31,18 @@ struct NativeBindings {
     unsigned int entities;
     unsigned int entityCapacity;
     unsigned int teams;
+    unsigned int assignMoatDigger;
+    unsigned int wallDefense;
+    unsigned int patrolDefense;
+    unsigned int assignRaider;
+    unsigned int assignAttacker;
+    unsigned int findSortieGroup;
+    unsigned int findAttackGroup;
+    unsigned int returnTribe;
+    unsigned int removeUnitFromTribe;
+    unsigned int relayRaidOrder;
+    unsigned int mapRows;
+    unsigned int attackGroupSlots;
 };
 extern NativeBindings nativeBindings;
 int nativeRandom(void*);

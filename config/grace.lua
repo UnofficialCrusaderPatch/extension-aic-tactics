@@ -7,10 +7,7 @@ local signature = '03 CB 03 CD 74 4D 0F BF 05 ? ? ? ? 99 F7 F9 B9 ? ? ? ? 89 54 
 
 function M.resolveNative()
   if not binding then
-    local site = core.AOBScan(signature)
-    assert(type(site) == 'number' and site > 0, 'AIC Tactics: native recruitment context not found')
-    local second = core.scanForAOB(signature, site + 1)
-    assert(second == nil or second == 0, 'AIC Tactics: ambiguous native recruitment context')
+    local site = require('native-context').find('recruitment context', signature)
     local candidate = {gameTick=core.readInteger(site + 32),
       rngState=core.readInteger(site + 17), rngValue=core.readInteger(site + 9),
       rngNext=site + 30 + core.readInteger(site + 26), initialDefenseTicks=site + 36}

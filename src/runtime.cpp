@@ -143,7 +143,7 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
     else if (probe.role == SortieRole) first = behaviour + 160;
     else if (probe.role == AttackRole) {
         if (behaviour < 10 || behaviour > 20) return false;
-        first = memory<int>(0xB3EC1C + (behaviour - 10) * 4);
+        first = memory<int>(nativeBindings.attackGroupSlots + (behaviour - 10) * 4);
         int offset = 0, maximum = 1;
         if (first == 15) { offset = 0x264; maximum = 2; }
         if (first == 186) { offset = 0x270; maximum = 3; }
@@ -369,22 +369,22 @@ bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
 void assign(void* aic, int player, int character, int role, const Candidate& candidate, int unit, int recruitedWalls) {
     if (role == DefenseRole) {
         if (candidate.behaviour == 5) {
-            reinterpret_cast<PlayerAction>(0x4CC840)(aic, unit);
+            reinterpret_cast<PlayerAction>(nativeBindings.assignMoatDigger)(aic, unit);
             return;
         }
         playerValue(player, (nativeBindings.players + 0x3100)) = candidate.cursor;
         const int walls = (legacyWallCounts ? legacyWallCounts[player] : playerValue(player, (nativeBindings.players + 0x30E8)))
             + recruitedWalls;
-        reinterpret_cast<PlayerAction>(walls < aicValue(aic, character, 0x180) ? 0x4D2660 : 0x4D2730)(aic, unit);
+        reinterpret_cast<PlayerAction>(walls < aicValue(aic, character, 0x180) ? nativeBindings.wallDefense : nativeBindings.patrolDefense)(aic, unit);
     } else if (role == RaidRole) {
         playerValue(player, (nativeBindings.players + 0x3104)) = candidate.cursor;
-        reinterpret_cast<PlayerAction>(0x4D2790)(aic, unit);
+        reinterpret_cast<PlayerAction>(nativeBindings.assignRaider)(aic, unit);
     } else if (role == AttackRole) {
         if (candidate.cursor >= 0) playerValue(player, (nativeBindings.players + 0x3108)) = candidate.cursor;
-        reinterpret_cast<TwoIntAction>(0x4D27E0)(aic, unit, candidate.behaviour);
+        reinterpret_cast<TwoIntAction>(nativeBindings.assignAttacker)(aic, unit, candidate.behaviour);
     } else {
         memory<short>(nativeBindings.unitRecords + 0x42A + unit * 0x490) = static_cast<short>(candidate.behaviour);
-        const int group = reinterpret_cast<TwoIntQuery>(0x4CC910)(aic, player, candidate.behaviour + 160);
+        const int group = reinterpret_cast<TwoIntQuery>(nativeBindings.findSortieGroup)(aic, player, candidate.behaviour + 160);
         reinterpret_cast<TwoIntAction>(nativeBindings.addUnitToTribe)(reinterpret_cast<void*>(Tribes), unit, group);
     }
 }

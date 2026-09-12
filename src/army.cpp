@@ -167,11 +167,11 @@ void transferReturningReserve(void* aic, int player)
                 || at<short>(address + 0x42A) != role) continue;
             if (!destinationRoom(aic, player, role)) return;
             typedef int (__thiscall *FindGroup)(void*, int, int, int);
-            const int destination = reinterpret_cast<FindGroup>(0x4CCD20)(aic, player, unit, role);
+            const int destination = reinterpret_cast<FindGroup>(nativeBindings.findAttackGroup)(aic, player, unit, role);
             if (destination <= 0 || destination >= 1250 || destination == source.id) return;
             // Native add/remove maintain size, selection bits, unit group UID
             // and movement speed. No raw membership or unit-order writes.
-            reinterpret_cast<TwoAction>(0x525A70)(reinterpret_cast<void*>(Tribes), unit, source.id);
+            reinterpret_cast<TwoAction>(nativeBindings.removeUnitFromTribe)(reinterpret_cast<void*>(Tribes), unit, source.id);
             reinterpret_cast<TwoAction>(nativeBindings.addUnitToTribe)(reinterpret_cast<void*>(Tribes), unit, destination);
             ++field(player, (nativeBindings.players + 0x2BA8) + (role - 10) * 4);
             ++field(player, (nativeBindings.players + 0x30F0));
@@ -308,7 +308,7 @@ void __fastcall recruitWithReserve(void* aic, void*, int player)
         state.groups[index] = activeGroup(player, index);
         setActiveGroup(player, index, deployed[index]);
         if (size(state.groups[index], player) > oldSizes[index]) {
-            reinterpret_cast<TwoAction>(0x4CD110)(aic, state.groups[index].id, player);
+            reinterpret_cast<TwoAction>(nativeBindings.returnTribe)(aic, state.groups[index].id, player);
             at<short>(Tribes + state.groups[index].id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
         }
     }
@@ -364,7 +364,7 @@ bool returnArmyToCampfire(void* aic, int player)
     for (int index = 0; index < 22; ++index) {
         const ReserveGroup group = activeGroup(player, index);
         if (!validGroup(group, player) || size(group, player) <= 0) continue;
-        reinterpret_cast<TwoAction>(0x4CD110)(aic, group.id, player);
+        reinterpret_cast<TwoAction>(nativeBindings.returnTribe)(aic, group.id, player);
         at<short>(Tribes + group.id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
     }
     return true;
