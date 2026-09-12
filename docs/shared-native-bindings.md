@@ -236,3 +236,21 @@ Grace checks compare all 31 Legacy month settings and Loader's actual storage
 metadata. The Extreme grace runner does not execute a calendar; none of these
 checks claims active-army behavior, live multiplayer or save/replay acceptance.
 The additional fixtures required no production signature or layout change.
+
+## Shared main-executable uniqueness
+
+Source 0.0.4 uses `core.AOBScanUnique` when the framework provides it. Its existing
+cache/RPS owner checks the first two overlapping matches in the main executable's
+code. A rejection is final: the module never retries through a less restrictive
+scan. Stock UCP 3.0.7 keeps the existing cached AoB plus second-scan path, so this
+does not impose an unpublished development runtime on module testers.
+
+Inspected framework `1d78391` ([PR149](https://github.com/UnofficialCrusaderPatch/UnofficialCrusaderPatch3/pull/149))
+and RPS `e958409` ([PR16](https://github.com/gynt/RuntimePatchingSystem/pull/16)).
+The actual framework core/cache resolves all 64 AIC instruction contexts and 67
+resulting fields on all six reference images through a main-code, overlapping
+PE oracle. Lua 5.4/LuaJIT tests reject failed or invalid owner results without
+falling back. Legacy-path native component checks remain unchanged. This is
+component coverage; startup timings require the installed runtime and cannot be
+inferred from the private-image scanner. No private scanner, range parser or
+per-tick discovery was introduced.

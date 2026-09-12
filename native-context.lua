@@ -1,8 +1,14 @@
 local M = {}
 
--- Use UCP's cache for discovery; the bounded second scan rejects ambiguity.
+-- Prefer UCP's main-executable uniqueness owner when available. Stock 3.0.7
+-- retains its existing cached discovery and full-process ambiguity check.
 -- No address fallback or per-tick cache is maintained by the extension.
 function M.find(name, signature)
+  if type(core.AOBScanUnique)=='function' then
+    local site=core.AOBScanUnique(signature,'AIC Tactics: '..name)
+    assert(type(site)=='number' and site>0,'AIC Tactics: missing native '..name)
+    return site
+  end
   local ok, site = pcall(core.AOBScan, signature)
   assert(ok and type(site) == 'number' and site > 0, 'AIC Tactics: missing native '..name)
   local second = core.scanForAOB(signature, site + 1)
