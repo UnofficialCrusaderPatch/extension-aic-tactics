@@ -71,8 +71,8 @@ int buildingFor(int player, int unitType) {
 RecruitmentServices services() {
     RecruitmentServices result;
     result.units = reinterpret_cast<void*>(Units);
-    result.european = reinterpret_cast<RecruitFunction>(0x52E960);
-    result.nonEuropean = reinterpret_cast<RecruitFunction>(0x52EC10);
+    result.european = reinterpret_cast<RecruitFunction>(nativeBindings.recruitEuropean);
+    result.nonEuropean = reinterpret_cast<RecruitFunction>(nativeBindings.recruitNonEuropean);
     result.failureReason = reinterpret_cast<int*>(Units + 0x60C);
     result.requiredResource = reinterpret_cast<int*>(Units + 0x610);
     for (int i = 0; i < 8; ++i)
@@ -115,7 +115,7 @@ int moatVacancies(void* aic, int character, int player) {
     }
     if (size >= maximum) return 0;
     // Existing moat registry owner; at most once per recruitment opportunity.
-    if (reinterpret_cast<PlayerQuery>(0x500180)(reinterpret_cast<void*>(0x1A93208), player) <= 0) return 0;
+    if (reinterpret_cast<PlayerQuery>(nativeBindings.moatVacancies)(reinterpret_cast<void*>(nativeBindings.moat), player) <= 0) return 0;
     return maximum - size;
 }
 
@@ -408,10 +408,10 @@ void __cdecl countDefenseUnit(int player, int unitType) {
 }
 
 void __fastcall rangedSortie(void* aic, void*, int player) {
-    if (!active(player)) reinterpret_cast<PlayerAction>(0x4CD560)(aic, player);
+    if (!active(player)) reinterpret_cast<PlayerAction>(nativeBindings.rangedSortieNative)(aic, player);
 }
 void __fastcall meleeSortie(void* aic, void*, int player) {
-    if (!active(player)) reinterpret_cast<PlayerAction>(0x4CD690)(aic, player);
+    if (!active(player)) reinterpret_cast<PlayerAction>(nativeBindings.meleeSortieNative)(aic, player);
 }
 
 int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
@@ -466,7 +466,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         int attackerCount = 0;
         unsigned int mask = 0;
         __int64 defenseMaximum = aicValue(aic, character, 0x170);
-        if (memory<int>(0x1FE7D78) == 3 && memory<int>(0x1FE9CA4) == 1 && memory<int>(0x1FE9CAC) == 2)
+        if (memory<int>(nativeBindings.scenarioMode) == 3 && memory<int>(nativeBindings.scenarioCustom) == 1 && memory<int>(nativeBindings.scenarioMission) == 2)
             defenseMaximum = defenseMaximum * 4 / 3;
         if (playerValue(player, (nativeBindings.players + 0x38F0)) > 0) defenseMaximum *= 4;
         probe.defenseMaximum = defenseMaximum <= 0 ? 0

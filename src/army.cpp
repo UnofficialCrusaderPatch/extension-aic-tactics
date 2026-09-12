@@ -270,7 +270,7 @@ void completeReserveCensus()
 void __fastcall recruitWithReserve(void* aic, void*, int player)
 {
     if (!enabled(player) || !reserves[player].deployed || reserves[player].returning || reservePlayer) {
-        reinterpret_cast<PlayerAction>(0x4D3AE0)(aic, player);
+        reinterpret_cast<PlayerAction>(nativeBindings.recruitUpdate)(aic, player);
         return;
     }
     ReserveState& state = reserves[player];
@@ -297,7 +297,7 @@ void __fastcall recruitWithReserve(void* aic, void*, int player)
     field(player, (nativeBindings.players + 0x2BA4)) = 0;
     field(player, (nativeBindings.players + 0x3108)) = state.recruitCursor;
     reservePlayer = player;
-    reinterpret_cast<PlayerAction>(0x4D3AE0)(aic, player);
+    reinterpret_cast<PlayerAction>(nativeBindings.recruitUpdate)(aic, player);
     reservePlayer = 0;
     state.recruitCursor = field(player, (nativeBindings.players + 0x3108));
     field(player, (nativeBindings.players + 0x3108)) = savedCursor;

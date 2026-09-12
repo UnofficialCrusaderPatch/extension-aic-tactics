@@ -47,6 +47,17 @@ struct BindFixture {
         nativeBindings.relayRaidOrder = 0x5371E0;
         nativeBindings.mapRows = 0x2337300;
         nativeBindings.attackGroupSlots = 0xB3EC1C;
+        nativeBindings.recruitUpdate = 0x4D3AE0;
+        nativeBindings.rangedSortieNative = 0x4CD560;
+        nativeBindings.meleeSortieNative = 0x4CD690;
+        nativeBindings.recruitEuropean = 0x52E960;
+        nativeBindings.recruitNonEuropean = 0x52EC10;
+        nativeBindings.scenarioMode = 0x1FE7D78;
+        nativeBindings.scenarioCustom = 0x1FE9CA4;
+        nativeBindings.scenarioMission = 0x1FE9CAC;
+        nativeBindings.moat = 0x1A93208;
+        nativeBindings.moatVacancies = 0x500180;
+
     }
 } bindFixture;
 int cases;

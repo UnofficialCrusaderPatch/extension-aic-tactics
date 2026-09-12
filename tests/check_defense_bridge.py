@@ -23,9 +23,11 @@ p.add_argument('--legacy',type=Path,required=True)
 p.add_argument('--fasm',type=Path,required=True)
 p.add_argument('--output',type=Path,required=True)
 p.add_argument('--combat',action='store_true')
+p.add_argument('--variant',choices=['SHC','SHCE'],default='SHC')
 a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 raw=a.reference.read_bytes()
-assert hashlib.sha256(raw).hexdigest()=='3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a'
+assert hashlib.sha256(raw).hexdigest()=={'SHC':'3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a','SHCE':'55648e6b05d67d37a5773fe699bbb17a2d6ad4de1bb9dbded9a21caef82bd7fb'}[a.variant]
+assert not a.combat or a.variant=='SHC', 'Combat bindings still need porting'
 pe=pefile.PE(data=raw);uc=Uc(UC_ARCH_X86,UC_MODE_32)
 base=pe.OPTIONAL_HEADER.ImageBase
 uc.mem_map(base,(pe.OPTIONAL_HEADER.SizeOfImage+4095)&~4095)
@@ -53,19 +55,33 @@ def allocate(count):
     answer=allocation;allocation+=(count+15)&~15
     assert allocation<0x3060000
     return answer
-def scan(pattern):
+scan_count=0
+scan_log=[]
+def scan(pattern,start=None):
+    global scan_count
+    scan_count+=1
     expression=b''.join(b'.' if t=='?' else re.escape(bytes([int(t,16)])) for t in pattern.split())
-    matches=list(re.finditer(expression,raw,re.DOTALL));assert len(matches)==1,(pattern,len(matches))
-    return base+pe.get_rva_from_offset(matches[0].start())
+    # Read current executable sections so discovery sees Legacy's installed patches.
+    for section in pe.sections:
+        address=base+section.VirtualAddress
+        count=len(section.get_data())
+        low=max(address,start or base)
+        if low>=address+count:continue
+        match=re.search(expression,bytes(uc.mem_read(low,address+count-low)),re.DOTALL)
+        if match:
+            scan_log.append((pattern,start,low+match.start()))
+            return low+match.start()
+    return None
 g=lua.globals()
 g.utils=lua.table_from({'itob':itob})
-g.core=lua.table_from({'writeCode':write,'AOBScan':scan,'allocateCode':allocate,'allocate':allocate,
+g.core=lua.table_from({'writeCode':write,'AOBScan':scan,'scanForAOB':scan,'allocateCode':allocate,'allocate':allocate,
     'calculateCodeSize':size,'readInteger':get,'readByte':lambda address:uc.mem_read(address,1)[0],
     'getRelativeAddress':lambda address,target,offset:target-address+offset})
 lua.execute('core.relTo=function(target,offset)return function(address)return utils.itob(target-address+offset)end end')
 port=lua.execute(a.legacy.read_text());port.init(port,lua.table());port.enable(port,lua.table())
-original={site:bytes(uc.mem_read(site,6 if site==0x579A7C else 5)) for site in [0x579879,0x579A7C]}
-wall_hook=0x4D3E74+get(0x4D3E70);wall_counts=get(wall_hook+7)
+reset_site=port.ai_defense_reset_edit;count_site=port.ai_defense_count_edit
+original={reset_site:bytes(uc.mem_read(reset_site,5)),count_site:bytes(uc.mem_read(count_site,6))}
+wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_counts=get(wall_hook+7)
 assembly_count=0
 def assemble(source,symbols):
     global assembly_count
@@ -79,15 +95,58 @@ g.core.allocateAssembly=assemble
 g.root=Path(__file__).resolve().parents[1].as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
-package.loaded['native-bindings']={initialize=function()end} -- defense bridge only
+package.loaded['native-bindings']={initialize=function(native)
+  local game=require('native-layout').resolve()
+  for k,v in pairs(require('native-group-actions').resolve(game)) do game[k]=v end
+  for k,v in pairs(require('native-recruitment').resolve(game)) do game[k]=v end
+  native.game=game
+end} -- full production discovery; DLL storage writes checked by check_grace_native
 package.loaded['config.grace']={preflight=function()end}
 configFinal={}
 package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new()
-native.activateComposition();native.activateComposition()
-native.preflightComposition()
+
 ''')
+# Exercise every production context against absence and ambiguity. Captured
+# addresses only avoid repeating private-fixture scans for negative cases.
+recruitment_contexts=[item for item in scan_log if item[1] is None][-11:]
+assert len(recruitment_contexts)==11
+context_sites={pattern:address for pattern,_,address in recruitment_contexts}
+resolver=lua.eval("require('native-recruitment')")
+negative=0
+for pattern,_,address in recruitment_contexts:
+    for kind in ('absent','ambiguous'):
+        g.core.AOBScan=lambda pat: None if kind=='absent' and pat==pattern else context_sites[pat]
+        g.core.scanForAOB=lambda pat,start: 0x307F000 if kind=='ambiguous' and pat==pattern else None
+        try:resolver.resolve(g.native.game)
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError((kind,pattern))
+        negative+=1
+g.core.AOBScan=context_sites.__getitem__;g.core.scanForAOB=lambda *_:None
+# Decoded caller identity, roots, structure strides, cleanup branches and ABI.
+for index,offset in [(1,14),(1,19),(1,30),(1,46),(2,43),(3,18),(3,181),
+                     (3,269),(4,175),(5,20),(6,17),(7,15),(7,51),(8,12),(10,2)]:
+    target=recruitment_contexts[index][2]+offset
+    g.core.readInteger=lambda address: 0 if address==target else get(address)
+    try:resolver.resolve(g.native.game)
+    except Exception as error:assert 'AIC Tactics:' in str(error)
+    else:raise AssertionError(('operand',index,offset))
+    negative+=1
+g.core.readInteger=get;g.core.AOBScan=scan;g.core.scanForAOB=scan
+# Validate all bytes and operands of the unchanged owner's three trampolines.
+legacy_negative=0
+for site,length in [(wall_hook,16),(reset_site+5+get(reset_site+1),25),(count_site+5+get(count_site+1),40)]:
+    for offset in range(length):
+        old=bytes(uc.mem_read(site+offset,1));uc.mem_write(site+offset,bytes([old[0]^1]))
+        try:resolver.legacyCounter(g.native.game)
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError(('legacy byte',hex(site),offset))
+        finally:uc.mem_write(site+offset,old)
+        legacy_negative+=1
+scans_before=scan_count
+lua.execute('native.activateComposition();native.activateComposition();native.preflightComposition()')
+assert scan_count==scans_before, 'Repeated preflight must not scan'
 assert assembly_count==2
 wrapped={site:bytes(uc.mem_read(site,len(data))) for site,data in original.items()}
 registers=[UC_X86_REG_EAX,UC_X86_REG_EBX,UC_X86_REG_ECX,UC_X86_REG_EDX,
@@ -102,7 +161,7 @@ def spy(uc,address,size,user):
     uc.reg_write(UC_X86_REG_EIP,get(sp)&0xFFFFFFFF);uc.reg_write(UC_X86_REG_ESP,sp+4)
 uc.hook_add(UC_HOOK_CODE,spy)
 cases=0
-for site,end in [(0x579879,0x57987E),(0x579A7C,0x579A82)]:
+for site,end in [(reset_site,reset_site+5),(count_site,count_site+6)]:
  for player in range(1,9):
   for kind in [22,24,30,70,76]:
    for role in [1,4]:
@@ -110,20 +169,85 @@ for site,end in [(0x579879,0x57987E),(0x579A7C,0x579A82)]:
      results=[]
      for patch in [original,wrapped]:
       uc.mem_write(site,patch[site]);uc.ctl_remove_cache(site,site+6);calls.clear()
-      initial=[0x12345678,0x98765432,0xCC001101,0,0x1387F38,player,3,0x308F000,flags]
+      initial=[0x12345678,0x98765432,0xCC001101,0,g.native.game.units,player,3,0x308F000,flags]
       frame=b'unchanged caller frame'
       uc.mem_write(initial[7],frame)
-      uc.mem_write(0x1388976+3*0x490,struct.pack('<h',role))
-      uc.mem_write(0x13885DA+3*0x490,struct.pack('<h',kind))
+      uc.mem_write(g.native.game.unitRecords+0x42A+3*0x490,struct.pack('<h',role))
+      uc.mem_write(g.native.game.unitRecords+0x8E+3*0x490,struct.pack('<h',kind))
       for owner in range(9):put(wall_counts+owner*4,7)
       for reg,value in zip(registers,initial):uc.reg_write(reg,value)
       uc.emu_start(site,end,count=300)
       results.append(([uc.reg_read(reg) for reg in registers],bytes(uc.mem_read(wall_counts,36))))
       assert bytes(uc.mem_read(initial[7],len(frame)))==frame
-      assert calls==([] if patch is original else [('reset',)] if site==0x579879 else [('count',player,kind)]),(hex(site),patch is original,player,kind,calls,hex(uc.reg_read(UC_X86_REG_EIP)))
+      assert calls==([] if patch is original else [('reset',)] if site==reset_site else [('count',player,kind)]),(hex(site),patch is original,player,kind,calls,hex(uc.reg_read(UC_X86_REG_EIP)))
      assert results[0]==results[1],(site,player,kind,role,flags,results)
      cases+=1
-result={'cases':cases,'source':'actual native.lua wrappers and unchanged Legacy ai_defense.lua',
+# Exercise native thiscall owners on both actual executables, without rendering.
+game=g.native.game
+native_cases=0
+for player in range(1,9):
+    for fn in (game.rangedSortieNative,game.meleeSortieNative):
+        put(game.players+player*0x39F4+0x2300,0)
+        sp=0x308F000;put(sp,0x307F000);put(sp+4,player)
+        initial=[0x12345678,0x98765432,0x3050000,0,0x10203040,0x50607080,0x12344321,sp,0x202]
+        for reg,value in zip(registers,initial):uc.reg_write(reg,value)
+        uc.emu_start(fn,0x307F000,count=100)
+        assert uc.reg_read(UC_X86_REG_ESP)==sp+8
+        for i in (1,4,5,6):assert uc.reg_read(registers[i])==initial[i]
+        native_cases+=1
+    # Three queue records: available, already occupied, owned by another player.
+    for index,owner,tile,flags in [(0,player,1,0),(1,player,2,0x40000000),(15998,player%8+1,3,0)]:
+        record=game.moat+0x50088C+index*16
+        uc.mem_write(record,bytes([owner]));put(record-12,tile)
+        put(game.moat+0x165160+tile*4,flags)
+    sp=0x308F000;put(sp,0x307F000);put(sp+4,player)
+    uc.reg_write(UC_X86_REG_ESP,sp);uc.reg_write(UC_X86_REG_ECX,game.moat)
+    uc.emu_start(game.moatVacancies,0x307F000,count=300000)
+    assert uc.reg_read(UC_X86_REG_EAX)==1 and uc.reg_read(UC_X86_REG_ESP)==sp+8
+    native_cases+=1
+
+# Install the actual recruitment bridge after the unchanged Legacy census.
+native=g.native
+for name,address in {'legacyWallCounts':0x306F100,'recruitOpportunity':0x3070800,
+                     'rangedSortie':0x3070840,'meleeSortie':0x3070860}.items():native[name]=address
+g.core.writeInteger=put
+native.activate();native.activate()
+assert get(native.legacyWallCounts)==wall_counts
+assert scan_count==scans_before
+opportunity=game.recruitmentSites.opportunity
+handled=0;opportunity_calls=[]
+def opportunity_spy(machine,address,size,user):
+    if address!=native.recruitOpportunity:return
+    sp=machine.reg_read(UC_X86_REG_ESP)
+    opportunity_calls.append((get(sp+4),get(sp+8),get(sp+12)))
+    for register in registers[:7]:machine.reg_write(register,0xDEADBEEF)
+    machine.reg_write(UC_X86_REG_EAX,handled)
+    machine.reg_write(UC_X86_REG_EFLAGS,0x202)
+    machine.reg_write(UC_X86_REG_EIP,get(sp)&0xFFFFFFFF);machine.reg_write(UC_X86_REG_ESP,sp+4)
+uc.hook_add(UC_HOOK_CODE,opportunity_spy)
+opportunity_cases=0
+for player in range(1,9):
+    for flags in (0x202,0x247,0xA92):
+        for handled in (0,1):
+            initial=[0x12345678,0x98765432,0xCC001101,0x3050000,player*0x39F4,5,6,0x308F000,flags]
+            frame=bytes(range(64));uc.mem_write(initial[7],frame)
+            put(initial[7]+40,player);put(initial[7]+28,2)
+            frame=bytes(uc.mem_read(initial[7],64))
+            put(game.players+player*0x39F4+0x30F8,2)
+            for register,value in zip(registers,initial):uc.reg_write(register,value)
+            opportunity_calls.clear()
+            end=game.recruitmentSites.finished if handled else opportunity+6
+            uc.emu_start(opportunity,end,count=100)
+            expected=initial.copy()
+            if not handled:expected[0]=2
+            assert [uc.reg_read(reg) for reg in registers]==expected
+            assert bytes(uc.mem_read(initial[7],64))==frame
+            assert opportunity_calls==[(initial[3],player,2)]
+            opportunity_cases+=1
+
+result={'variant':a.variant,'cases':cases,'contexts':11,'negativeResolutionCases':negative,
+    'negativeLegacyTrampolineCases':legacy_negative,'repeatPreflightScans':0,
+    'nativeSortieAndMoatCases':native_cases,'opportunityBridgeCases':opportunity_cases,'source':'actual native.lua wrappers and unchanged Legacy ai_defense.lua',
     'legacySHA256':hashlib.sha256(a.legacy.read_bytes()).hexdigest(),
     'scope':'Original census effects, registers, flags, stack and added callback arguments; C++ calls replaced by ABI spies'}
 (a.output/'result.json').write_text(json.dumps(result,indent=2)+'\n')

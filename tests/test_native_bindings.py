@@ -14,7 +14,7 @@ def test_binding_contract_failure_does_not_write_native_memory(invalid):
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       local layout={version=1,address=10000,characters=16,stride=676}
-      local native={nativeBindingsSize=144,nativeBindings=20000}
+      local native={nativeBindingsSize=184,nativeBindings=20000}
       local game={gameTick=30000,rngState=40000,rngValue=40002,rngNext=50000,initialDefenseTicks=60000}
       package.loaded['config.grace']={resolveNative=function()return game end}
       modules={aicloader={getNativeAICLayout=function()return layout end}}

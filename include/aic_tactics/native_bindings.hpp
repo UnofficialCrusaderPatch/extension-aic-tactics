@@ -43,6 +43,17 @@ struct NativeBindings {
     unsigned int relayRaidOrder;
     unsigned int mapRows;
     unsigned int attackGroupSlots;
+    unsigned int recruitUpdate;
+    unsigned int rangedSortieNative;
+    unsigned int meleeSortieNative;
+    unsigned int recruitEuropean;
+    unsigned int recruitNonEuropean;
+    unsigned int scenarioMode;
+    unsigned int scenarioCustom;
+    unsigned int scenarioMission;
+    unsigned int moat;
+    unsigned int moatVacancies;
+
 };
 extern NativeBindings nativeBindings;
 int nativeRandom(void*);

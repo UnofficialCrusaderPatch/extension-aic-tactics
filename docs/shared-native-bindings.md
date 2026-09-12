@@ -20,7 +20,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 144-byte
+`native-bindings.lua` passes the resolved values into the DLL's 184-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -80,6 +80,29 @@ consumers. C++ no longer casts fixed addresses for these group actions/tables.
 `native-context.lua` shares the framework uniqueness/call checks across layout,
 group actions and recruitment; it adds no private scan cache or patch manager.
 
+## Recruitment and Legacy census composition
+
+`native-recruitment.lua` adds eleven contexts for the sortie functions, their
+scheduler, recruitment interval/opportunity, moat vacancy query and surviving
+Legacy defense-census instructions. The full native sortie bodies establish the
+AIC fields, role assignment and thiscall argument/cleanup convention. Both
+sorties must call the same acquisition and group owners. The moat recruitment
+and active-group callers must agree on the singleton and identified query.
+Scenario fields are decoded from recruitment's existing override predicate.
+
+Legacy's `ai_defense` keeps its counter and source. Its implementation allocates
+that counter privately and exports no accessor. AIC discovers the unmodified
+instructions following the three patches, validates their native callers/fields,
+then validates every trampoline instruction, shared counter operand and return
+destination before chaining. It also verifies its own installed chain identities.
+The framework AOB cache deliberately invalidates a signature whose bytes were
+patched; relying on a stale pre-Legacy cached address would be incorrect.
+
+`native.lua` now uses these resolved sites and operands for every recruitment
+patch and displaced instruction. It uses the existing framework assembly/write
+facilities; `core.detourCode` is a Lua callback boundary rather than the required
+native C++ callback ABI. No counter, scan cache or patch manager was introduced.
+
 Validation performed:
 
 - Actual SHC and Extreme instruction images resolve the complete context and
@@ -105,6 +128,15 @@ Validation performed:
   consumer evidence, separately from the original Extreme instruction tests.
 - Three additional save-state tests cover high IDs/cursors, rejection beyond
   the native boundary and index reconstruction using resolved roots/stride.
+- `tests/check_defense_bridge.py` runs unchanged Legacy Lua, production discovery
+  over the resulting patched image and actual AIC FASM wrappers on both fixtures.
+  Each passes 480 census equivalence cases, 48 opportunity-bridge cases, 24
+  native sortie/moat cases, 37 negative resolution/operand cases and 81 negative
+  Legacy trampoline-byte checks. Repeated preflights perform no scans. Sortie
+  cases cover the no-personality return path; these do not prove recruitment in
+  an active game. The classic combat-wrapper regression also passes 297 cases.
+- The actual interval wrapper passes 11,520 FASM/Unicorn cases covering explicit
+  Legacy interval fallback, opted-in intervals, registers, flags and caller stack.
 - Seventy-six AIC Python/Lua tests and forty Loader tests passed. The initial
   full AIC run lacked `AICLOADER_TEST_ROOT`; rerunning with the actual prerequisite
   checkout passed.
@@ -117,7 +149,7 @@ in test code. No new game, MP, replay or performance acceptance is claimed.
 Source version 0.0.3 requires Loader 1.1.4 and Protocol 1.1.1. No 0.0.3 tester
 bundle is published while the remaining native integration is incomplete.
 
-Remaining native work includes Lua hook discovery/Legacy composition, the other
+Remaining native work includes combat Lua hook discovery/Legacy composition, the other
 native function casts and data tables, and verification of every reused player
 field against all required executable variants. Pool discovery alone does not
 establish those capabilities or whole-game compatibility.
