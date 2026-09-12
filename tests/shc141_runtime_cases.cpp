@@ -70,6 +70,30 @@ void runRuntimeCases() {
             check(observations[player].sequence==sequence,"Native personality evaluated policy");
         }
     }
+    // Grace gates only offensive recruitment while the native defense quota is open.
+    for(int tickIndex=0;tickIndex<4;++tickIndex) {
+        const unsigned int ticks[4]={0,4799,4800,0x80000000U};
+        fixture(1,4,1000,17);
+        configurations[4].initialDefenseTicks=4800;
+        for(int strength=0;strength<3;++strength) {
+            configurations[4].baseRows[strength].values[SortieRole]=0;
+            configurations[4].baseRows[strength].values[AttackRole]=100;
+        }
+        at<int>(0x23FC8E8+4*0x2A4+0x288)=22;
+        at<unsigned int>(0x1FE7DA8)=ticks[tickIndex];
+        opportunity(1);
+        check(observations[1].probeTypes[AttackRole]==(tickIndex<2?0:22),"grace end boundary or unsigned clock differs");
+        check(observations[1].probeTypes[DefenseRole]==0,"grace overrode zero defense weight");
+        check(observations[1].purchaseResource==(tickIndex<2?0:17),"grace ordered gated attack equipment");
+        at<int>(0x115EEE0+0x39F4)=100;
+        opportunity(1);
+        check(observations[1].probeTypes[AttackRole]==22,"full defense did not release grace");
+    }
+    fixture(1,4,1000,17);
+    configurations[4].initialDefenseTicks=24000;
+    at<int>(0x1FE7DA8)=0;
+    opportunity(1);
+    check(observations[1].probeTypes[SortieRole]==22,"grace blocked sortie defense");
     fixture(1,4,0,17); opportunity(1);
     check(observations[1].probeReasons[SortieRole]==1,"gold restriction lost");
     check(observations[1].purchaseResource==0,"gold failure ordered equipment");

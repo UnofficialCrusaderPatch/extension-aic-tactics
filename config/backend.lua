@@ -1,11 +1,11 @@
 local M = {}
 
 function M.new(native)
-  assert(native.configurationSize == 284, 'AIC Tactics: unsupported configuration ABI')
+  assert(native.configurationSize == 288, 'AIC Tactics: unsupported configuration ABI')
   local function readRecord(ai)
     local result = {}
     local address = native.configuration + ai * native.configurationSize
-    for index = 0, 70 do result[index + 1] = core.readInteger(address + index * 4) end
+    for index = 0, 71 do result[index + 1] = core.readInteger(address + index * 4) end
     return result
   end
   local function writeRecord(ai, words)
@@ -18,7 +18,7 @@ function M.new(native)
   end
   return {prepare = function(ai, authored, compiled)
     assert(ai >= 1 and ai <= 16 and ai == math.floor(ai), 'Invalid AI character')
-    assert(compiled.schemaVersion == 2, 'Unsupported recruitment schema')
+    assert(compiled.schemaVersion == 3, 'Unsupported recruitment schema')
     local previous = readRecord(ai)
     local changesPolicy = compiled.mode ~= 0 or previous[1] ~= 0
     if changesPolicy then admission() end
@@ -41,6 +41,7 @@ function M.new(native)
       end
     end
     words[#words + 1] = compiled.defenseComposition
+    words[#words + 1] = compiled.initialDefenseTicks
     return {commit = function()
       if changesPolicy then admission() end
       if compiled.mode == 1 then native.activate() end

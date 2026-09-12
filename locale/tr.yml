@@ -1,2 +1,4 @@
 legacyRecruitInterval: Legacy asker alım hızını koru
 legacyRecruitInterval_descr: 'Legacy ai_recruitinterval seçeneğinin yerine geçer: Native kişiliklerde aralık 1 olur. WeightedRoles, AIC aralıklarını kullanmaya devam eder. Legacy seçeneğini kapatın; önceden kapalıysa bu seçeneği de kapalı bırakın.'
+nativeInitialDefenseMonths: Native yapay zekâlar için başlangıç savunma süresi
+nativeInitialDefenseMonths_descr: '0–30 ay; varsayılan 6. Legacy başlangıç süresini buraya kopyalayıp o Legacy seçeneğini kapatın. WeightedRoles, RecruitInitialDefenseMonths değerini kullanır.'

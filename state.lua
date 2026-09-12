@@ -1,7 +1,7 @@
 local M = {}
 local path = 'recruitment-state.bin'
-local header = 'AICTACT\002'
-local configurationBytes, aicBytes, censusWords = 16 * 284, 16 * 676, 9 * 80
+local header = 'AICTACT\003'
+local configurationBytes, aicBytes, censusWords = 16 * 288, 16 * 676, 9 * 80
 
 local function word(value)
   if value < 0 then value = value + 4294967296 end
@@ -19,16 +19,16 @@ local function number(bytes, offset)
 end
 
 function M.new(native, legacyInterval)
-  assert(native.configurationSize == 284, 'AIC Tactics: incompatible save ABI')
+  assert(native.configurationSize == 288, 'AIC Tactics: incompatible save ABI')
   local function active()
     for ai = 1, 16 do
-      if core.readInteger(native.configuration + ai * 284) ~= 0 then return true end
+      if core.readInteger(native.configuration + ai * 288) ~= 0 then return true end
     end
     return false
   end
   local function identity()
-    return header .. word(legacyInterval and 1 or 0)
-      .. core.readString(native.configuration + 284, configurationBytes)
+    return header .. word(legacyInterval and 1 or 0) .. word(core.readInteger(0x4D34B1))
+      .. core.readString(native.configuration + 288, configurationBytes)
       .. core.readString(0x23FC8E8 + 676, aicBytes)
   end
   local function capture()

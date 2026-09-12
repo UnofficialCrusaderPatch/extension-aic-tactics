@@ -18,7 +18,12 @@ The newer composition branch requires Map Extensions 1.0.0 and includes
 [PreserveSlots and saved recruitment state](defense-composition.md); these changes
 have not yet had their own game acceptance. Start a new match for their tests.
 
-EquipmentSurplus is rejected. Custom initial grace, next-wave
+This branch also implements [per-AI initial defense grace](recruitment-grace.md).
+For its tests, turn Legacy `ai_recruitstate_initialtimer` OFF and migrate the old
+global duration to `nativeInitialDefenseMonths` if needed. The earlier linked
+sortie artifact predates these additions.
+
+EquipmentSurplus is rejected. Next-wave
 reserves, opponent policies/retaliation and split raids are not implemented by
 this runtime yet. Do not use this build for multiplayer or historical recordings:
 configuration fingerprints and the shared save/replay state contract remain open.

@@ -2,7 +2,7 @@ local M = {}
 
 function M.new()
   local native = require('aicTactics.dll')
-  assert(type(native) == 'table' and native.configurationSize == 284,
+  assert(type(native) == 'table' and native.configurationSize == 288,
     'AIC Tactics: incompatible native library')
   local installed = false
   local wallCounter
@@ -45,6 +45,7 @@ finished:
     core.writeCode(0x4D3B41, {0xE9, intervalHook - 0x4D3B46, 0x90, 0x90})
   end
   function native.preflight()
+  require('config.grace').preflight()
   if installed then return end
   -- This adapter deliberately admits only the inspected SHC 1.41 image layout.
   -- Check every patched site before loading the DLL or making a patch.
