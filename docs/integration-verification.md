@@ -36,7 +36,7 @@ Dependent source checkpoints:
 
 - AIC Loader: `24ea47c20f62082f8a1b06969089898a8285add9`.
 - Map Extensions required-state API: `04449b7f7b38dccf52e376a5fe62cc230fa5f596`.
-- Recorder required-state capture/checkpoints: `615e54c1a3e019af4d3b6f016e9c5d382ce392a2`.
+- Recorder required-state capture/checkpoints: `7b6217fe256dacd8cc02e4ff1f67c67c96c2ed46` (0.50.5 preview).
 - Protocol admission: `a6d940357432bbd63b87bbb26e6e67d973090eb8`.
 - Unchanged Chat: `8f0c58a52cdc3aa5bca2cd4fd731ad1fcf1b9921`.
 
@@ -73,6 +73,24 @@ Saving a replay copy exposed Recorder's rejection of native observer slot zero.
 Recorder 615e54c accepts that slot only for commandless single-player recordings;
 its full suite passes 410 tests and 2,386 subtests, with one skip. This correction
 still needs native save/playback verification. Both test games closed normally.
+
+Native loading of that starting save in PID26204 restored the same roster and
+advanced to tick 2,207, but the older Recorder did not start recording. Refreshing
+the existing Recorder owner's branch found its already-implemented fix 237570a:
+the native load-return callback must inspect requestedView, because currentView
+still refers to the load dialog. Recorder 7b6217f now includes owner 02014385,
+preserving native retained-boundary memory, compact 1,024-tick release checks,
+64-tick diagnostic checks and snapshot seeking. Its merged full suite passed
+477 tests/3,189 subtests with one skip; two additional integration regressions
+passed in a 59-test focused run. Initial and frozen worlds share required-state
+export. This updated Recorder has not yet passed a fresh native AIC replay run.
+
+Review chain: [Map Extensions PR3](https://github.com/gynt/ucp-extension-map-extensions/pull/3),
+[Protocol PR3](https://github.com/gynt/ucp-extension-protocol/pull/3), and
+[Recorder stacked PR3](https://github.com/Krarilotus/ucp_recorder/pull/3), based on
+the existing upstream Recorder PR46 owner. AIC integration is
+[PR17](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/pull/17),
+following focused recruitment completion PRs13–16. All remain drafts.
 
 Still required: actual multiplayer content/config admission, actual new-policy
 games and memory evidence, two complete reserve cycles, distinct/no-path raid
