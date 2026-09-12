@@ -5,6 +5,8 @@
 - `RecruitPolicy`：`Native`（默认）沿用原有招募方式。`WeightedRoles` 在防御、袭扰、主力军队和出城迎敌之间分配招募。
 - `RecruitProbSortieDefault`、`RecruitProbSortieWeak`、`RecruitProbSortieStrong`：AI 处于普通、较弱和较强状态时的出击权重。取 **0–100** 的整数，默认 **0**。与现有防御、袭扰和进攻权重相加，每档必须为 **100**。需要 `WeightedRoles`；兵种列表、招募间隔和配额继续生效。
 - `RecruitConditions`：最多 **8** 条按顺序匹配的规则，默认为空。第一条匹配规则替代当前实力档位的权重。每条规则包含 `When` 和总和为 100 的四个权重：`Defense`、`Raid`、`Attack`、`Sortie`。需要 `WeightedRoles`。
+- `DefRecruitComposition`：`Native`（默认）沿用原有行为。`PreserveSlots` 按 `DefUnit1..8` 的条目保留兵种份额；重复条目会增加该兵种的份额。缺少装备时，相应名额保持空缺。需要 `WeightedRoles`。
+- `RecruitInitialDefenseMonths`：**0–30** 个月，默认 **6**。在此期间，若防御兵力未满配额，暂停招募袭扰部队和主力军。仍可招募出击部队；权重为 0 的角色仍不招募。**0** 关闭等待期。需要 `WeightedRoles`。
 
 `When` 可检查 `Strength`（`Default`、`Weak`、`Strong`）、`HomeUnderThreat`（基地受威胁）、`AttackActive`（进攻进行中）、`DefenseIncomplete`（防御兵力未补齐）和 `EquipmentSurplus`（有多余装备）。所有已填写条件必须匹配；`true` 要求条件成立，`false` 要求不成立。空的 `When` 始终匹配。
 
