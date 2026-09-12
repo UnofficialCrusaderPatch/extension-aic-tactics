@@ -63,10 +63,10 @@ jobs:
           path: tests/deps/chat
           persist-credentials: false
       - if: github.event_name == 'workflow_dispatch'
-        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --output build/package/aic-tactics-combat-test.zip
+        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --module-directory build/package/modules --output build/package/aic-tactics-combat-test.zip
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
           name: aic-tactics-combat-test
-          path: build/package/aic-tactics-combat-test.zip
+          path: build/package/
           retention-days: 21

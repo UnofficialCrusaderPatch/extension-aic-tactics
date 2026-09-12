@@ -1,8 +1,15 @@
 # AIC Tactics integration testing
 
-Extract the integration ZIP into an isolated SHC 1.41 installation with the UCP development runtime, then enable the included AIC Loader 1.1.3, Map Extensions 1.1.0, Protocol 1.1.0, Chat 1.0.0 and AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
+Copy `aic-tactics-0.0.1.zip` and the supplied dependency module ZIPs into `ucp/modules` without unpacking them, reopen the GUI, and enable AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
 Merge one example fragment into the `aic` object of a copied personality and start a fresh process on the eight-player Green Haven spectator fixture, keeping neighbouring allied pairs and Vanilla Interpretation Castles.
-Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; use the dependent recorder build for saved continuation and replay checks, and keep native memory/UID evidence for every claimed result.
+Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; Recorder 0.50.5 is optional for recording/playback checks and its ZIP also stays zipped.
+
+The optional all-in-one download is an outer bundle: copy the ZIPs from its
+`ucp/modules` directory into the game's `ucp/modules`. Do not unpack those inner
+ZIPs or put the outer bundle itself in `ucp/modules`. Replace mistakenly extracted
+folders for AIC Tactics, AIC Loader, Map Extensions, Protocol and Chat with their
+module ZIPs. These unsigned previews work with testers' existing security-off
+runtime. Signing and store release are separate from this packaging correction.
 
 The current source integrates all four subsystems, required saved state and
 checkpoint digests. Its MSVC2005 build and component/native-layout checks pass;
