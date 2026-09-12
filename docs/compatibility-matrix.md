@@ -1,8 +1,10 @@
 # Compatibility and migration
 
-The table distinguishes the code paths from acceptance evidence. The integrated
-combat branch has not yet been built or tested; earlier recruitment checks apply
-only to their recorded revisions. Fixed work limits do not establish performance.
+The table distinguishes code paths from acceptance evidence. The integrated
+preview has SHC startup and limited gameplay evidence at recorded revisions;
+full behavior acceptance remains incomplete. It does not support Extreme.
+See the [native integration audit](native-integration-audit.md) for outstanding
+bindings and layouts. Fixed work limits do not establish performance.
 
 | Original control | Confirmed native meaning | Status / replacement | Activation and precedence | Defaults / conversion | Get, set, reset | Legacy requirement | Evidence / remaining acceptance |
 | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -1,5 +1,6 @@
 """Deterministic UCP module ZIPs, with module contents at the archive root."""
 import io
+import re
 import zipfile
 
 
@@ -27,5 +28,10 @@ def package_modules(files):
     for module, members in sorted(modules.items()):
         if not {'definition.yml', 'init.lua'} <= members.keys():
             raise ValueError('Incomplete module: ' + module)
+        definition = members['definition.yml'].decode('utf-8-sig')
+        name = re.search(r'^name: ([\w-]+)\s*$', definition, re.M)
+        version = re.search(r'^version: (\d+\.\d+\.\d+)\s*$', definition, re.M)
+        if not name or not version or module != name[1] + '-' + version[1]:
+            raise ValueError('Module filename disagrees with its definition: ' + module)
         bundle['ucp/modules/' + module + '.zip'] = archive_bytes(members)
     return bundle

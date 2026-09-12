@@ -76,7 +76,7 @@ if hashlib.sha256(map_base).hexdigest() != map_base_sha:
 import io
 with zipfile.ZipFile(io.BytesIO(map_base)) as archive:
     map_dll = archive.read('luamemzip.dll')
-map_prefix = 'ucp/modules/map-extensions-1.1.0/'
+map_prefix = 'ucp/modules/' + module_name(a.map_extensions, 'map-extensions') + '/'
 files[map_prefix+'luamemzip.dll'] = map_dll
 for path in sorted(a.map_extensions.glob('*.lua')):
     files[map_prefix+path.name] = path.read_bytes()
@@ -86,8 +86,8 @@ for relative in ['definition.yml','LICENSE']:
     files[map_prefix+relative] = (a.map_extensions/relative).read_bytes()
 for path in sorted((a.map_extensions/'locale').glob('*')):
     if path.is_file(): files[map_prefix+'locale/'+path.name] = path.read_bytes()
-for checkout,name,version in [(a.protocol,'protocol','1.1.0'),(a.chat,'chat','1.0.0')]:
-    prefix='ucp/modules/'+name+'-'+version+'/'
+for checkout,name in [(a.protocol,'protocol'),(a.chat,'chat')]:
+    prefix='ucp/modules/'+module_name(checkout, name)+'/'
     for path in sorted(checkout.rglob('*')):
         relative=path.relative_to(checkout)
         if not path.is_file() or any(part.startswith('.') or part in ('build','tests','docs') for part in relative.parts):
