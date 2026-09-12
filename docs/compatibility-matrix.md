@@ -36,7 +36,7 @@ Previously authored new values remain stored but inactive; do not re-author thei
 mode-specific fields in the same Native update. Whole-personality reset clears them.
 
 When any personality opts in, the match lock covers all AIC updates, including
-Native neighbours. Pure Native sessions keep the original loader lifecycle.
+Native neighbours. Pure Native single-player sessions keep the original loader lifecycle.
 This prevents mixed matches from bypassing the lock through an untouched AI.
 
 Native-only saves do not declare AIC Tactics as required. Its optional Native
@@ -46,5 +46,7 @@ package/AIC identities. Old Native saves without policy state may initialize onl
 Native behavior. Existing policy saves/recordings need their original artifacts;
 there is no implicit upgrade, downgrade or live army conversion. A plain game or an
 older Map Extensions reader cannot acquire new validation retroactively; loading
-new-policy saves through those readers is unsupported. The complete release still
-needs the existing framework/MP admission owner to reject mismatched peers before play.
+new-policy saves through those readers is unsupported. Protocol 1.1.0's admission
+prerequisite compares full content/configuration identities before the native
+host Start path. Once that exchange begins, all AIC edits require a fresh process,
+including Native-only multiplayer. Physical-peer acceptance remains outstanding.

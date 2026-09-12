@@ -12,6 +12,14 @@ on:
         description: Full commit SHA of the Map Extensions state prerequisite
         required: true
         type: string
+      protocol_repository:
+        description: Repository containing the Protocol admission prerequisite
+        required: true
+        type: string
+      protocol_ref:
+        description: Full commit SHA of the Protocol admission prerequisite
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -41,7 +49,21 @@ jobs:
           path: tests/deps/map-extensions
           persist-credentials: false
       - if: github.event_name == 'workflow_dispatch'
-        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --output build/package/aic-tactics-combat-test.zip
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.protocol_repository }}
+          ref: ${{ inputs.protocol_ref }}
+          path: tests/deps/protocol
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: gynt/ucp-extension-chat
+          ref: 8f0c58a52cdc3aa5bca2cd4fd731ad1fcf1b9921
+          path: tests/deps/chat
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --output build/package/aic-tactics-combat-test.zip
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:

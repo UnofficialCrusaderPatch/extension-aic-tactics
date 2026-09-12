@@ -37,7 +37,8 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "isReserveUnit", "recruitWithReserve", "reserveRecruitType", "reserveGroupOwner", "reserveGroupUID",
         "raidStates", "raidStateSize", "raidGroupCensus", "raidUnitPower", "raidStaticDefenses",
         "raidBuildingCensusTick", "raidBuildingCensusValid", "resetRaidBuildingCensus",
-        "countRaidBuilding", "completeRaidBuildingCensus", "integrityDigest", "captureIntegrity"};
+        "countRaidBuilding", "completeRaidBuildingCensus", "integrityDigest", "captureIntegrity",
+        "observeIntegrityBoundary", "captureBoundaryIntegrity"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
@@ -68,7 +69,8 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(raidStaticDefenses), reinterpret_cast<unsigned int>(&raidBuildingCensusTick),
         reinterpret_cast<unsigned int>(&raidBuildingCensusValid), reinterpret_cast<unsigned int>(&resetRaidBuildingCensus),
         reinterpret_cast<unsigned int>(&countRaidBuilding), reinterpret_cast<unsigned int>(&completeRaidBuildingCensus),
-        reinterpret_cast<unsigned int>(integrityDigest), reinterpret_cast<unsigned int>(&captureIntegrity)};
+        reinterpret_cast<unsigned int>(integrityDigest), reinterpret_cast<unsigned int>(&captureIntegrity),
+        reinterpret_cast<unsigned int>(&observeIntegrityBoundary), reinterpret_cast<unsigned int>(&captureBoundaryIntegrity)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);

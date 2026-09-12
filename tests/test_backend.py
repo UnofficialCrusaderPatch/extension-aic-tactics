@@ -112,6 +112,18 @@ def test_native_only_updates_keep_existing_loader_lifecycle():
     ''')
 
 
+def test_multiplayer_freeze_also_blocks_native_only_updates():
+    backend().execute('''
+      local operation=prepare(2,{})
+      assert(not backend.multiplayerLocked())
+      backend.freezeMultiplayer()
+      assert(backend.multiplayerLocked())
+      assert(not pcall(operation.commit))
+      assert(not pcall(prepare,3,{}))
+      assert(next(memory)==nil)
+    ''')
+
+
 def test_preparation_retains_authored_default_and_compiles_stable_commitment():
     backend().execute('''
       local authored, compiled=schema.prepare(nil,{AttackPreparation='DuringAttack'},function()return 0 end,false)

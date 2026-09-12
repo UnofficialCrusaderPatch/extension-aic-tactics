@@ -14,6 +14,7 @@ p.add_argument('--reference', type=Path, required=True)
 p.add_argument('--test-exe', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--compiler', type=Path, required=True)
+p.add_argument('--benchmark-integrity', action='store_true')
 a = p.parse_args()
 raw = a.reference.read_bytes()
 digest = hashlib.sha256(raw).hexdigest()
@@ -27,7 +28,9 @@ for section in pe.sections:
     image[start:start + section.SizeOfRawData] = section.get_data()
 flat = a.output / 'private-shc141-image.bin'
 flat.write_bytes(image)
-result = subprocess.run([str(a.test_exe.resolve()), str(flat.resolve())], capture_output=True, text=True)
+command=[str(a.test_exe.resolve()), str(flat.resolve())]
+if a.benchmark_integrity: command.append('--benchmark-integrity')
+result = subprocess.run(command, capture_output=True, text=True)
 record = {'reference': str(a.reference.resolve()), 'sha256': digest,
           'compiler': str(a.compiler.resolve()),
           'compiler_sha256': hashlib.sha256(a.compiler.read_bytes()).hexdigest(),
@@ -44,7 +47,7 @@ if 'runtime' in a.test_exe.name:
         for source in sorted((root/folder).glob(pattern)):
             record['sources'][source.relative_to(root).as_posix()] = hashlib.sha256(source.read_bytes()).hexdigest()
     record['sources']['tests/build_runtime_tests.ps1'] = hashlib.sha256((root/'tests/build_runtime_tests.ps1').read_bytes()).hexdigest()
-(a.output / 'probe-result.json').write_text(json.dumps(record, indent=2) + '\n')
+(a.output / ('integrity-timing.json' if a.benchmark_integrity else 'probe-result.json')).write_text(json.dumps(record, indent=2) + '\n')
 print(result.stdout, end='')
 print(result.stderr, end='')
 raise SystemExit(result.returncode)

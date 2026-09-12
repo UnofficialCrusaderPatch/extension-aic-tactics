@@ -1,6 +1,7 @@
 local M = {}
 
 function M.new(native)
+  local multiplayerLocked=false
   assert(native.configurationSize == 344, 'AIC Tactics: unsupported configuration ABI')
   local function readRecord(ai)
     local result = {}
@@ -13,7 +14,7 @@ function M.new(native)
     for index = 1, #words do core.writeInteger(address + (index - 1) * 4, words[index]) end
   end
   local function admission()
-    assert(core.readInteger(native.configurationLocked) == 0 and core.readInteger(0x1FE7DA8) == 0,
+    assert(not multiplayerLocked and core.readInteger(native.configurationLocked) == 0 and core.readInteger(0x1FE7DA8) == 0,
       'AIC Tactics: personality changes require a fresh game process')
   end
   local function anyPolicyActive()
@@ -25,7 +26,9 @@ function M.new(native)
     end
     return false
   end
-  return {prepare = function(ai, authored, envelope)
+  return {freezeMultiplayer = function() multiplayerLocked=true end,
+    multiplayerLocked = function() return multiplayerLocked end,
+    prepare = function(ai, authored, envelope)
     assert(ai >= 1 and ai <= 16 and ai == math.floor(ai), 'Invalid AI character')
     assert(envelope.schemaVersion == 4, 'Unsupported personality schema')
     local compiled, targeting = envelope.recruitment, envelope.targeting
@@ -37,7 +40,7 @@ function M.new(native)
       or previous[73] ~= 0 or previous[74] ~= 0 or previous[75] ~= 0
       or envelope.preparation ~= 0 or previous[80] ~= 0
       or envelope.raids[1] ~= 0 or previous[81] ~= 0
-    if changesPolicy or anyPolicyActive() then admission() end
+    if multiplayerLocked or changesPolicy or anyPolicyActive() then admission() end
     if compiled.mode == 1 then native.preflight() end
     if compiled.mode == 1 and compiled.defenseComposition == 1 then native.preflightComposition() end
     local needsCombat = targeting.policy ~= 0 or targeting.commitment ~= 0 or targeting.activation ~= 0
@@ -72,7 +75,7 @@ function M.new(native)
     words[#words + 1] = envelope.preparation
     for _, value in ipairs(envelope.raids) do words[#words + 1] = value end
     return {commit = function()
-      if changesPolicy or anyPolicyActive() then admission() end
+      if multiplayerLocked or changesPolicy or anyPolicyActive() then admission() end
       if compiled.mode == 1 then native.activate() end
       if compiled.mode == 1 and compiled.defenseComposition == 1 then native.activateComposition() end
       if needsCombat then native.activateCombat() end

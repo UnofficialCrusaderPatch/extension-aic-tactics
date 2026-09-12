@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
+#include <windows.h>
 #include "aic_tactics/runtime.hpp"
 using namespace AicTactics;
 using namespace AicTactics::SHC141;
@@ -121,8 +123,12 @@ void runCombatCases() {
     captureIntegrity(0); const unsigned int first=integrityDigest[0], second=integrityDigest[1];
     captureIntegrity(0);
     check(first==integrityDigest[0] && second==integrityDigest[1],"observation changed digest");
+    observeIntegrityBoundary(0); captureBoundaryIntegrity();
+    check(first==integrityDigest[0] && second==integrityDigest[1],"boundary snapshot digest differs from live state");
     raidStates[1].retargetPending=15; captureIntegrity(0);
     check(first!=integrityDigest[0] || second!=integrityDigest[1],"pending raid decision missing from digest");
+    captureBoundaryIntegrity();
+    check(first==integrityDigest[0] && second==integrityDigest[1],"ending observation changed with the live world");
     for (int player=1;player<=8;++player) {
         fixture(); configurations[player].preparation=PrepareDuringAttack;
         const int source=1250-player;
@@ -156,4 +162,40 @@ void runCombatCases() {
             "continued handover replaced its active army group");
     }
     std::printf("%d combat/reserve/raid native-layout checks passed; no running-game acceptance\n",checks);
+}
+
+void runIntegrityBenchmark()
+{
+    LARGE_INTEGER frequency,begin,end;
+    check(QueryPerformanceFrequency(&frequency)!=0,"performance counter unavailable");
+    const int Samples=1001, Batch=32;
+    double elapsed[3][Samples];
+    volatile unsigned int baseline=0;
+    // Nonzero deterministic bytes prevent a zero-state-only benchmark. No game
+    // routine consumes this synthetic observation fixture.
+    std::memset(raidUnitPower,0x35,sizeof(raidUnitPower));
+    std::memset(raidStaticDefenses,0x72,sizeof(raidStaticDefenses));
+    for (int warm=0;warm<100;++warm) observeIntegrityBoundary(0);
+    for (int sample=0;sample<Samples;++sample) {
+        for (int step=0;step<3;++step) {
+            const int kind=(sample+step)%3;
+            QueryPerformanceCounter(&begin);
+            for (int repeat=0;repeat<Batch;++repeat) {
+                if (kind==0) ++baseline;
+                else if (kind==1) observeIntegrityBoundary(0);
+                else captureIntegrity(0);
+            }
+            QueryPerformanceCounter(&end);
+            elapsed[kind][sample]=static_cast<double>(end.QuadPart-begin.QuadPart)
+                * 1000000.0 / static_cast<double>(frequency.QuadPart) / Batch;
+        }
+    }
+    const char* names[]={"empty_loop","boundary_copy","live_digest"};
+    std::printf("{\"scope\":\"Cache-warm native component timing; excludes Lua, recorder, simulation and full-match overhead\",\"samples\":%d,\"batch\":%d,\"microseconds\":{",Samples,Batch);
+    for (int kind=0;kind<3;++kind) {
+        std::sort(elapsed[kind],elapsed[kind]+Samples);
+        std::printf("%s\"%s\":{\"median\":%.6f,\"p95\":%.6f,\"p99\":%.6f,\"max\":%.6f}",
+            kind ? "," : "",names[kind],elapsed[kind][500],elapsed[kind][950],elapsed[kind][990],elapsed[kind][1000]);
+    }
+    std::printf("}}\n");
 }

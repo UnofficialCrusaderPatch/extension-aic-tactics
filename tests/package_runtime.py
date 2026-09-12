@@ -11,11 +11,13 @@ p = argparse.ArgumentParser()
 p.add_argument('--dll', type=Path, required=True)
 p.add_argument('--loader', type=Path, required=True)
 p.add_argument('--map-extensions', type=Path, required=True)
+p.add_argument('--protocol', type=Path, required=True)
+p.add_argument('--chat', type=Path, required=True)
 p.add_argument('--map-base-zip', type=Path)
 p.add_argument('--output', type=Path, required=True)
 a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
-for checkout in [root, a.loader, a.map_extensions]:
+for checkout in [root, a.loader, a.map_extensions, a.protocol, a.chat]:
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=checkout,text=True).strip():
         raise SystemExit('Commit source changes before packaging: ' + str(checkout))
 files = {}
@@ -70,9 +72,18 @@ for relative in ['definition.yml','LICENSE']:
     files[map_prefix+relative] = (a.map_extensions/relative).read_bytes()
 for path in sorted((a.map_extensions/'locale').glob('*')):
     if path.is_file(): files[map_prefix+'locale/'+path.name] = path.read_bytes()
+for checkout,name,version in [(a.protocol,'protocol','1.1.0'),(a.chat,'chat','1.0.0')]:
+    prefix='ucp/modules/'+name+'-'+version+'/'
+    for path in sorted(checkout.rglob('*')):
+        relative=path.relative_to(checkout)
+        if not path.is_file() or any(part.startswith('.') or part in ('build','tests','docs') for part in relative.parts):
+            continue
+        if path.suffix=='.lua' or relative.parts[0]=='locale' or relative.as_posix() in ('definition.yml','options.yml','LICENSE'):
+            files[prefix+relative.as_posix()]=path.read_bytes()
 files['AIC-TACTICS-COMBAT.md'] = (root/'docs/combat-integration.md').read_bytes()
 files['AIC-TACTICS-COMPATIBILITY.md'] = (root/'docs/compatibility-matrix.md').read_bytes()
 files['AIC-TACTICS-VERIFICATION.md'] = (root/'docs/integration-verification.md').read_bytes()
+files['AIC-TACTICS-INTEGRITY-TIMING.md'] = (root/'docs/integrity-performance.md').read_bytes()
 files['DEPENDENCY-SOURCES.md'] = (root/'docs/dependency-sources.md').read_bytes()
 for path in sorted((root/'examples').rglob('*')):
     if path.is_file(): files['examples/'+path.relative_to(root/'examples').as_posix()] = path.read_bytes()
@@ -87,6 +98,8 @@ files['sortie-test-aic-fragment.json'] = json.dumps({'RecruitPolicy':'WeightedRo
 manifest = {'moduleSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
     'loaderSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.loader,text=True).strip(),
     'mapStateSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.map_extensions,text=True).strip(),
+    'protocolSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.protocol,text=True).strip(),
+    'chatSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.chat,text=True).strip(),
     'mapRuntimeSource':{'url':map_base_url,'sha256':map_base_sha,'dllSha256':hashlib.sha256(map_dll).hexdigest()},
     'scope':'Development AIC Tactics integration; acceptance status is recorded separately',
     'sha256':{name:hashlib.sha256(data).hexdigest() for name,data in files.items()}}

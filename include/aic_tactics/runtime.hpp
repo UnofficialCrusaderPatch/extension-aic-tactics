@@ -56,6 +56,8 @@ extern unsigned int defenseCensusTick;
 extern int defenseCensusValid;
 extern unsigned int integrityDigest[2];
 void __cdecl captureIntegrity(int legacyInterval);
+void __cdecl observeIntegrityBoundary(int legacyInterval);
+void __cdecl captureBoundaryIntegrity();
 void __cdecl resetDefenseCensus();
 void __cdecl countDefenseUnit(int player, int unitType);
 void __cdecl invalidateDefenseCensus();

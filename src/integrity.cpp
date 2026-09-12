@@ -7,6 +7,19 @@ namespace SHC141 {
 unsigned int integrityDigest[2];
 
 namespace {
+// Observation only: never used by the simulation or serialized as game state.
+// A fixed memcpy snapshot preserves the final observed replay boundary without
+// running the word digest on every tick. The sink's exact size is checked below.
+unsigned int boundaryWords[32768];
+unsigned int boundaryCount;
+struct Boundary {
+    void word(unsigned int value) { boundaryWords[boundaryCount++] = value; }
+    void block(const void* data, unsigned int bytes) {
+        word(bytes);
+        std::memcpy(boundaryWords + boundaryCount, data, bytes);
+        boundaryCount += bytes / 4;
+    }
+};
 struct Digest {
     unsigned int first;
     unsigned int second;
@@ -25,13 +38,8 @@ struct Digest {
         }
     }
 };
-}
-
-// Observational, allocation-free checkpoint of the explicitly serialized words.
-// This detects simulation divergence; package authentication uses SHA256 instead.
-void __cdecl captureIntegrity(int legacyInterval)
+template<class Sink> void visitIntegrity(Sink& digest, int legacyInterval)
 {
-    Digest digest = {2166136261U, 0x27D4EB2FU};
     digest.word(1); // aic-tactics-word-digest-v1
     digest.word(legacyInterval ? 1U : 0U);
     digest.word(*reinterpret_cast<const unsigned int*>(0x4D34B1));
@@ -54,6 +62,35 @@ void __cdecl captureIntegrity(int legacyInterval)
     digest.block(raidStaticDefenses, sizeof(raidStaticDefenses));
     digest.word(raidBuildingCensusTick);
     digest.word(static_cast<unsigned int>(raidBuildingCensusValid));
+}
+typedef char BoundaryCapacity[(sizeof(CharacterConfiguration) * 16 + 676 * 16
+    + sizeof(defenseTypeCounts) + sizeof(combatCensus) + sizeof(targetStates)
+    + sizeof(targetLifecycle) + sizeof(incidents) + sizeof(reserves)
+    + sizeof(raidStates) + sizeof(raidGroupCensus) + sizeof(raidUnitPower)
+    + sizeof(raidStaticDefenses) + 128 <= sizeof(boundaryWords)) ? 1 : -1];
+}
+
+// Observational, allocation-free checkpoint of the explicitly serialized words.
+// This detects simulation divergence; package authentication uses SHA256 instead.
+void __cdecl captureIntegrity(int legacyInterval)
+{
+    Digest digest = {2166136261U, 0x27D4EB2FU};
+    visitIntegrity(digest, legacyInterval);
+    integrityDigest[0] = digest.first;
+    integrityDigest[1] = digest.second;
+}
+
+void __cdecl observeIntegrityBoundary(int legacyInterval)
+{
+    boundaryCount = 0;
+    Boundary snapshot;
+    visitIntegrity(snapshot, legacyInterval);
+}
+
+void __cdecl captureBoundaryIntegrity()
+{
+    Digest digest = {2166136261U, 0x27D4EB2FU};
+    for (unsigned int index = 0; index < boundaryCount; ++index) digest.word(boundaryWords[index]);
     integrityDigest[0] = digest.first;
     integrityDigest[1] = digest.second;
 }

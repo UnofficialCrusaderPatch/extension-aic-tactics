@@ -25,6 +25,15 @@ function M.new(native, legacyInterval, fingerprint)
   local army = require('army-state').new(native)
   local raids = require('raid-state').new(native)
   local nativeIntegrity = core.exposeCode(native.captureIntegrity, 1, 0)
+  local observeBoundary = core.exposeCode(native.observeIntegrityBoundary, 1, 0)
+  local boundaryIntegrity = core.exposeCode(native.captureBoundaryIntegrity, 0, 0)
+  local observed=false
+  local function digest()
+    local first, second = core.readInteger(native.integrityDigest), core.readInteger(native.integrityDigest + 4)
+    if first < 0 then first = first + 4294967296 end
+    if second < 0 then second = second + 4294967296 end
+    return string.format('aic-tactics-word-digest-v1-%08x%08x', first, second)
+  end
   local function active()
     for ai = 1, 16 do
       local address = native.configuration + ai * 344
@@ -109,7 +118,7 @@ function M.new(native, legacyInterval, fingerprint)
     raids.initialize()
   end
   return {
-    capture = capture, validate = validate, restore = restore,
+    capture = capture, validate = validate, restore = restore, identity = identity,
     callbacks = {
       isRequired = active,
       initialize = initialize,
@@ -117,10 +126,14 @@ function M.new(native, legacyInterval, fingerprint)
       capture = function(self, handle) handle:put(path, capture()) end,
       integrity = function()
         nativeIntegrity(legacyInterval and 1 or 0)
-        local first, second = core.readInteger(native.integrityDigest), core.readInteger(native.integrityDigest + 4)
-        if first < 0 then first = first + 4294967296 end
-        if second < 0 then second = second + 4294967296 end
-        return string.format('aic-tactics-word-digest-v1-%08x%08x', first, second)
+        return digest()
+      end,
+      observeBoundary = function()
+        observeBoundary(legacyInterval and 1 or 0); observed=true
+      end,
+      boundaryIntegrity = function()
+        assert(observed,'AIC Tactics: no observed replay boundary')
+        boundaryIntegrity();return digest()
       end,
       validate = function(self, handle)
         if handle.required then

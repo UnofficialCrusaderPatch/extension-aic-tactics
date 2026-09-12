@@ -9,6 +9,7 @@ function M.register(loader, backend)
     'AIC Tactics requires a native configuration backend')
   local states = {}
   local function handles(ai, spec, resetting)
+    if backend.multiplayerLocked and backend.multiplayerLocked() then return true end
     -- Once any personality opts in, every AIC mutation participates in the
     -- same admission gate. A Native neighbour must not bypass match locking.
     for _, state in pairs(states) do if schema.active(state) then return true end end

@@ -1,6 +1,6 @@
 # AIC Tactics integration testing
 
-Extract the integration ZIP into an isolated SHC 1.41 installation with the UCP development runtime, then enable the included AIC Loader 1.1.3, Map Extensions 1.1.0 and AIC Tactics; apply the Legacy settings and migrations in `AIC-TACTICS-COMPATIBILITY.md`.
+Extract the integration ZIP into an isolated SHC 1.41 installation with the UCP development runtime, then enable the included AIC Loader 1.1.3, Map Extensions 1.1.0, Protocol 1.1.0, Chat 1.0.0 and AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
 Merge one example fragment into the `aic` object of a copied personality and start a fresh process on the eight-player Green Haven spectator fixture, keeping neighbouring allied pairs and Vanilla Interpretation Castles.
 Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; use the dependent recorder build for saved continuation and replay checks, and keep native memory/UID evidence for every claimed result.
 
@@ -18,9 +18,15 @@ existing recorder versions must not be treated as compatible with this state API
 
 CI runs compilation and policy checks on pushes and PRs. Packaging currently
 requires workflow dispatch with the published repository and full commit SHA of
-the Map Extensions prerequisite; it does not substitute Map Extensions 1.0.0.
+the Map Extensions and Protocol prerequisites; it does not substitute older APIs.
 The downloaded package must be tested separately before attaching acceptance
 evidence to it.
+
+For multiplayer, all peers need the same files, extension order and settings.
+The host's first Start action checks every human peer; press Start again after
+the replies arrive. A mismatch appears in the existing local chat display.
+AIC settings freeze at this exchange; changing them requires a fresh process.
+Single-player and replay do not run this lobby exchange.
 
 The compiled configuration stores authored character IDs 1..16; native player
 characters use 2..17. The launch log publishes configuration and observation
