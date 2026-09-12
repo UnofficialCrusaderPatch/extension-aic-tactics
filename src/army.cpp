@@ -318,7 +318,7 @@ void __fastcall recruitWithReserve(void* aic, void*, int player)
 int __fastcall reserveRecruitType(void* aic, void*, int player, int role)
 {
     if (!reserveRoleAvailable(aic, player, role)) return 0;
-    return reinterpret_cast<TwoQuery>(0x4CC250)(aic, player, role);
+    return reinterpret_cast<TwoQuery>(nativeBindings.attackRecruitType)(aic, player, role);
 }
 
 void prepareArmyUpdate(void* aic, int player)

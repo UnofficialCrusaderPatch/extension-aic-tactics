@@ -51,7 +51,7 @@ int buildingFor(int player, int unitType) {
     } else if (unitType == 5) {
         building = playerValue(player, (nativeBindings.players + 0x224)); type = 25;
     } else if (unitType == 37) {
-        building = reinterpret_cast<TwoIntQuery>(0x40AAD0)(reinterpret_cast<void*>(nativeBindings.buildings), player, 38);
+        building = reinterpret_cast<TwoIntQuery>(nativeBindings.findRecruitmentBuilding)(reinterpret_cast<void*>(nativeBindings.buildings), player, 38);
         type = 38;
     } else if (unitType >= 70 && unitType <= 76) {
         building = playerValue(player, (nativeBindings.players + 0x24C)); type = 8;
@@ -155,7 +155,7 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
         smallest = count > 1;
     } else if (probe.role == RaidRole) {
         int index = 0;
-        while (index < 20 && memory<int>(0xB426C8 + index * 4) != unitType) ++index;
+        while (index < 20 && memory<int>(nativeBindings.raidTypes + index * 4) != unitType) ++index;
         if (index == 20) return false;
         first = index < 1 ? 180 : index < 2 ? 181 : index < 7 ? 182
             : index < 12 ? 183 : index < 15 ? 184 : 185;
@@ -174,17 +174,17 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
                 && playerValue(player, (nativeBindings.players + 0x30C0)) > 0
                 && (unitType == 22 || unitType == 23 || unitType == 70 || unitType == 72 || unitType == 76)) index = 13;
             else {
-                while (index < 20 && memory<int>(0xB425E8 + index * 4) != unitType) ++index;
+                while (index < 20 && memory<int>(nativeBindings.defenseTypes + index * 4) != unitType) ++index;
                 if (index == 20) index = 0;
             }
             count = playerValue(player, (nativeBindings.players + 0x308C) + index * 4);
             if (count < 1) {
                 first = 1;
                 for (int i = 0; i < 7; ++i)
-                    if (memory<int>(0xB3EB34 + i * 4) == unitType) first = 0;
+                    if (memory<int>(nativeBindings.specialDefenders + i * 4) == unitType) first = 0;
                 count = 1;
             } else {
-                first = memory<int>(0xB42638 + index * 4);
+                first = memory<int>(nativeBindings.defenseSlots + index * 4);
                 if (index == 8 || index == 10 || index == 17) {
                     const int maximum = aicValue(probe.aic, probe.character, 0x114);
                     if (count > maximum) count = maximum;
@@ -262,7 +262,7 @@ int attackCandidates(Probe& native, void* aic, int character,
         }
         openSubrole = true;
         const int behaviour = index + 10;
-        const int unitType = reinterpret_cast<TwoIntQuery>(0x4CC250)(aic, player, behaviour);
+        const int unitType = reinterpret_cast<TwoIntQuery>(nativeBindings.attackRecruitType)(aic, player, behaviour);
         if (eligible(native, player, unitType, behaviour, -1, results[count])) ++count;
     }
     if ((!openSubrole || static_cast<__int64>(playerValue(player, (nativeBindings.players + 0x2BD0))) + recruited[10] < aicValue(aic, character, 0x298))
@@ -291,7 +291,7 @@ bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
     // Use the acquisition owner's table, including armor and horse requirements.
     // Index zero in this local accounting denotes horses, never a native resource.
     for (int type = 0; type < 7; ++type) {
-        const unsigned int row = 0xB55260 + type * 16;
+        const unsigned int row = nativeBindings.equipmentRecipes + type * 16;
         const int offsets[3] = {0, 4, 8};
         for (int item = 0; item < 3; ++item) {
             const int resource = memory<int>(row + offsets[item]);
@@ -348,7 +348,7 @@ bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
     includeEquipmentRoster(types, aic, character, 0x1AC, 8);
     includeEquipmentRoster(types, aic, character, 0x288, 4);
     for (int role = 10; role < 20; ++role)
-        includeEquipmentType(types, reinterpret_cast<TwoIntQuery>(0x4CC250)(aic, player, role));
+        includeEquipmentType(types, reinterpret_cast<TwoIntQuery>(nativeBindings.attackRecruitType)(aic, player, role));
     for (int type = 0; type < 7; ++type) {
         if (!types[type]) continue;
         bool spare = true, consumes = false;
@@ -507,7 +507,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
                 defenders[defenderCount])) ++defenderCount;
             if (defenderCount) mask |= 1U << DefenseRole;
         }
-        const int raidMaximum = reinterpret_cast<TwoIntQuery>(0x4D12A0)(aic, character - 1, player);
+        const int raidMaximum = reinterpret_cast<TwoIntQuery>(nativeBindings.raidMaximum)(aic, character - 1, player);
         probe.role = RaidRole;
         if (!initialDefense && offensiveActionsAllowed(player) && requested.eligibleWeights.values[RaidRole] > 0 && playerValue(player, (nativeBindings.players + 0x30EC)) + recruited[RaidRole] < raidMaximum
             && rosterCandidate(probe, aic, character, player, 0x1AC,

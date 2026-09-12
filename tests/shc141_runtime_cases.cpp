@@ -57,6 +57,15 @@ struct BindFixture {
         nativeBindings.scenarioMission = 0x1FE9CAC;
         nativeBindings.moat = 0x1A93208;
         nativeBindings.moatVacancies = 0x500180;
+        nativeBindings.findRecruitmentBuilding = 0x40AAD0;
+        nativeBindings.attackRecruitType = 0x4CC250;
+        nativeBindings.raidMaximum = 0x4D12A0;
+        nativeBindings.defenseTypes = 0xB425E8;
+        nativeBindings.specialDefenders = 0xB3EB34;
+        nativeBindings.defenseSlots = 0xB42638;
+        nativeBindings.raidTypes = 0xB426C8;
+        nativeBindings.equipmentRecipes = 0xB55260;
+
 
     }
 } bindFixture;

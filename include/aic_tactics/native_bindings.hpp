@@ -53,6 +53,15 @@ struct NativeBindings {
     unsigned int scenarioMission;
     unsigned int moat;
     unsigned int moatVacancies;
+    unsigned int findRecruitmentBuilding;
+    unsigned int attackRecruitType;
+    unsigned int raidMaximum;
+    unsigned int defenseTypes;
+    unsigned int specialDefenders;
+    unsigned int defenseSlots;
+    unsigned int raidTypes;
+    unsigned int equipmentRecipes;
+
 
 };
 extern NativeBindings nativeBindings;

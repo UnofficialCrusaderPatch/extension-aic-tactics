@@ -20,7 +20,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 184-byte
+`native-bindings.lua` passes the resolved values into the DLL's 216-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -103,6 +103,19 @@ patch and displaced instruction. It uses the existing framework assembly/write
 facilities; `core.detourCode` is a Lua callback boundary rather than the required
 native C++ callback ABI. No counter, scan cache or patch manager was introduced.
 
+## Native AIC queries and recruitment tables
+
+`native-aic-queries.lua` resolves the complete native building filter, attack-role
+selector and raid-limit function, and the native consumers of the defense/raid
+unit lists, special-defender list and defensive group slots. Identifying loops
+encode the 20-entry and seven-entry bounds; repeated table operands and record
+fields must agree. The native acquisition function's equipment-recipe consumer
+is verified at its already resolved address, without another scan. Recipes remain
+owned by native acquisition, including armor and horses. The recruitment caller
+must reach the identified building/role queries with their existing thiscall ABI.
+No fixed executable addresses remain in production `src/runtime.cpp` or
+`src/army.cpp`; the remaining combat/raid adapters are a separate unfinished port.
+
 Validation performed:
 
 - Actual SHC and Extreme instruction images resolve the complete context and
@@ -137,6 +150,12 @@ Validation performed:
   an active game. The classic combat-wrapper regression also passes 297 cases.
 - The actual interval wrapper passes 11,520 FASM/Unicorn cases covering explicit
   Legacy interval fallback, opted-in intervals, registers, flags and caller stack.
+- `tests/check_aic_queries_native.py` resolves nine query/table contexts on both
+  actual images and rejects 35 missing/ambiguous/inconsistent/occupied bindings.
+  Each executes 1,920 native role-selection cases (including main-roster cursor
+  writes), 1,280 native raid-limit cases and five native building-filter cases,
+  including the highest valid building record. Acquisition recipes are verified
+  at the existing function binding rather than scanned again.
 - Seventy-six AIC Python/Lua tests and forty Loader tests passed. The initial
   full AIC run lacked `AICLOADER_TEST_ROOT`; rerunning with the actual prerequisite
   checkout passed.

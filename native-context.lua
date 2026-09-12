@@ -17,4 +17,14 @@ function M.call(site, name)
   return target
 end
 
+-- Validate context at an already resolved owner without scanning again.
+function M.verify(site, name, signature)
+  local offset=0
+  for token in signature:gmatch('%S+') do
+    assert(token=='?' or core.readByte(site+offset)==tonumber(token,16),
+      'AIC Tactics: modified native '..name)
+    offset=offset+1
+  end
+end
+
 return M

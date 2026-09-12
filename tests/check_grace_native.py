@@ -86,7 +86,7 @@ for months in range(31):
 # Use Loader's real discovery implementation, not a second AIC table scan.
 owner = lua.execute((a.loader/'addresses.lua').read_text())
 g.owner = owner
-g.native = lua.table_from({'nativeBindings': 0x3001000, 'nativeBindingsSize':184})
+g.native = lua.table_from({'nativeBindings': 0x3001000, 'nativeBindingsSize':216})
 lua.execute('''
   modules={aicloader={getNativeAICLayout=function()
     return {version=1,address=owner.getAIStartAddress(1),characters=16,stride=676}
