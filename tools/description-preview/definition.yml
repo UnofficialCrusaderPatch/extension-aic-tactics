@@ -1,0 +1,7 @@
+name: aic-tactics-description-preview
+display-name: AIC Tactics (description preview)
+version: 0.0.1
+author: UnofficialCrusaderPatch
+type: plugin
+meta:
+  version: 1.0.0
