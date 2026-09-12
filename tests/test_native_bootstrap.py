@@ -18,6 +18,8 @@ def runtime():
         AOBScan=function(pattern)
           if pattern:sub(1,5)=='57 8B' then return 0x4D5438 end
           if pattern:sub(1,5)=='8B 86' then return 0x4D3BA5 end
+          if pattern:sub(1,5)=='53 55' then return 0x500180 end
+          if pattern:sub(1,5)=='53 8B' then return 0x4CC840 end
           return foreignInterval and 0 or 0x4D3B41
         end,
         allocateAssembly=function(text,symbols)

@@ -93,6 +93,78 @@ void checkEquipment(bool expected, const char* message) {
 }
 }
 void runRuntimeCases() {
+    // The original registered-moat counter runs against a real pending entry.
+    const unsigned int moatEntry=0x1A93208+0x50088C;
+    const unsigned int moatFlags=0x1A93208+0x165160+100*4;
+    fixture(1,4,1000,19);
+    const unsigned int moatAic=0x23FC8E8+4*0x2A4;
+    at<int>(moatAic+0x170)=0;
+    at<int>(moatAic+0x15C)=4;
+    at<int>(moatAic+0x160)=24;
+    at<int>(moatEntry-12)=100;at<signed char>(moatEntry)=1;
+    at<int>(moatFlags)=0;
+    for(int strength=0;strength<3;++strength) {
+        configurations[4].baseRows[strength].values[SortieRole]=0;
+        configurations[4].baseRows[strength].values[DefenseRole]=100;
+    }
+    opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==24,"pending moat did not use authored digger");
+    check(observations[1].purchaseResource==19,"moat digger did not request its equipment");
+    at<int>(moatFlags)=0x40000000;opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"finished moat recruited another digger");
+    at<int>(moatFlags)=0;at<signed char>(moatEntry)=2;opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"foreign moat recruited a digger");
+    at<signed char>(moatEntry)=1;
+    at<short>(0x115EF18+0x39F4)=1249;
+    at<unsigned int>(0x115F0BC+0x39F4)=77;
+    at<unsigned int>(0x1667F78+0x34+1249*0x334)=77;
+    at<int>(0x1667F78+0x2C+1249*0x334)=1;
+    at<short>(0x1667F78+0x40+1249*0x334)=2;
+    at<short>(0x1667F78+0x5C+1249*0x334)=4;opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"full digger quota was ignored");
+    at<short>(0x1667F78+0x5C+1249*0x334)=3;opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==24,"digger casualty did not reopen quota");
+    at<int>(0x1667F78+0x2C+1249*0x334)=2;opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"foreign tribe admitted a digger");
+    at<unsigned int>(0x115F0BC+0x39F4)=78;
+    for(int group=1249;group>0;group-=8) at<short>(0x1667F78+0x40+group*0x334)=2;
+    opportunity(1);
+    check(observations[1].probeReasons[DefenseRole]==-3,"stale moat tribe borrowed occupied capacity");
+    for(int strength=0;strength<3;++strength) {
+        configurations[4].baseRows[strength].values[DefenseRole]=0;
+        configurations[4].baseRows[strength].values[AttackRole]=100;
+    }
+    at<int>(0x115E99C+0x39F4)=1;opportunity(1);
+    check(observations[1].probeTypes[DefenseRole]==0,"moat digger overrode zero Defense weight");
+    at<signed char>(moatEntry)=0;
+    for(int player=1;player<=8;++player) {
+        fixture(player,4,1000,0);
+        at<int>(0x1FE7DD4)=900;
+        typedef void (__thiscall *AssignMoat)(void*,int);
+        const int firstUnit=10+player*2;
+        for(int index=0;index<2;++index) {
+            const int unit=firstUnit+index;
+            at<short>(0x13885E2+unit*0x490)=static_cast<short>(player);
+            at<unsigned int>(0x13885E4+unit*0x490)=1234+unit;
+            reinterpret_cast<AssignMoat>(0x4CC840)(reinterpret_cast<void*>(0x23FC8E8),unit);
+            const int group=at<short>(0x115EF18+player*0x39F4);
+            check(group==1250-player,"native moat assignment left its player's partition");
+            const unsigned int record=0x1667F78+group*0x334;
+            check(at<unsigned int>(0x115F0BC+player*0x39F4)==900 && at<unsigned int>(record+0x34)==900,
+                "native moat group UID was not retained");
+            check(at<short>(record+0x5C)==index+1 && at<short>(record+0x2E0)==1,
+                "native moat size or defensive stance differs");
+            check(at<short>(0x1388976+unit*0x490)==5 && at<short>(0x1388824+unit*0x490)==group,
+                "native moat unit role/group not assigned");
+            check(at<unsigned int>(0x1388830+unit*0x490)==900
+                && (at<unsigned short>(record+0x60+(unit/16)*2) & (1U<<(unit%16))),
+                "native moat unit identity/membership mismatch");
+            check(at<unsigned int>(0x13885E4+unit*0x490)==static_cast<unsigned int>(1234+unit),
+                "native moat assignment changed unit UID");
+        }
+        check(at<int>(0x1FE7DD4)==901,"second digger allocated another group");
+        check(at<int>(0x115EEE0+player*0x39F4)==0,"digger consumed the regular defender quota");
+    }
     for(int type=22;type<=27;++type) {
         equipmentFixture(type,10,6,4);checkEquipment(false,"reserved home kit counted as surplus");
         equipmentFixture(type,11,6,4);checkEquipment(true,"complete surplus kit missing");
@@ -132,6 +204,15 @@ void runRuntimeCases() {
     checkEquipment(false,"stale composition census admitted surplus equipment");
     configurations[4].defenseComposition=NativeComposition;
     checkEquipment(false,"Native composition failed to reserve possible archer vacancies");
+    equipmentFixture(24,5,0,0);
+    at<int>(equipmentAic+0x15C)=5;at<int>(equipmentAic+0x160)=24;
+    at<int>(moatEntry-12)=100;at<signed char>(moatEntry)=1;at<int>(moatFlags)=0;
+    checkEquipment(false,"pending diggers' spears counted as surplus");
+    at<int>(0x115C2C8+0x39F4+19*4)=6;
+    checkEquipment(true,"spare spear beyond digger needs was missed");
+    at<int>(0x115C2C8+0x39F4+19*4)=1;at<int>(moatFlags)=0x40000000;
+    checkEquipment(true,"finished moat kept reserving digger equipment");
+    at<signed char>(moatEntry)=0;
     for(int player=1;player<=8;++player) {
         for(int character=1;character<=16;++character) {
             fixture(player,character,1000,17);
