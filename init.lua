@@ -1,3 +1,4 @@
+local nativeGame = require('native-bindings').resolve()
 local enabled = false
 return {
   enable = function(self, config)
@@ -9,7 +10,7 @@ return {
       'AIC Tactics requires Map Extensions 1.1.0 with required state admission')
     local identity = require('build-identity')
     require('package-identity').verify(identity)
-    local native = require('native').new()
+    local native = require('native').new(nativeGame)
     native.enableNativeTargetPolicy(config and config.nativeTargetPolicy or 'Native')
     local legacyInterval = config and config.legacyRecruitInterval
     assert(legacyInterval == nil or type(legacyInterval) == 'boolean',

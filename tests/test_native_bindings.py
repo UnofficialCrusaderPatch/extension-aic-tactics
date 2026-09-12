@@ -6,6 +6,35 @@ from lupa import LuaRuntime
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_entry_point_resolves_on_load_and_passes_bindings_on_enable():
+    lua = LuaRuntime()
+    lua.globals().root = ROOT.as_posix()
+    lua.execute('''
+      package.path=root..'/?.lua;'..package.path
+      local game={}
+      local phase='load'
+      local resolves=0
+      package.loaded['native-bindings']={resolve=function()
+        assert(phase=='load')
+        resolves=resolves+1
+        return game
+      end}
+      package.loaded.native={new=function(resolved)
+        assert(phase=='enable' and resolved==game and resolves==1)
+        error('native enable reached',0)
+      end}
+      package.loaded['build-identity']={}
+      package.loaded['package-identity']={verify=function()end}
+      modules={aicloader={registerAICUpdateProvider=function()end},
+        ['map-extensions']={requiredStateVersion=function()return 1 end}}
+      local module=assert(loadfile(root..'/init.lua'))()
+      assert(resolves==1)
+      phase='enable'
+      local ok,why=pcall(module.enable,module,{})
+      assert(not ok and why=='native enable reached')
+    ''')
+
+
 @pytest.mark.parametrize('invalid', ['abi','owner','version','count','stride','address'])
 def test_binding_contract_failure_does_not_write_native_memory(invalid):
     lua = LuaRuntime()

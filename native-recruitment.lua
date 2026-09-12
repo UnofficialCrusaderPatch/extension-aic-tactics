@@ -15,9 +15,9 @@ local signatures = {
   wallCount = '8D 8F ? ? ? ? BB 01 00 00 00 01 19 E9 6B 01 00 00 69 FF F4 39 00 00 8D 8F ? ? ? ? BB 01 00 00 00 01 19 E9 53 01 00 00 69 FF F4 39 00 00',
 }
 
--- Discovery runs after Legacy enable: its census/check patches are deliberately
--- outside these surviving contexts. Their complete trampolines are checked by
--- legacyCounter before they are consumed or chained; Legacy retains ownership.
+-- Discovery runs during module load. Legacy's census/check patches are outside
+-- these contexts; legacyCounter checks their complete installed trampolines
+-- before they are consumed or chained during activation.
 function M.resolve(game)
   local sites = {}
   for _, name in ipairs({'moatVacancies','moatRecruitment','moatGroup','rangedSortie','meleeSortie','scheduler','recruitmentPrefix',

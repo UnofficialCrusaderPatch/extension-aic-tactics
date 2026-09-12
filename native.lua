@@ -1,11 +1,11 @@
 local M = {}
 
-function M.new()
+function M.new(game)
   local native = require('aicTactics.dll')
   assert(type(native) == 'table' and native.configurationSize == 344,
     'AIC Tactics: incompatible native library')
-  require('native-bindings').initialize(native)
-  local game = native.game
+  require('native-bindings').initialize(native, game)
+  game = native.game
   local sites = game.recruitmentSites
   local installed = false
   local wallCounter

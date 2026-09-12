@@ -242,8 +242,11 @@ The additional fixtures required no production signature or layout change.
 Source 0.0.4 uses `core.AOBScanUnique` when the framework provides it. Its existing
 cache/RPS owner checks the first two overlapping matches in the main executable's
 code. A rejection is final: the module never retries through a less restrictive
-scan. Stock UCP 3.0.7 keeps the existing cached AoB plus second-scan path, so this
-does not impose an unpublished development runtime on module testers.
+scan. Stock UCP 3.0.7 keeps the cached AoB plus second-scan path, but an actual
+signed installation failed the startup performance gate: after 134.17 seconds
+and 131.73 CPU seconds it was still enabling AIC, without a game window.
+Current acceptance therefore uses the complete signed secure framework preview;
+the shared scanner's final release/minimum-version contract remains outstanding.
 
 Inspected framework `1d78391` ([PR149](https://github.com/UnofficialCrusaderPatch/UnofficialCrusaderPatch3/pull/149))
 and RPS `e958409` ([PR16](https://github.com/gynt/RuntimePatchingSystem/pull/16)).
@@ -254,3 +257,25 @@ falling back. Legacy-path native component checks remain unchanged. This is
 component coverage; startup timings require the installed runtime and cannot be
 inferred from the private-image scanner. No private scanner, range parser or
 per-tick discovery was introduced.
+
+## Load before Legacy patches
+
+The signed framework preview reached AIC enable in 1.745 seconds, then rejected
+`targetSelection`: Legacy `ai_assaultswitch` had already patched eight bytes
+inside the complete identifying signature. Raw executable fixtures had not
+covered that load-order interaction.
+
+Source 0.0.6 uses the framework's existing two-phase lifecycle: `code/main.lua`
+loads every module before enabling any module. `init.lua` resolves read-only
+bindings at load; `native.new(game)` writes the DLL bindings during enable.
+Loader's `getNativeAICLayout` is available in that phase. Legacy retains its
+target-stability patch; signatures and activation-time checks are unchanged.
+No native DLL is loaded or patched by read-only discovery.
+
+The updated `check_defense_bridge.py` executes the actual AIC entry point,
+applies unchanged Legacy 2.15.2 defense and assault-switch ports, proves that
+late target discovery would fail, and consumes the saved bindings without a
+second scan. All six reference images pass, including 128 original Legacy
+target-commitment cases, 480 census comparisons, 297 combat gateway cases and
+91 occupied-hook/call rejection cases per image. These are instruction-level
+composition checks; the corrected signed module still needs live-game acceptance.

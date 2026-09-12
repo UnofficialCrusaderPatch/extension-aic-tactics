@@ -21,6 +21,7 @@ from unicorn.x86_const import (UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX,
 p=argparse.ArgumentParser()
 p.add_argument('--reference',type=Path,required=True)
 p.add_argument('--legacy',type=Path,required=True)
+p.add_argument('--loader',type=Path,required=True)
 p.add_argument('--fasm',type=Path,required=True)
 p.add_argument('--output',type=Path,required=True)
 p.add_argument('--combat',action='store_true')
@@ -51,7 +52,7 @@ def compile_at(address,code):
         else:output.extend(struct.pack('<I',int(value)&0xFFFFFFFF))
     return bytes(output)
 def write(address,code):uc.mem_write(address,compile_at(address,code))
-def allocate(count):
+def allocate(count, *_):
     global allocation
     answer=allocation;allocation+=(count+15)&~15
     assert allocation<0x3060000
@@ -79,10 +80,6 @@ g.core=lua.table_from({'writeCode':write,'AOBScan':scan,'scanForAOB':scan,'alloc
     'calculateCodeSize':size,'readInteger':get,'readByte':lambda address:uc.mem_read(address,1)[0],
     'getRelativeAddress':lambda address,target,offset:target-address+offset})
 lua.execute('core.relTo=function(target,offset)return function(address)return utils.itob(target-address+offset)end end')
-port=lua.execute(a.legacy.read_text());port.init(port,lua.table());port.enable(port,lua.table())
-reset_site=port.ai_defense_reset_edit;count_site=port.ai_defense_count_edit
-original={reset_site:bytes(uc.mem_read(reset_site,5)),count_site:bytes(uc.mem_read(count_site,6))}
-wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_counts=get(wall_hook+7)
 assembly_count=0
 def assemble(source,symbols):
     global assembly_count
@@ -96,25 +93,59 @@ g.core.allocateAssembly=assemble
 g.root=Path(__file__).resolve().parents[1].as_posix()
 recruitment_scan_range=[]
 g.markRecruitment=lambda:recruitment_scan_range.append(len(scan_log))
+g.owner=lua.execute((a.loader/'addresses.lua').read_text())
+g.core.writeInteger=put
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
-package.loaded['native-bindings']={initialize=function(native)
-  local game=require('config.grace').resolveNative()
-  for k,v in pairs(require('native-layout').resolve()) do game[k]=v end
-  for k,v in pairs(require('native-group-actions').resolve(game)) do game[k]=v end
+modules={aicloader={getNativeAICLayout=function()
+  return {version=1,address=owner.getAIStartAddress(1),characters=16,stride=676}
+end}}
+local recruitment=require('native-recruitment')
+local resolveRecruitment=recruitment.resolve
+recruitment.resolve=function(game)
   markRecruitment()
-  for k,v in pairs(require('native-recruitment').resolve(game)) do game[k]=v end
+  local result=resolveRecruitment(game)
   markRecruitment()
-  for k,v in pairs(require('native-aic-queries').resolve(game)) do game[k]=v end
-  for k,v in pairs(require('native-combat-bindings').resolve(game)) do game[k]=v end
-  native.game=game
-end} -- full production discovery; DLL storage writes checked by check_grace_native
+  return result
+end
+local bindings=require('native-bindings')
+local resolve=bindings.resolve
+bindings.resolve=function()
+  assert(preparedGame==nil, 'module load must resolve once')
+  preparedGame=resolve()
+  return preparedGame
+end
 configFinal={}
-package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
-  resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
-native=require('native').new()
-
 ''')
+# Execute the actual module entry point during load, before any Legacy enable.
+before_allocation=allocation
+before_storage=bytes(uc.mem_read(0x3051000,256))
+module=lua.execute((Path(g.root)/'init.lua').read_text())
+assert g.preparedGame is not None and allocation==before_allocation
+assert bytes(uc.mem_read(0x3051000,256))==before_storage
+assert lua.eval("package.loaded['aicTactics.dll']==nil")
+target_context=next(pattern for pattern,start,address in scan_log
+                    if start is None and address==g.preparedGame.selectAttackTarget)
+persistent_path=a.legacy.parent.parent/'persistent-state.lua'
+persistent=lua.execute(persistent_path.read_text()).new() if persistent_path.exists() else None
+port=lua.execute(a.legacy.read_text());port.init(port,lua.table());port.enable(port,lua.table(),persistent)
+assault_path=a.legacy.with_name('ai_assaultswitch.lua')
+assault=lua.execute(assault_path.read_text())
+assault.init(assault,lua.table());assault.enable(assault,lua.table())
+assert scan(target_context) is None, 'Legacy must reproduce the former late-resolution failure'
+reset_site=port.ai_defense_reset_edit;count_site=port.ai_defense_count_edit
+original={reset_site:bytes(uc.mem_read(reset_site,5)),count_site:bytes(uc.mem_read(count_site,6))}
+wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_counts=get(wall_hook+7)
+before_enable_scans=scan_count
+lua.execute('''
+package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
+  nativeBindings=0x3051000,nativeBindingsSize=256,
+  resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
+native=require('native').new(preparedGame)
+native.preflightCombat();native.preflightTargets();native.preflightRaids()
+''')
+assert scan_count==before_enable_scans, 'Enable must consume load-phase bindings without rescanning'
+assert get(0x3051000+54*4)==g.preparedGame.selectAttackTarget
 # Exercise every production context against absence and ambiguity. Captured
 # addresses only avoid repeating private-fixture scans for negative cases.
 recruitment_contexts=[item for item in scan_log[recruitment_scan_range[0]:recruitment_scan_range[1]] if item[1] is None]
@@ -159,6 +190,35 @@ wrapped={site:bytes(uc.mem_read(site,len(data))) for site,data in original.items
 registers=[UC_X86_REG_EAX,UC_X86_REG_EBX,UC_X86_REG_ECX,UC_X86_REG_EDX,
     UC_X86_REG_ESI,UC_X86_REG_EDI,UC_X86_REG_EBP,UC_X86_REG_ESP,UC_X86_REG_EFLAGS]
 calls=[]
+
+# Retain the real Legacy target commitment patch inside the captured function.
+# Its early return restores the selector frame; noncommitted candidates replay
+# the displaced loads and resume. No AIC replacement of this owner is needed.
+assault_cases=0
+order_root=get(assault.ai_recruitinterval_edit+0xD9+2)
+target_root=get(assault.ai_assaultswitch_edit+0x15E)
+for player in range(1,9):
+    for order in range(8):
+        for matches in (False,True):
+            sp=0x308F000
+            frame=struct.pack('<16I',*range(100,116))
+            uc.mem_write(sp,frame);put(sp+48,0x307F000)
+            initial=[0x12345678,player*0x39F4,0xCC001101,0,0x10203040,4,3,sp,0x202]
+            put(order_root+initial[1],order);put(target_root+initial[1],4 if matches else 5)
+            for reg,value in zip(registers,initial):uc.reg_write(reg,value)
+            committed=order>=3 and matches
+            end=0x307F000 if committed else assault.ai_assaultswitch_edit+8
+            uc.emu_start(assault.ai_assaultswitch_edit,end,count=100)
+            expected=initial.copy()
+            if committed:
+                expected[5],expected[4],expected[6],expected[1]=100,101,102,103
+                expected[7]=sp+56
+            else:
+                expected[0],expected[2]=107,108
+            # Legacy's comparisons intentionally change flags.
+            assert [uc.reg_read(reg) for reg in registers[:-1]]==expected[:-1]
+            assert uc.reg_read(UC_X86_REG_EIP)==end
+            assault_cases+=1
 def spy(uc,address,size,user):
     if address not in [0x3070000,0x3070020]:return
     sp=uc.reg_read(UC_X86_REG_ESP)
@@ -253,6 +313,9 @@ for player in range(1,9):
             opportunity_cases+=1
 
 result={'variant':a.variant,'cases':cases,'contexts':11,'negativeResolutionCases':negative,
+    'loadBeforeLegacyEnable':True,'enableScans':0,
+    'legacyAssaultSwitchSHA256':hashlib.sha256(assault_path.read_bytes()).hexdigest(),
+    'legacyAssaultSwitchCases':assault_cases,
     'negativeLegacyTrampolineCases':legacy_negative,'repeatPreflightScans':0,
     'nativeSortieAndMoatCases':native_cases,'opportunityBridgeCases':opportunity_cases,'source':'actual native.lua wrappers and unchanged Legacy ai_defense.lua',
     'legacySHA256':hashlib.sha256(a.legacy.read_bytes()).hexdigest(),
