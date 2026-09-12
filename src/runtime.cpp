@@ -40,12 +40,27 @@ int takeRandom(void*) {
 }
 
 int buildingFor(int player, int unitType) {
-    if (unitType == 29 || unitType == 30) return playerValue(player, 0x115BFF4);
-    if (unitType == 5) return playerValue(player, 0x115C01C);
-    if (unitType == 37) {
-        return reinterpret_cast<TwoIntQuery>(0x40AAD0)(reinterpret_cast<void*>(0xF98520), player, 38);
-    }
-    return playerValue(player, unitType < 70 ? 0x115BF54 : 0x115C044);
+    int building, type;
+    if (unitType == 29 || unitType == 30) {
+        building = playerValue(player, 0x115BFF4); type = 24;
+    } else if (unitType == 5) {
+        building = playerValue(player, 0x115C01C); type = 25;
+    } else if (unitType == 37) {
+        building = reinterpret_cast<TwoIntQuery>(0x40AAD0)(reinterpret_cast<void*>(0xF98520), player, 38);
+        type = 38;
+    } else if (unitType >= 70 && unitType <= 76) {
+        building = playerValue(player, 0x115C044); type = 8;
+    } else if (unitType >= 22 && unitType <= 28) {
+        building = playerValue(player, 0x115BF54); type = 9;
+    } else return 0;
+    if (building <= 0 || building >= 2000 || building >= memory<int>(0xF98528)) return 0;
+    const unsigned int address = 0xF98534 + building * 0x32C;
+    const short state = memory<short>(address + 0xD0);
+    // The native building lookup excludes unused/removing records. Acquisition
+    // check-only does not inspect its building argument, so validate the cache here.
+    if (state == 0 || state == 3 || memory<short>(address + 0xD2) != type
+        || memory<short>(address + 0xD6) != player) return 0;
+    return building;
 }
 
 RecruitmentServices services() {

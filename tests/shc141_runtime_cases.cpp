@@ -29,6 +29,11 @@ void fixture(int player, int character, int gold, int missing) {
     at<int>(playerBase+0x115E964) = 1;
     at<int>(playerBase+0x115F76C) = 1;
     at<int>(playerBase+0x115BF54) = 1;
+    at<int>(0xF98528) = 2;
+    std::memset(reinterpret_cast<void*>(0xF98534+0x32C), 0, 0x32C);
+    at<short>(0xF98534+0x32C+0xD0) = 2;
+    at<short>(0xF98534+0x32C+0xD2) = 9;
+    at<short>(0xF98534+0x32C+0xD6) = static_cast<short>(player);
     for (int resource=1; resource<=24; ++resource)
         at<int>(playerBase+0x115C2C8+4*resource) = resource==missing ? 0 : 10;
     at<int>(playerBase+0x115C304) = gold;
@@ -73,6 +78,28 @@ void runRuntimeCases() {
     fixture(1,4,1000,17);
     at<int>(0x115BF54+0x39F4)=0; opportunity(1);
     check(observations[1].probeReasons[SortieRole]==-1,"missing building admitted");
+    const unsigned int building=0xF98534+0x32C;
+    for(int state=0;state<=3;state+=3) {
+        fixture(1,4,1000,17);
+        at<short>(building+0xD0)=static_cast<short>(state);
+        opportunity(1);
+        check(observations[1].probeReasons[SortieRole]==-1,"removed building admitted");
+        check(observations[1].purchaseResource==0,"removed building ordered equipment");
+    }
+    fixture(1,4,1000,17);
+    at<short>(building+0xD6)=2; opportunity(1);
+    check(observations[1].probeReasons[SortieRole]==-1,"foreign recruitment building admitted");
+    at<short>(building+0xD6)=1;
+    at<short>(building+0xD2)=8; opportunity(1);
+    check(observations[1].probeReasons[SortieRole]==-1,"reused wrong-type building admitted");
+    at<short>(building+0xD2)=9; opportunity(1);
+    check(observations[1].probeReasons[SortieRole]==2,"restored recruitment building did not recover");
+    const int invalidBuildings[3]={-1,2,2000};
+    for(int index=0;index<3;++index) {
+        fixture(1,4,1000,17);
+        at<int>(0x115BF54+0x39F4)=invalidBuildings[index]; opportunity(1);
+        check(observations[1].probeReasons[SortieRole]==-1,"out-of-range recruitment building admitted");
+    }
     fixture(1,4,1000,17);
     at<int>(0x115F73C+0x39F4)=8; opportunity(1);
     check(observations[1].purchaseResource==0,"filled quota ordered equipment");

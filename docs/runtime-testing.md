@@ -25,9 +25,14 @@ for read-only diagnostics. Native game state and the native RNG drive decisions.
 Omitted RecruitPolicy uses Native. New role rows must total 100 and require
 WeightedRoles. The first matching condition overrides the base strength row;
 zero-weight roles are not probed or recruited. Missing equipment can create one
-native purchase request per opportunity, in Defense/Raid/Attack/Sortie order,
+native purchase request per attempt (at most four at the native opportunity), in Defense/Raid/Attack/Sortie order,
 using the existing purchase amount and nervous-recruitment rule. Purchase requests
 do not recruit, spend gold directly, advance the roster cursor or consume RNG.
+
+Recruitment buildings are checked against the native building pool, live state,
+owner and required type on every probe. Cached IDs are not accepted after removal
+or reuse as a different building. This follows the native building lookup's
+validity predicate; no additional persistent building cache is introduced.
 
 Supported condition facts in this development build are AttackActive (native
 attack phase nonzero), DefenseIncomplete (current native defense count below its
