@@ -15,13 +15,14 @@ p.add_argument('--loader', type=Path, required=True)
 p.add_argument('--map-extensions', type=Path, required=True)
 p.add_argument('--protocol', type=Path, required=True)
 p.add_argument('--chat', type=Path, required=True)
+p.add_argument('--files', dest='files_module', type=Path, required=True)
 p.add_argument('--map-base-zip', type=Path)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--module-directory', type=Path,
                help='Also write individual module ZIPs here for direct downloads')
 a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
-for checkout in [root, a.loader, a.map_extensions, a.protocol, a.chat]:
+for checkout in [root, a.loader, a.map_extensions, a.protocol, a.chat, a.files_module]:
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=checkout,text=True).strip():
         raise SystemExit('Commit source changes before packaging: ' + str(checkout))
 files = {}
@@ -86,7 +87,7 @@ for relative in ['definition.yml','LICENSE']:
     files[map_prefix+relative] = (a.map_extensions/relative).read_bytes()
 for path in sorted((a.map_extensions/'locale').glob('*')):
     if path.is_file(): files[map_prefix+'locale/'+path.name] = path.read_bytes()
-for checkout,name in [(a.protocol,'protocol'),(a.chat,'chat')]:
+for checkout,name in [(a.protocol,'protocol'),(a.chat,'chat'),(a.files_module,'files')]:
     prefix='ucp/modules/'+module_name(checkout, name)+'/'
     for path in sorted(checkout.rglob('*')):
         relative=path.relative_to(checkout)
@@ -107,7 +108,7 @@ files['AIC-TACTICS-EQUIPMENT.md'] = (root/'docs/equipment-surplus.md').read_byte
 files['AIC-TACTICS-MOAT.md'] = (root/'docs/defense-moat.md').read_bytes()
 files['AIC-TACTICS-COMPOSITION.md'] = (root/'docs/defense-composition.md').read_bytes()
 files['INSTALL.txt'] = (
-    'Copy the five ZIP files from ucp/modules into your game\'s ucp/modules folder.\n'
+    'Copy the module ZIP files from ucp/modules into your game\'s ucp/modules folder.\n'
     'Keep those module ZIPs zipped, then reopen the UCP GUI and enable AIC Tactics.\n'
     'Replace the mistakenly extracted folders of the same names with these ZIPs.\n'
     'See AIC-TACTICS-COMPATIBILITY.md for the required Legacy settings.\n'
@@ -122,6 +123,7 @@ manifest = {'moduleSource':subprocess.check_output(['git','rev-parse','HEAD'],cw
     'mapStateSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.map_extensions,text=True).strip(),
     'protocolSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.protocol,text=True).strip(),
     'chatSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.chat,text=True).strip(),
+    'filesSource':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.files_module,text=True).strip(),
     'mapRuntimeSource':{'url':map_base_url,'sha256':map_base_sha,'dllSha256':hashlib.sha256(map_dll).hexdigest()},
     'scope':'Development AIC Tactics integration; acceptance status is recorded separately',
     'sha256':{name:hashlib.sha256(data).hexdigest() for name,data in files.items()}}

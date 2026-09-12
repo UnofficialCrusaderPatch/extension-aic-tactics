@@ -1,13 +1,13 @@
 # AIC Tactics integration testing
 
-Copy `aic-tactics-0.0.2.zip` and the supplied dependency module ZIPs into `ucp/modules` without unpacking them, reopen the GUI, and enable AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
+Copy the AIC Tactics ZIP and the dependency module ZIPs from the same bundle into `ucp/modules` without unpacking them, reopen the GUI, and enable AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
 Merge one example fragment into the `aic` object of a copied personality and start a fresh process on the eight-player Green Haven spectator fixture, keeping neighbouring allied pairs and Vanilla Interpretation Castles.
-Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; Recorder 0.50.5 is optional for recording/playback checks and its ZIP also stays zipped.
+Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; the matching Recorder build is optional for recording/playback checks and its ZIP also stays zipped.
 
 The optional all-in-one download is an outer bundle: copy the ZIPs from its
 `ucp/modules` directory into the game's `ucp/modules`. Do not unpack those inner
 ZIPs or put the outer bundle itself in `ucp/modules`. Replace mistakenly extracted
-folders for AIC Tactics, AIC Loader, Map Extensions, Protocol and Chat with their
+folders for AIC Tactics, AIC Loader, Map Extensions, Protocol, Chat and Files with their
 module ZIPs. These unsigned previews work with testers' existing security-off
 runtime. Signing and store release are separate from this packaging correction.
 
@@ -24,14 +24,15 @@ framework binary is bundled. The recorder change is a separate dependent PR;
 existing recorder versions must not be treated as compatible with this state API.
 
 For Recorder testing, also enable UI 1.0.1 with its LuaJIT 1.0.0 and cffi 1.0.0
-dependencies before Recorder. Let the GUI supply their option defaults. A manually
+dependencies, WinProc Handler 1.0.0, and the existing Legacy 2.15.2 saved-state
+prerequisite before Recorder. Let the GUI supply their option defaults. A manually
 written direct-launch profile must include those defaults from each module's
 `options.yml`; empty configuration tables are insufficient for LuaJIT/cffi.
 Keep JIT enabled and tracing/GC logging disabled for performance measurements.
 
 CI runs compilation and policy checks on pushes and PRs. Packaging currently
 requires workflow dispatch with the published repository and full commit SHA of
-the Map Extensions and Protocol prerequisites; it does not substitute older APIs.
+the Map Extensions, Protocol and Files prerequisites; it does not substitute older APIs.
 The downloaded package must be tested separately before attaching acceptance
 evidence to it.
 

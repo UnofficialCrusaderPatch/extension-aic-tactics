@@ -20,6 +20,10 @@ on:
         description: Full commit SHA of the Protocol admission prerequisite
         required: true
         type: string
+      files_ref:
+        description: Full commit SHA of the Files traversal prerequisite
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -63,7 +67,14 @@ jobs:
           path: tests/deps/chat
           persist-credentials: false
       - if: github.event_name == 'workflow_dispatch'
-        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --module-directory build/package/modules --output build/package/aic-tactics-combat-test.zip
+        uses: actions/checkout@v4
+        with:
+          repository: UnofficialCrusaderPatch/extension-files
+          ref: ${{ inputs.files_ref }}
+          path: tests/deps/files
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --files tests/deps/files --module-directory build/package/modules --output build/package/aic-tactics-combat-test.zip
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
