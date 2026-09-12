@@ -23,6 +23,7 @@ struct RecruitmentAvailability {
     bool eligible;
     int failureReason;
     int requiredResource;
+    int availableHorses;
 };
 
 // Original, signature-verified services only. Returns false for invalid inputs.

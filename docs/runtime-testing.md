@@ -23,7 +23,9 @@ For its tests, turn Legacy `ai_recruitstate_initialtimer` OFF and migrate the ol
 global duration to `nativeInitialDefenseMonths` if needed. The earlier linked
 sortie artifact predates these additions.
 
-EquipmentSurplus is rejected. Next-wave
+This branch implements [EquipmentSurplus](equipment-surplus.md), using complete
+recruitable equipment sets after accounting for home-defense deficits. It has
+component coverage but no running-game acceptance yet. Next-wave
 reserves, opponent policies/retaliation and split raids are not implemented by
 this runtime yet. Do not use this build for multiplayer or historical recordings:
 configuration fingerprints and the shared save/replay state contract remain open.

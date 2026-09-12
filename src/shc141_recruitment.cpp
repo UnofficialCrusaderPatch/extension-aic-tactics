@@ -9,6 +9,7 @@ bool queryRecruitment(const RecruitmentServices& services, int player,
     result.eligible = false;
     result.failureReason = 0;
     result.requiredResource = 0;
+    result.availableHorses = 0;
     const bool european = unitType >= 22 && unitType <= 28;
     const bool nonEuropean = unitType == 5 || unitType == 29 || unitType == 30
         || unitType == 37 || (unitType >= 70 && unitType <= 76);
@@ -38,6 +39,7 @@ bool queryRecruitment(const RecruitmentServices& services, int player,
     result.failureReason = *services.failureReason;
     if (result.failureReason == 2)
         result.requiredResource = *services.requiredResource;
+    if (unitType == 28 && result.eligible) result.availableHorses = *services.availableHorses[player - 1];
 
     *services.failureReason = savedReason;
     *services.requiredResource = savedResource;

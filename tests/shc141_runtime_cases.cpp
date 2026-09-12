@@ -54,8 +54,84 @@ void opportunity(int player) {
     check(at<unsigned int>(0x1A279C0)==rng,"unavailable recruit consumed RNG");
     for(int role=0;role<4;++role) check(observations[player].hires[role]==0,"unavailable recruit hired");
 }
+
+void equipmentFixture(int type, int stock, int defense, int sortie) {
+    fixture(1,4,1000,0);
+    configurations[4].recruitment.conditionCount=1;
+    configurations[4].recruitment.conditions[0].strength=-1;
+    configurations[4].recruitment.conditions[0].requiredFacts=EquipmentSurplus;
+    configurations[4].recruitment.conditions[0].weights.values[AttackRole]=100;
+    for(int strength=0;strength<3;++strength) {
+        configurations[4].baseRows[strength].values[SortieRole]=0;
+        configurations[4].baseRows[strength].values[AttackRole]=100;
+    }
+    // Observe the fact without dispatching a hire into map/render services.
+    at<int>(0x115E99C+0x39F4)=1;
+    const unsigned int aic=0x23FC8E8+4*0x2A4;
+    at<int>(aic+0x170)=defense;
+    at<int>(aic+0x184)=type;
+    at<int>(aic+0x154)=sortie;
+    at<int>(aic+0x158)=type;
+    at<int>(aic+0x288)=type;
+    for(int resource=17;resource<=24;++resource) at<int>(0x115C2C8+0x39F4+resource*4)=stock;
+    at<int>(0x1387F38)=2;
+    at<short>(0x1387F38+0xD64-0x232)=1;
+    at<short>(0x1387F38+0xD64-0x22A)=1;
+    at<short>(0x1387F38+0xD64-0x234)=2;
+    at<short>(0x1387F38+0xD64)=1;
+}
+
+void checkEquipment(bool expected, const char* message) {
+    const int reason=at<int>(0x1387F38+0x60C);
+    const int resource=at<int>(0x1387F38+0x610);
+    opportunity(1);
+    check(((observations[1].facts & EquipmentSurplus)!=0)==expected,message);
+    check(observations[1].condition==(expected?0:-1),"equipment condition did not select the first matching row");
+    check(at<int>(0x1387F38+0x60C)==reason && at<int>(0x1387F38+0x610)==resource,
+        "equipment fact changed native acquisition diagnostics");
+    check(observations[1].purchaseResource==0,"equipment fact ordered purchases");
+}
 }
 void runRuntimeCases() {
+    for(int type=22;type<=27;++type) {
+        equipmentFixture(type,10,6,4);checkEquipment(false,"reserved home kit counted as surplus");
+        equipmentFixture(type,11,6,4);checkEquipment(true,"complete surplus kit missing");
+        at<int>(0x115C304+0x39F4)=0;checkEquipment(false,"unaffordable kit counted usable");
+        at<int>(0x115C304+0x39F4)=1000;
+        at<int>(0x1387F38)=1;checkEquipment(false,"kit without peasant counted usable");
+        at<int>(0x1387F38)=2;
+        at<short>(0xF98534+0x32C+0xD6)=2;checkEquipment(false,"foreign barracks counted usable");
+    }
+    equipmentFixture(25,11,6,4);
+    at<int>(0x115C2C8+0x39F4+24*4)=10;
+    checkEquipment(false,"pikes without spare armor counted surplus");
+    equipmentFixture(22,11,0x7FFFFFFF,0x7FFFFFFF);
+    checkEquipment(false,"huge home quota overflowed equipment reserve");
+    equipmentFixture(70,100,0,0);
+    checkEquipment(false,"unrelated equipment or gold-only roster counted surplus");
+    equipmentFixture(28,11,0,0);
+    checkEquipment(false,"knight kit without a horse counted usable");
+    at<int>(0xF98528)=3;
+    const unsigned int stable=0xF98534+2*0x32C+0xD0;
+    at<short>(stable)=1;at<short>(stable+2)=0x23;at<short>(stable+6)=1;
+    at<signed char>(stable+0x1C7)=1;at<signed char>(stable+0x1D7)=0;
+    at<short>(0x115E04A+0x39F4)=99;
+    checkEquipment(true,"free horse and full kit did not qualify");
+    check(at<short>(0x115E04A+0x39F4)==99,"surplus probe changed the horse cache");
+    at<int>(0x23FC8E8+4*0x2A4+0x170)=1;
+    checkEquipment(false,"home defender's last horse counted surplus");
+    equipmentFixture(22,1,10,0);
+    const unsigned int equipmentAic=0x23FC8E8+4*0x2A4;
+    at<int>(equipmentAic+0x188)=22;at<int>(equipmentAic+0x18C)=24;
+    at<int>(0x115EEE0+0x39F4)=7;
+    configurations[4].defenseComposition=PreserveSlots;
+    resetDefenseCensus();
+    for(int count=0;count<7;++count) countDefenseUnit(1,22);
+    checkEquipment(true,"filled archer shares unnecessarily reserved surplus bows");
+    invalidateDefenseCensus();
+    checkEquipment(false,"stale composition census admitted surplus equipment");
+    configurations[4].defenseComposition=NativeComposition;
+    checkEquipment(false,"Native composition failed to reserve possible archer vacancies");
     for(int player=1;player<=8;++player) {
         for(int character=1;character<=16;++character) {
             fixture(player,character,1000,17);

@@ -85,11 +85,15 @@ def test_grace_default_bounds_and_atomic_storage():
     ''')
 
 
-def test_unimplemented_fact_rejected_before_writes():
+def test_equipment_fact_both_boolean_forms_are_compiled():
     backend().execute('''
-      assert(not pcall(prepare,4,{RecruitPolicy='WeightedRoles',RecruitConditions={
-        {When={EquipmentSurplus=false},Defense=100,Raid=0,Attack=0,Sortie=0}}}))
-      assert(next(memory)==nil)
+      for _,value in ipairs({true,false}) do
+        prepare(4,{RecruitPolicy='WeightedRoles',RecruitConditions={
+          {When={EquipmentSurplus=value},Defense=100,Raid=0,Attack=0,Sortie=0}}}).commit()
+        local base=10000+4*288
+        assert(memory[base+12]==(value and 8 or 0))
+        assert(memory[base+16]==(value and 0 or 8))
+      end
     ''')
 
 

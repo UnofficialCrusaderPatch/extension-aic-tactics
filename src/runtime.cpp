@@ -248,6 +248,95 @@ int attackCandidates(Probe& native, void* aic, int character,
     return count;
 }
 
+void includeEquipmentType(bool* types, int unitType) {
+    if (unitType >= 22 && unitType <= 28) types[unitType - 22] = true;
+}
+
+void includeEquipmentRoster(bool* types, void* aic, int character, int offset, int count) {
+    for (int slot = 0; slot < count; ++slot) {
+        const int type = aicValue(aic, character, offset + slot * 4);
+        if (type == 0) break;
+        includeEquipmentType(types, type);
+    }
+}
+
+bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
+    int recruitedDefense, int ranged, int melee) {
+    const int character = probe.character;
+    void* const aic = probe.aic;
+    int recipe[7][26] = {{0}};
+    // Use the acquisition owner's table, including armor and horse requirements.
+    // Index zero in this local accounting denotes horses, never a native resource.
+    for (int type = 0; type < 7; ++type) {
+        const unsigned int row = 0xB55260 + type * 16;
+        const int offsets[3] = {0, 4, 8};
+        for (int item = 0; item < 3; ++item) {
+            const int resource = memory<int>(row + offsets[item]);
+            if (resource < 0 || resource >= 26) return false;
+            if (resource) ++recipe[type][resource];
+        }
+        if (memory<int>(row + 12) == -1) recipe[type][0] = 1;
+        else if (memory<int>(row + 12) != 0) return false;
+    }
+    __int64 reserve[26] = {0};
+    bool defenseTypes[7] = {false}, types[7] = {false};
+    includeEquipmentRoster(defenseTypes, aic, character, 0x184, 8);
+    const __int64 deficit = static_cast<__int64>(probe.defenseMaximum)
+        - playerValue(player, 0x115EEE0) - recruitedDefense;
+    if (configurations[character - 1].defenseComposition == PreserveSlots) {
+        if (!compositionReady) return false;
+        int roster[8];
+        for (int slot = 0; slot < 8; ++slot) roster[slot] = aicValue(aic, character, 0x184 + slot * 4);
+        for (int type = 0; type < 7; ++type) {
+            const __int64 missing = static_cast<__int64>(defenseTypeQuota(roster, probe.defenseMaximum, type + 22))
+                - defenseTypeCounts[player][type + 22] - probe.recruitedTypes[type + 22];
+            if (missing > 0 && deficit > 0) {
+                const __int64 needed = missing < deficit ? missing : deficit;
+                for (int resource = 0; resource < 26; ++resource) reserve[resource] += needed * recipe[type][resource];
+            }
+        }
+    } else if (deficit > 0) {
+        // Native composition may fill all vacant seats with any available roster
+        // type. Reserve the worst per-seat use of each resource, without guessing
+        // which unit the native cursor will be able to acquire later.
+        for (int resource = 0; resource < 26; ++resource) {
+            int largest = 0;
+            for (int type = 0; type < 7; ++type)
+                if (defenseTypes[type] && recipe[type][resource] > largest) largest = recipe[type][resource];
+            reserve[resource] = deficit * largest;
+        }
+    }
+    for (int sortie = 0; sortie < 2; ++sortie) {
+        const int type = aicValue(aic, character, sortie ? 0x158 : 0x150);
+        includeEquipmentType(types, type);
+        const __int64 maximum = static_cast<__int64>(aicValue(aic, character, sortie ? 0x154 : 0x14C));
+        const __int64 missing = maximum + (sortie ? 0 : playerValue(player, 0x115F738) / 2)
+            - playerValue(player, sortie ? 0x115F73C : 0x115F734) - (sortie ? melee : ranged);
+        if (type >= 22 && type <= 28 && maximum >= 0 && missing > 0)
+            for (int resource = 0; resource < 26; ++resource) reserve[resource] += missing * recipe[type - 22][resource];
+    }
+    includeEquipmentRoster(types, aic, character, 0x184, 8);
+    includeEquipmentRoster(types, aic, character, 0x1AC, 8);
+    includeEquipmentRoster(types, aic, character, 0x288, 4);
+    for (int role = 10; role < 20; ++role)
+        includeEquipmentType(types, reinterpret_cast<TwoIntQuery>(0x4CC250)(aic, player, role));
+    for (int type = 0; type < 7; ++type) {
+        if (!types[type]) continue;
+        bool spare = true, consumes = false;
+        for (int resource = 1; resource < 26; ++resource) {
+            if (recipe[type][resource] == 0) continue;
+            consumes = true;
+            if (static_cast<__int64>(playerValue(player, 0x115C2C8 + resource * 4))
+                    < reserve[resource] + recipe[type][resource]) spare = false;
+        }
+        if (!spare || !consumes) continue;
+        RecruitmentAvailability available;
+        if (queryRecruitment(probe.native, player, type + 22, buildingFor(player, type + 22), available)
+            && available.eligible && (!recipe[type][0] || available.availableHorses > reserve[0])) return true;
+    }
+    return false;
+}
+
 void assign(void* aic, int player, int character, int role, const Candidate& candidate, int unit, int recruitedWalls) {
     if (role == DefenseRole) {
         playerValue(player, 0x115EEF8) = candidate.cursor;
@@ -352,6 +441,12 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         unsigned int facts = defenseIncomplete ? DefenseIncomplete : 0;
         if (playerValue(player, 0x115E99C) != 0) facts |= AttackActive;
         if (playerValue(player, 0x115F6E8) > 0) facts |= HomeUnderThreat;
+        bool needsEquipmentFact = false;
+        for (int row = 0; row < configuration.recruitment.conditionCount; ++row)
+            if ((configuration.recruitment.conditions[row].requiredFacts
+                | configuration.recruitment.conditions[row].forbiddenFacts) & EquipmentSurplus) needsEquipmentFact = true;
+        if (needsEquipmentFact && equipmentSurplus(probe, player, compositionReady, recruited[DefenseRole], ranged, melee))
+            facts |= EquipmentSurplus;
         observation.facts = facts;
 
         RecruitmentPlan requested;

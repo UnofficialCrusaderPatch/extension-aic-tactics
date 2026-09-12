@@ -86,6 +86,7 @@ static void check(const RecruitmentServices& services, int player, int unit,
     require(result.eligible == eligible, "wrong eligibility");
     require(result.failureReason == reason, "wrong failure reason");
     require(result.requiredResource == resource, "wrong required resource");
+    require(result.availableHorses == (unit == 28 && eligible ? 1 : 0), "horse availability snapshot differs");
     require(std::memcmp(savedUnits, units, sizeof(units)) == 0, "UnitsState changed");
     require(std::memcmp(savedImage, reinterpret_cast<void*>(ImageBase), ImageSize) == 0,
         "Original image/global state changed");
