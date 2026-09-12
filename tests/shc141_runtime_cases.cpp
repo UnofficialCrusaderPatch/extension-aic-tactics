@@ -65,6 +65,17 @@ struct BindFixture {
         nativeBindings.defenseSlots = 0xB42638;
         nativeBindings.raidTypes = 0xB426C8;
         nativeBindings.equipmentRecipes = 0xB55260;
+        nativeBindings.selectAttackTarget = 0x4D4680;
+        nativeBindings.computeNervousness = 0x4D3780;
+        nativeBindings.updateAIPlayerState = 0x4D49E0;
+        nativeBindings.returnAttack = 0x4CEA50;
+        nativeBindings.hasNoTroopsOrAllDiggers = 0x4CFFD0;
+        nativeBindings.updateRaids = 0x4D2A70;
+        nativeBindings.combatValue = 0x51C360;
+        nativeBindings.troopValues = 0x1763348;
+        nativeBindings.marketPrice = 0x4588D0;
+        nativeBindings.gameState = 0x112B0B8;
+
 
 
     }

@@ -61,6 +61,17 @@ struct NativeBindings {
     unsigned int defenseSlots;
     unsigned int raidTypes;
     unsigned int equipmentRecipes;
+    unsigned int selectAttackTarget;
+    unsigned int computeNervousness;
+    unsigned int updateAIPlayerState;
+    unsigned int returnAttack;
+    unsigned int hasNoTroopsOrAllDiggers;
+    unsigned int updateRaids;
+    unsigned int combatValue;
+    unsigned int troopValues;
+    unsigned int marketPrice;
+    unsigned int gameState;
+
 
 
 };

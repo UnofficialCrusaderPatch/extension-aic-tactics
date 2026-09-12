@@ -1,8 +1,8 @@
 # Shared recruitment and identity bindings
 
-Corrections after the [native audit](native-integration-audit.md). Shared pool
-bindings are implemented; the remaining function/hook port and full Extreme
-acceptance are still unfinished.
+Corrections after the [native audit](native-integration-audit.md). The AIC production
+function, hook and pool bindings now use native discovery. Full installed-framework,
+gameplay and variant acceptance remains unfinished.
 
 `config/grace.lua` resolves the original recruitment/RNG context through
 framework `core.AOBScan`, with a second framework scan rejecting ambiguity.
@@ -20,7 +20,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 216-byte
+`native-bindings.lua` passes the resolved values into the DLL's 256-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -62,9 +62,10 @@ error. The new binding derives the origin from the native owner-field operand,
 cross-checks projectile type and alliance operands, and is exercised through
 the production damage bridge.
 
-Legacy source is unchanged. Inspected `ai_attackwave.lua` patches the native
-wall/building/breach dispatch sites, outside these eight contexts. Full enabled
-Legacy composition testing remains part of the unfinished hook integration.
+Legacy source is unchanged. Inspected `ai_attackwave.lua` patches native
+wall/building/breach dispatch sites outside these pool contexts. Actual Legacy
+defense and target-policy composition checks are recorded below; the complete
+installed baseline remains a gameplay acceptance requirement.
 
 `native-group-actions.lua` adds twelve contexts for the native assignment,
 group-selection/removal, return and raid-order boundaries. Full assignment and
@@ -114,7 +115,34 @@ is verified at its already resolved address, without another scan. Recipes remai
 owned by native acquisition, including armor and horses. The recruitment caller
 must reach the identified building/role queries with their existing thiscall ABI.
 No fixed executable addresses remain in production `src/runtime.cpp` or
-`src/army.cpp`; the remaining combat/raid adapters are a separate unfinished port.
+`src/army.cpp`. The combat and raid adapters use the same binding structure.
+
+## Combat, raid and targeting hooks
+
+`native-combat-bindings.lua` resolves 23 identifying contexts for native targeting,
+nervousness, attack/raid state updates, return orders, combat values, damage,
+unit/building census, wave readiness, tunneler membership and scheduler callers.
+Repeated operands must agree with the shared pools, player fields, tick, census
+indices and original owners. The combat-value switch table and all dispatch
+indices are validated. Buy/sell price arithmetic is shared, so the native caller
+identifies the price function and its body is verified in place; the decoded
+price field is checked against the player layout on each game family.
+
+`combat-native.lua` consumes named hook sites and captured original instructions.
+It rejects occupied bytes and redirected calls before patching. Existing
+framework allocation/write facilities preserve the displaced instructions and
+original native calls; the three damage gateways adapt native C++ callbacks.
+Framework `core.hookCode`/`detourCode` expose Lua callbacks, so using them here
+would add Lua dispatch to every observed hit. No additional dispatcher was added.
+The explicit Legacy target-policy replacement reaches the original selection
+paths and is compared with unchanged `ai_attacktarget.lua` below.
+
+No fixed executable addresses remain in AIC production Lua/C++ bindings. The
+remaining long hex values are integer limits, digest constants and a building
+cost-table field offset. Hash-pinned executable addresses remain in private tests.
+Framework `core.AOBScan` uses its existing cache; RPS 1.5.2 scans committed image
+regions, while the Lua wrapper supplies its documented range. Installed-process
+scanner/module composition still needs the real-game acceptance below.
 
 Validation performed:
 
@@ -156,6 +184,14 @@ Validation performed:
   writes), 1,280 native raid-limit cases and five native building-filter cases,
   including the highest valid building record. Acquisition recipes are verified
   at the existing function binding rather than scanned again.
+- Both actual images pass 81 combat binding/operand/switch failures, 200 native
+  price calls, 80 native combat-value calls (identical output vectors), and 40
+  native lifecycle early-return/nervousness cases. These do not test active armies.
+- Actual FASM combat/raid/damage gateways pass 297 cases on each image, preserving
+  displaced effects, callback arguments, registers, flags and stack. Ninety-one
+  occupied hook-byte/call checks reject before allocation. Forty-five cases per
+  image compare the explicit target-policy replacement with unchanged Legacy
+  through the original selection loop, including its stack and flags effects.
 - Seventy-six AIC Python/Lua tests and forty Loader tests passed. The initial
   full AIC run lacked `AICLOADER_TEST_ROOT`; rerunning with the actual prerequisite
   checkout passed.
@@ -168,7 +204,9 @@ in test code. No new game, MP, replay or performance acceptance is claimed.
 Source version 0.0.3 requires Loader 1.1.4 and Protocol 1.1.1. No 0.0.3 tester
 bundle is published while the remaining native integration is incomplete.
 
-Remaining native work includes combat Lua hook discovery/Legacy composition, the other
-native function casts and data tables, and verification of every reused player
-field against all required executable variants. Pool discovery alone does not
-establish those capabilities or whole-game compatibility.
+Remaining acceptance includes the complete installed framework/Legacy baseline,
+all reused field/layout paths in active games, applicable language/distribution
+fixtures, native-default equivalence, mixed personalities, physical two-peer MP,
+save/load, Recorder state restore/replay and measured whole-game performance.
+The Recorder resolver and shared asset-admission ownership identified in the
+original audit also remain open. Passing component tests does not finish those.

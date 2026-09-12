@@ -2,25 +2,11 @@ local M = {}
 
 function M.attach(native)
   local installed, targetingInstalled, raidsInstalled = false, false, false
-  local raidSites = {
-    {0x422EE2, '8B CF 89 5E 04'},
-    {0x422F56, '66 83 B8 E6 00 00 00 43'},
-    {0x42331B, '8B 46 10 B9 D0 07 00 00'},
-  }
-  local sites = {
-    {0x5798EF, '8B C7 A3 C8 0F EE 00 39 3E'},
-    {0x579940, '8B C5 69 C0 90 04 00 00 8B 8C 30 E8 06 00 00'},
-    {0x579DDC, 'B9 00 03 35 02 E8 3A 78 E8 FF'},
-    {0x531220, '51 53 8B 5C 24 0C 55 56 57'},
-    {0x531920, '83 EC 14 8B 44 24 18 53 55'},
-    {0x532460, '8B 44 24 04 53 33 DB 3B C3'},
-    {0x4D4A62, '89 AF 68 F7 15 01 C7 87 9C E9 15 01 01 00 00 00'},
-    {0x4CDD47, '89 AE 98 F6 15 01 69 C0 A4 02 00 00'},
-    {0x4D40F2, '0F B7 86 42 02 00 00 66 85 C0 74 0F'},
-  }
-  local calls = {{0x4D54A8,0x4D49E0}, {0x4D5570,0x4D4680}, {0x4D547B,0x4D2A70},
-    {0x4D4B5C,0x4CEA50}, {0x4D4F59,0x4CEA50}, {0x4D4FAF,0x4CEA50},
-    {0x4D544B,0x4D3AE0}, {0x4D3DA5,0x4CC250}}
+  local game = native.game
+  local sites = game and game.combatSites
+  local originals = game and game.combatOriginals
+  local calls = game and game.combatCalls
+  local context = require('native-context')
 
   function native.preflightTargets()
     assert(type(configFinal) == 'table', 'AIC Tactics: resolved framework configuration is unavailable')
@@ -31,38 +17,25 @@ function M.attach(native)
       end
     end
     if not targetingInstalled then
-      assert(core.AOBScan('83 F8 04 75 33 83 3C BD 10 DE 91 01 FF') == 0x4D47B2,
-        'AIC Tactics: native target choice is already modified; restart with compatible modules')
+      context.verify(sites.targetChoice,'target choice',originals.targetChoice)
     end
   end
 
   function native.preflightCombat()
     if installed then return end
-    for _, site in ipairs(sites) do
-      -- Several native damage prologues occur more than once in the image.
-      -- Validate the admitted 1.41 owner itself instead of taking the first match.
-      local offset = 0
-      for byte in site[2]:gmatch('%x%x') do
-        assert(core.readByte(site[1] + offset) == tonumber(byte, 16),
-          string.format('AIC Tactics: unsupported or modified combat owner at 0x%X', site[1]))
-        offset = offset + 1
-      end
+    for _, name in ipairs({'unitReset','unitCount','unitComplete','unitDamage','entityDamage','fireDamage',
+        'launch','randomWave','tunnelers'}) do
+      context.verify(sites[name],name,originals[name])
     end
-    for _, site in ipairs(calls) do
-      assert(core.readByte(site[1]) == 0xE8 and site[1] + 5 + core.readInteger(site[1] + 1) == site[2],
-        string.format('AIC Tactics: unsupported AI scheduler call at 0x%X', site[1]))
+    for name, target in pairs(calls) do
+      assert(context.call(sites[name],name)==target, 'AIC Tactics: native combat scheduler was replaced')
     end
   end
 
   function native.preflightRaids()
     if raidsInstalled then return end
-    for _, site in ipairs(raidSites) do
-      local offset = 0
-      for byte in site[2]:gmatch('%x%x') do
-        assert(core.readByte(site[1] + offset) == tonumber(byte, 16),
-          string.format('AIC Tactics: unsupported building census at 0x%X', site[1]))
-        offset = offset + 1
-      end
+    for _, name in ipairs({'buildingReset','buildingCount','buildingComplete'}) do
+      context.verify(sites[name],name,originals[name])
     end
   end
 
@@ -94,7 +67,7 @@ function M.attach(native)
       mov ecx, edi
       mov dword [esi + 4], ebx
       jmp resume
-    ]], {resetCensus=native.resetRaidBuildingCensus, resume=0x422EE7})
+    ]], {resetCensus=native.resetRaidBuildingCensus, resume=(sites.buildingReset+5)})
     local count = core.allocateAssembly([[
       pushfd
       pushad
@@ -105,7 +78,7 @@ function M.attach(native)
       popfd
       cmp word [eax + 0xE6], 0x43
       jmp resume
-    ]], {countBuilding=native.countRaidBuilding, resume=0x422F5E})
+    ]], {countBuilding=native.countRaidBuilding, resume=(sites.buildingCount+8)})
     local complete = core.allocateAssembly([[
       pushfd
       pushad
@@ -115,10 +88,10 @@ function M.attach(native)
       mov eax, dword [esi + 0x10]
       mov ecx, 2000
       jmp resume
-    ]], {completeCensus=native.completeRaidBuildingCensus, resume=0x423323})
-    jump(0x422EE2, reset, 5)
-    jump(0x422F56, count, 8)
-    jump(0x42331B, complete, 8)
+    ]], {completeCensus=native.completeRaidBuildingCensus, resume=(sites.buildingComplete+8)})
+    jump(sites.buildingReset, reset, 5)
+    jump(sites.buildingCount, count, 8)
+    jump(sites.buildingComplete, complete, 8)
     raidsInstalled = true
   end
 
@@ -139,9 +112,9 @@ function M.attach(native)
       cmp eax, 4
       jne notPlayer
       jmp player
-    ]], {policy=native.legacyTargetPolicy, nearest=0x4D47C5, richest=0x4D47F3,
-      weakest=0x4D4806, notPlayer=0x4D47EA, player=0x4D47B7})
-    jump(0x4D47B2, hook, 5)
+    ]], {policy=native.legacyTargetPolicy, nearest=sites.nearest, richest=sites.richest,
+      weakest=sites.weakest, notPlayer=sites.notPlayer, player=sites.player})
+    jump(sites.targetChoice, hook, 5)
     targetingInstalled = true
   end
 
@@ -155,9 +128,9 @@ function M.attach(native)
       popad
       popfd
       mov eax, edi
-      mov dword [0xEE0FC8], eax
+      mov dword [censusID], eax
       jmp resume
-    ]], {resetCensus=native.resetCombatCensus, resume=0x5798F6})
+    ]], {censusID=sites.censusID, resetCensus=native.resetCombatCensus, resume=(sites.unitReset+7)})
     local count = core.allocateAssembly([[
       pushfd
       pushad
@@ -169,16 +142,16 @@ function M.attach(native)
       mov eax, ebp
       imul eax, eax, 0x490
       jmp resume
-    ]], {countUnit=native.countCombatUnit, resume=0x579948})
+    ]], {countUnit=native.countCombatUnit, resume=(sites.unitCount+8)})
     local complete = core.allocateAssembly([[
       pushfd
       pushad
       call completeCensus
       popad
       popfd
-      mov ecx, 0x2350300
+      mov ecx, entityState
       jmp resume
-    ]], {completeCensus=native.completeCombatCensus, resume=0x579DE1})
+    ]], {entityState=game.entities-0x14, completeCensus=native.completeCombatCensus, resume=(sites.unitComplete+5)})
     local launch = core.allocateAssembly([[
       pushfd
       pushad
@@ -189,13 +162,13 @@ function M.attach(native)
       jz refused
       popad
       popfd
-      mov dword [edi + 0x115F768], ebp
+      mov dword [edi + attackDuration], ebp
       jmp resume
     refused:
       popad
       popfd
       jmp waiting
-    ]], {commitTarget=native.commitOpponent, resume=0x4D4A68, waiting=0x4D4AB5})
+    ]], {attackDuration=game.players+0x3970, commitTarget=native.commitOpponent, resume=(sites.launch+6), waiting=sites.launchWait})
     local randomRequirement = core.allocateAssembly([[
       pushfd
       pushad
@@ -206,13 +179,13 @@ function M.attach(native)
       jnz preserve
       popad
       popfd
-      mov dword [esi + 0x115F698], ebp
+      mov dword [esi + randomWaveSize], ebp
       jmp resume
     preserve:
       popad
       popfd
       jmp resume
-    ]], {preserveRequirement=native.preserveRandomWaveRequirement, resume=0x4CDD4D})
+    ]], {randomWaveSize=game.players+0x38A0, preserveRequirement=native.preserveRandomWaveRequirement, resume=(sites.randomWave+6)})
     local tunnelers = core.allocateAssembly([[
       pushfd
       pushad
@@ -229,26 +202,26 @@ function M.attach(native)
       popad
       popfd
       jmp nextUnit
-    ]], {reserved=native.isReserveUnit, resume=0x4D40F9, nextUnit=0x4D4117})
+    ]], {reserved=native.isReserveUnit, resume=(sites.tunnelers+7), nextUnit=sites.nextTunneler})
     -- Every admission above precedes mutations. Original damage bodies stay in
     -- their existing owners; the trampolines only replay displaced prologues.
-    jump(0x5798EF, reset, 7)
-    jump(0x579940, count, 8)
-    jump(0x579DDC, complete, 5)
-    jump(0x4D4A62, launch, 6)
-    jump(0x4CDD47, randomRequirement, 6)
-    jump(0x4D40F2, tunnelers, 7)
-    detour(0x531220, 6, native.observedUnitDamage, native.originalUnitDamage)
-    detour(0x531920, 7, native.observedEntityDamage, native.originalEntityDamage)
-    detour(0x532460, 5, native.observedFireDamage, native.originalFireDamage)
-    call(0x4D54A8, native.updateOffensiveArmy)
-    call(0x4D5570, native.selectOpponent)
-    call(0x4D547B, native.updateOffensiveRaids)
-    call(0x4D4B5C, native.returnFromAttack)
-    call(0x4D4F59, native.returnFromAttack)
-    call(0x4D4FAF, native.returnFromAttack)
-    call(0x4D544B, native.recruitWithReserve)
-    call(0x4D3DA5, native.reserveRecruitType)
+    jump(sites.unitReset, reset, 7)
+    jump(sites.unitCount, count, 8)
+    jump(sites.unitComplete, complete, 5)
+    jump(sites.launch, launch, 6)
+    jump(sites.randomWave, randomRequirement, 6)
+    jump(sites.tunnelers, tunnelers, 7)
+    detour(sites.unitDamage, 6, native.observedUnitDamage, native.originalUnitDamage)
+    detour(sites.entityDamage, 7, native.observedEntityDamage, native.originalEntityDamage)
+    detour(sites.fireDamage, 5, native.observedFireDamage, native.originalFireDamage)
+    call(sites.callAttack, native.updateOffensiveArmy)
+    call(sites.callTarget, native.selectOpponent)
+    call(sites.callRaid, native.updateOffensiveRaids)
+    call(sites.callReturn1, native.returnFromAttack)
+    call(sites.callReturn2, native.returnFromAttack)
+    call(sites.callReturn3, native.returnFromAttack)
+    call(sites.callRecruit, native.recruitWithReserve)
+    call(sites.callRecruitType, native.reserveRecruitType)
     installed = true
   end
 end

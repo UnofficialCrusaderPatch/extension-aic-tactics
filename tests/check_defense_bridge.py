@@ -27,7 +27,7 @@ p.add_argument('--variant',choices=['SHC','SHCE'],default='SHC')
 a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 raw=a.reference.read_bytes()
 assert hashlib.sha256(raw).hexdigest()=={'SHC':'3bb0a8c1e72331b3a30a5aa93ed94beca0081b476b04c1960e26d5b45387ac5a','SHCE':'55648e6b05d67d37a5773fe699bbb17a2d6ad4de1bb9dbded9a21caef82bd7fb'}[a.variant]
-assert not a.combat or a.variant=='SHC', 'Combat bindings still need porting'
+
 pe=pefile.PE(data=raw);uc=Uc(UC_ARCH_X86,UC_MODE_32)
 base=pe.OPTIONAL_HEADER.ImageBase
 uc.mem_map(base,(pe.OPTIONAL_HEADER.SizeOfImage+4095)&~4095)
@@ -93,15 +93,21 @@ def assemble(source,symbols):
     uc.mem_write(address,code);return address
 g.core.allocateAssembly=assemble
 g.root=Path(__file__).resolve().parents[1].as_posix()
+recruitment_scan_range=[]
+g.markRecruitment=lambda:recruitment_scan_range.append(len(scan_log))
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
 package.loaded['native-bindings']={initialize=function(native)
-  local game=require('native-layout').resolve()
+  local game=require('config.grace').resolveNative()
+  for k,v in pairs(require('native-layout').resolve()) do game[k]=v end
   for k,v in pairs(require('native-group-actions').resolve(game)) do game[k]=v end
+  markRecruitment()
   for k,v in pairs(require('native-recruitment').resolve(game)) do game[k]=v end
+  markRecruitment()
+  for k,v in pairs(require('native-aic-queries').resolve(game)) do game[k]=v end
+  for k,v in pairs(require('native-combat-bindings').resolve(game)) do game[k]=v end
   native.game=game
 end} -- full production discovery; DLL storage writes checked by check_grace_native
-package.loaded['config.grace']={preflight=function()end}
 configFinal={}
 package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
@@ -110,7 +116,7 @@ native=require('native').new()
 ''')
 # Exercise every production context against absence and ambiguity. Captured
 # addresses only avoid repeating private-fixture scans for negative cases.
-recruitment_contexts=[item for item in scan_log if item[1] is None][-11:]
+recruitment_contexts=[item for item in scan_log[recruitment_scan_range[0]:recruitment_scan_range[1]] if item[1] is None]
 assert len(recruitment_contexts)==11
 context_sites={pattern:address for pattern,_,address in recruitment_contexts}
 resolver=lua.eval("require('native-recruitment')")
@@ -254,6 +260,29 @@ result={'variant':a.variant,'cases':cases,'contexts':11,'negativeResolutionCases
 print(json.dumps(result))
 
 if a.combat:
+    # Every occupied patch byte and redirected scheduler call must be rejected
+    # before allocating/writing a combat hook.
+    hooks=g.native.game.combatSites
+    occupied_cases=0
+    for name,pattern in g.native.game.combatOriginals.items():
+        preflight=g.native.preflightTargets if name=='targetChoice' else g.native.preflightRaids if name.startswith('building') else g.native.preflightCombat
+        for offset in range(len(pattern.split())):
+            address=hooks[name]+offset;old=bytes(uc.mem_read(address,1))
+            uc.mem_write(address,bytes([old[0]^1]))
+            before=assembly_count
+            try:preflight()
+            except Exception as error:assert 'AIC Tactics:' in str(error)
+            else:raise AssertionError(('occupied',name,offset))
+            finally:uc.mem_write(address,old)
+            assert assembly_count==before
+            occupied_cases+=1
+    for name,target in g.native.game.combatCalls.items():
+        address=hooks[name]+1;old=get(address);put(address,old+1)
+        try:g.native.preflightCombat()
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError(('redirected',name))
+        finally:put(address,old)
+        occupied_cases+=1
     # Reuse the same reference image, actual Lua assembler and register oracle.
     names=['resetCombatCensus','countCombatUnit','completeCombatCensus','commitOpponent',
         'preserveRandomWaveRequirement','isReserveUnit','observedUnitDamage','observedEntityDamage',
@@ -266,11 +295,12 @@ if a.combat:
     for index,name in enumerate(['originalUnitDamage','originalEntityDamage','originalFireDamage','legacyTargetPolicy']):
         native[name]=0x306F000+index*4
     g.core.writeInteger=put
-    sites=[(0x5798EF,7,'resetCombatCensus',None),(0x579940,8,'countCombatUnit',UC_X86_REG_EBP),
-        (0x579DDC,5,'completeCombatCensus',None),(0x422EE2,5,'resetRaidBuildingCensus',None),
-        (0x422F56,8,'countRaidBuilding',UC_X86_REG_EDX),(0x42331B,8,'completeRaidBuildingCensus',None),
-        (0x4D4A62,6,'commitOpponent',UC_X86_REG_ESI),(0x4CDD47,6,'preserveRandomWaveRequirement',UC_X86_REG_ESI),
-        (0x4D40F2,7,'isReserveUnit',UC_X86_REG_EDI)]
+    hooks=native.game.combatSites
+    sites=[(hooks.unitReset,7,'resetCombatCensus',None),(hooks.unitCount,8,'countCombatUnit',UC_X86_REG_EBP),
+        (hooks.unitComplete,5,'completeCombatCensus',None),(hooks.buildingReset,5,'resetRaidBuildingCensus',None),
+        (hooks.buildingCount,8,'countRaidBuilding',UC_X86_REG_EDX),(hooks.buildingComplete,8,'completeRaidBuildingCensus',None),
+        (hooks.launch,6,'commitOpponent',UC_X86_REG_ESI),(hooks.randomWave,6,'preserveRandomWaveRequirement',UC_X86_REG_ESI),
+        (hooks.tunnelers,7,'isReserveUnit',UC_X86_REG_EDI)]
     original_combat={site:bytes(uc.mem_read(site,length)) for site,length,_,_ in sites}
     native.activateCombat(); native.activateRaids(); native.activateCombat(); native.activateRaids()
     wrapped_combat={site:bytes(uc.mem_read(site,length)) for site,length,_,_ in sites}
@@ -292,11 +322,13 @@ if a.combat:
     for site,length,name,arg in sites:
         for player in range(1,9):
             for flags in [0x202,0x247,0xA92]:
-                initial=[0x1387F38,0x98765432,0xCC001101,player,0x1387F38,player*0x39F4,3,0x308F000,flags]
+                initial=[game.units,0x98765432,0xCC001101,player,game.units,player*0x39F4,3,0x308F000,flags]
+                if name in ['resetRaidBuildingCensus','countRaidBuilding','completeRaidBuildingCensus']:
+                    initial[0]=game.buildings;initial[4]=game.buildings
                 if name=='commitOpponent':initial[4]=player
                 if name=='preserveRandomWaveRequirement':initial[4]=player*0x39F4
-                locations=[0xEE0FC8,initial[4]+4,initial[5]+0x115F768,initial[4]+0x115F698]
-                locations=[address for address in locations if 0x400000<=address<0x2491000]
+                locations=[hooks.censusID,initial[4]+4,initial[5]+game.players+0x3970,initial[4]+game.players+0x38A0]
+                locations=[address for address in locations if base<=address<base+pe.OPTIONAL_HEADER.SizeOfImage]
                 results=[]
                 for patch in [original_combat,wrapped_combat]:
                     uc.mem_write(site,patch[site]);uc.ctl_remove_cache(site,site+length)
@@ -311,8 +343,8 @@ if a.combat:
                     assert combat_calls==expected,(name,combat_calls,expected)
                 assert results[0]==results[1],(hex(site),player,flags,results)
                 combat_cases+=1
-                skips={'commitOpponent':(0,0x4D4AB5),'preserveRandomWaveRequirement':(1,site+length),
-                    'isReserveUnit':(1,0x4D4117)}
+                skips={'commitOpponent':(0,hooks.launchWait),'preserveRandomWaveRequirement':(1,site+length),
+                    'isReserveUnit':(1,hooks.nextTunneler)}
                 if name in skips:
                     previous=returns[name];returns[name],end=skips[name]
                     uc.mem_write(site,wrapped_combat[site]);uc.ctl_remove_cache(site,site+length)
@@ -324,8 +356,8 @@ if a.combat:
                     assert combat_calls==[(name,initial[registers.index(arg)])]
                     returns[name]=previous;combat_cases+=1
     # Damage wrappers call these original prologues through relocated trampolines.
-    for site,length,original_name in [(0x531220,6,'originalUnitDamage'),
-        (0x531920,7,'originalEntityDamage'),(0x532460,5,'originalFireDamage')]:
+    for site,length,original_name in [(hooks.unitDamage,6,'originalUnitDamage'),
+        (hooks.entityDamage,7,'originalEntityDamage'),(hooks.fireDamage,5,'originalFireDamage')]:
         displaced=pe.get_data(site-base,length)
         trampoline=get(native[original_name])
         patched=bytes(uc.mem_read(site,length))
@@ -333,7 +365,7 @@ if a.combat:
             results=[]
             for entry in [site,trampoline]:
                 uc.mem_write(site,displaced);uc.ctl_remove_cache(site,site+length)
-                initial=[0x12345678,0x98765432,0x1387F38,3,0x11223344,0x55667788,0xABCD,0x308F000,flags]
+                initial=[0x12345678,0x98765432,game.units,3,0x11223344,0x55667788,0xABCD,0x308F000,flags]
                 uc.mem_write(initial[7]-64,bytes(range(128)))
                 for register,value in zip(registers,initial):uc.reg_write(register,value)
                 uc.emu_start(entry,site+length,count=30)
@@ -341,7 +373,48 @@ if a.combat:
             assert results[0]==results[1],(original_name,flags)
             combat_cases+=1
         uc.mem_write(site,patched);uc.ctl_remove_cache(site,site+length)
-    result={'cases':combat_cases,'source':'actual combat-native.lua wrappers',
+    result={'variant':a.variant,'cases':combat_cases,'occupiedHookCases':occupied_cases,
+        'source':'actual combat-native.lua wrappers',
         'scope':'Original displaced effects, callback arguments, registers, flags and stack; C++ ABI spies'}
     (a.output/'combat-result.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result))
+
+    # Compare explicit replacement policies to the real, unchanged Legacy port
+    # through the native selection loop's comparison and stack updates.
+    target_port=lua.execute(a.legacy.with_name('ai_attacktarget.lua').read_text())
+    choice_site=hooks.targetChoice
+    original_choice=pe.get_data(choice_site-base,5)
+    policy_cases=0
+    for choice in ('Nearest','Richest','Weakest'):
+        uc.mem_write(choice_site,original_choice)
+        target_port.init(target_port,lua.table_from({'choice':choice.lower()}))
+        target_port.enable(target_port,lua.table())
+        legacy_patch=bytes(uc.mem_read(choice_site,5))
+        uc.mem_write(choice_site,original_choice)
+        candidate=lua.table_from({'game':game,'legacyTargetPolicy':0x306F100})
+        lua.eval("require('combat-native').attach")(candidate)
+        candidate.enableNativeTargetPolicy(choice)
+        replacement=bytes(uc.mem_read(choice_site,5))
+        for configured in range(5):
+            for flags in (0x202,0x247,0xA92):
+                results=[]
+                for patch in (legacy_patch,replacement):
+                    uc.mem_write(choice_site,patch);uc.ctl_remove_cache(choice_site,choice_site+5)
+                    initial=[configured,0x98765432,0x12345678,0x10203040,
+                        game.players+0x39F4+0x50C,2,0,0x308F000,flags]
+                    frame=bytearray(64)
+                    uc.mem_write(initial[7],bytes(frame));put(initial[7]+0x10,10000)
+                    put(initial[7]+0x18,1000000)
+                    put(initial[4],300)
+                    for register,value in zip(registers,initial):uc.reg_write(register,value)
+                    uc.emu_start(choice_site,game.selectAttackTarget+0x1C7,count=100)
+                    results.append(([uc.reg_read(register) for register in registers],
+                        bytes(uc.mem_read(initial[7],64))))
+                assert results[0]==results[1],(choice,configured,flags,results)
+                policy_cases+=1
+        uc.mem_write(choice_site,original_choice);uc.ctl_remove_cache(choice_site,choice_site+5)
+    policy_result={'variant':a.variant,'cases':policy_cases,
+        'legacySHA256':hashlib.sha256(a.legacy.with_name('ai_attacktarget.lua').read_bytes()).hexdigest(),
+        'scope':'Actual Legacy target-policy patch versus actual AIC FASM/native selection loop; no active-game acceptance'}
+    (a.output/'target-policy-result.json').write_text(json.dumps(policy_result,indent=2)+'\n')
+    print(json.dumps(policy_result))

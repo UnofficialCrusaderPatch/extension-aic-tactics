@@ -7,7 +7,8 @@ function M.initialize(native)
     'assignMoatDigger','wallDefense','patrolDefense','assignRaider','assignAttacker',
     'findSortieGroup','findAttackGroup','returnTribe','removeUnitFromTribe','relayRaidOrder','mapRows','attackGroupSlots','recruitUpdate','rangedSortieNative','meleeSortieNative',
     'recruitEuropean','recruitNonEuropean','scenarioMode','scenarioCustom','scenarioMission','moat','moatVacancies','findRecruitmentBuilding','attackRecruitType','raidMaximum',
-    'defenseTypes','specialDefenders','defenseSlots','raidTypes','equipmentRecipes'}
+    'defenseTypes','specialDefenders','defenseSlots','raidTypes','equipmentRecipes',
+    'selectAttackTarget','computeNervousness','updateAIPlayerState','returnAttack','hasNoTroopsOrAllDiggers','updateRaids','combatValue','troopValues','marketPrice','gameState'}
   assert(native.nativeBindingsSize == #names * 4, 'AIC Tactics: incompatible native binding ABI')
   local game = require('config.grace').resolveNative()
   assert(type(modules.aicloader.getNativeAICLayout) == 'function',
@@ -21,6 +22,7 @@ function M.initialize(native)
   for key, value in pairs(require('native-group-actions').resolve(game)) do game[key] = value end
   for key, value in pairs(require('native-recruitment').resolve(game)) do game[key] = value end
   for key, value in pairs(require('native-aic-queries').resolve(game)) do game[key] = value end
+  for key, value in pairs(require('native-combat-bindings').resolve(game)) do game[key] = value end
   for index, name in ipairs(names) do
     core.writeInteger(native.nativeBindings + (index - 1) * 4, game[name])
   end

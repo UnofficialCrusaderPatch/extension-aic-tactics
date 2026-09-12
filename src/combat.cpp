@@ -98,7 +98,7 @@ void finishObservedDamage(DamageProbe& probe)
     input.lordDamaged = damage.unitType == 55 ? 1 : 0;
     typedef int (__thiscall *CombatValue)(void*, int);
     input.militaryLossPower = damage.killed && militaryPerson(damage.unitType)
-        ? reinterpret_cast<CombatValue>(0x51C360)(reinterpret_cast<void*>(0x1763348), damage.unitType) : 0;
+        ? reinterpret_cast<CombatValue>(nativeBindings.combatValue)(reinterpret_cast<void*>(nativeBindings.troopValues), damage.unitType) : 0;
     input.atHome = atHome(damage.victimOwner, damage.x, damage.y) ? 1 : 0;
     input.homeEnemyPower = combatCensusValid && input.tick - combatCensusTick <= 1
         ? combatCensus[damage.victimOwner].homePower[damage.sourceOwner] : 0;
@@ -123,7 +123,7 @@ void __cdecl resetCombatCensus()
     if (needsPower) {
         typedef int (__thiscall *CombatValue)(void*, int);
         for (int type = 0; type < 80; ++type)
-            combatValues[type] = reinterpret_cast<CombatValue>(0x51C360)(reinterpret_cast<void*>(0x1763348), type);
+            combatValues[type] = reinterpret_cast<CombatValue>(nativeBindings.combatValue)(reinterpret_cast<void*>(nativeBindings.troopValues), type);
     }
 }
 
@@ -295,7 +295,7 @@ int __cdecl commitOpponent(int player)
 void __fastcall selectOpponent(void* aic, void*, int player)
 {
     if (!targetPolicyActive(player)) {
-        reinterpret_cast<PlayerAction>(0x4D4680)(aic, player);
+        reinterpret_cast<PlayerAction>(nativeBindings.selectAttackTarget)(aic, player);
         return;
     }
     const CharacterConfiguration* config = configuration(player);
@@ -303,7 +303,7 @@ void __fastcall selectOpponent(void* aic, void*, int player)
     if (!readTargetContext(player, context)) return;
     TargetState& state = targetStates[player];
     if (state.attackActive) {
-        reinterpret_cast<PlayerAction>(0x4D3780)(aic, player);
+        reinterpret_cast<PlayerAction>(nativeBindings.computeNervousness)(aic, player);
         if (updateTarget(config->combat.targeting, state, MaintainAttack, context, nativeRandom, 0)
             == TargetNeedsCleanup) {
             if (playerValue(player, (nativeBindings.players + 0x2BA4)) != 9) at<int>((nativeBindings.players + 0x2BA4) + player * PlayerStride) = 8;
@@ -316,12 +316,12 @@ void __fastcall selectOpponent(void* aic, void*, int player)
     if (config->combat.targeting.commitment == UntilDefeated && state.player
         && context.players[state.player].eligible
         && context.players[state.player].lordUID == state.lordUID) {
-        reinterpret_cast<PlayerAction>(0x4D3780)(aic, player);
+        reinterpret_cast<PlayerAction>(nativeBindings.computeNervousness)(aic, player);
         at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = state.player;
         return;
     }
     // Preserve native nervousness and TargetChoice/request behavior for fallback.
-    reinterpret_cast<PlayerAction>(0x4D4680)(aic, player);
+    reinterpret_cast<PlayerAction>(nativeBindings.selectAttackTarget)(aic, player);
     context.nativeFallback = playerValue(player, (nativeBindings.players + 0x2BD8));
     if (config->combat.targeting.policy == RandomTarget) {
         if (config->combat.targeting.commitment == UntilDefeated) {
@@ -343,7 +343,7 @@ void __fastcall updateOffensiveArmy(void* aic, void*, int player)
     const int phaseBefore = playerValue(player, (nativeBindings.players + 0x2BA4));
     prepareArmyUpdate(aic, player);
     if (!targetPolicyActive(player)) {
-        reinterpret_cast<PlayerAction>(0x4D49E0)(aic, player);
+        reinterpret_cast<PlayerAction>(nativeBindings.updateAIPlayerState)(aic, player);
         finishArmyUpdate(player, phaseBefore);
         return;
     }
@@ -364,18 +364,18 @@ void __fastcall updateOffensiveArmy(void* aic, void*, int player)
     int& request = at<int>((nativeBindings.players + 0x384C) + player * PlayerStride);
     const int savedRequest = request;
     if (state.attackActive || config->combat.targeting.policy != InheritTarget) request = 0;
-    reinterpret_cast<PlayerAction>(0x4D49E0)(aic, player);
+    reinterpret_cast<PlayerAction>(nativeBindings.updateAIPlayerState)(aic, player);
     finishArmyUpdate(player, phaseBefore);
     if (request == 0 && savedRequest != 0) request = savedRequest;
 }
 
 void __fastcall returnFromAttack(void* aic, void*, int player)
 {
-    reinterpret_cast<PlayerAction>(0x4CEA50)(aic, player);
+    reinterpret_cast<PlayerAction>(nativeBindings.returnAttack)(aic, player);
     const CharacterConfiguration* config = configuration(player);
     if (!config || (config->preparation == NativePreparation && !targetPolicyActive(player))) return;
     if (playerValue(player, (nativeBindings.players + 0x2B7C)) != 0
-        || reinterpret_cast<PlayerQuery>(0x4CFFD0)(aic, player)
+        || reinterpret_cast<PlayerQuery>(nativeBindings.hasNoTroopsOrAllDiggers)(aic, player)
         || returnArmyToCampfire(aic, player)) {
         noteArmyReturn(player);
         if (targetPolicyActive(player) && targetStates[player].attackActive) targetLifecycle[player] |= 2;
@@ -385,7 +385,7 @@ void __fastcall returnFromAttack(void* aic, void*, int player)
 void __fastcall updateOffensiveRaids(void* aic, void*, int player)
 {
     if (offensiveActionsAllowed(player) && !updateSplitRaids(aic, player))
-        reinterpret_cast<PlayerAction>(0x4D2A70)(aic, player);
+        reinterpret_cast<PlayerAction>(nativeBindings.updateRaids)(aic, player);
 }
 
 int __cdecl preserveRandomWaveRequirement(int playerOffset)

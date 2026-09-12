@@ -2,9 +2,11 @@
 
 The table distinguishes code paths from acceptance evidence. The integrated
 preview has SHC startup and limited gameplay evidence at recorded revisions;
-full behavior acceptance remains incomplete. It does not support Extreme.
-See the [native integration audit](native-integration-audit.md) for outstanding
-bindings and layouts. Fixed work limits do not establish performance.
+full behavior acceptance remains incomplete. The published 0.0.2 preview does
+not support Extreme. Source 0.0.3 declares both game families and now resolves
+native hooks/functions/layouts through UCP. See [current binding evidence](shared-native-bindings.md)
+and the historical [integration audit](native-integration-audit.md). Component
+checks and fixed work limits do not establish gameplay compatibility or performance.
 
 | Original control | Confirmed native meaning | Status / replacement | Activation and precedence | Defaults / conversion | Get, set, reset | Legacy requirement | Evidence / remaining acceptance |
 | --- | --- | --- | --- | --- | --- | --- | --- |

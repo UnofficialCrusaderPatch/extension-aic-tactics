@@ -18,6 +18,7 @@ p = argparse.ArgumentParser()
 p.add_argument('--reference', type=Path, required=True)
 p.add_argument('--variant', choices=['SHC', 'SHCE'], required=True)
 p.add_argument('--output', type=Path, required=True)
+p.add_argument('--combat-output',type=Path)
 a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
 raw = a.reference.read_bytes()
@@ -174,3 +175,75 @@ result={'variant':a.variant,'referenceSHA256':digest,'contexts':9,'negativeCases
 a.output.parent.mkdir(parents=True,exist_ok=True)
 a.output.write_text(json.dumps(result,indent=2)+'\n')
 print(json.dumps(result))
+
+if a.combat_output:
+    for k,v in bound.items():g.game[k]=v
+    g.core.AOBScan=scan;g.core.scanForAOB=scan
+    clock=lua.eval("(require('config.grace'))").resolveNative()
+    g.game.gameTick=clock.gameTick
+    start=len(scans)
+    combat_owner=lua.eval("(require('native-combat-bindings'))")
+    combat=combat_owner.resolve(g.game)
+    contexts=[item for item in scans[start:] if item[1] is None]
+    assert len(contexts)==23
+    sites={pattern:address for pattern,_,address in contexts}
+    negative=0
+    for pattern,_,address in contexts:
+        for kind in ('absent','ambiguous'):
+            g.core.AOBScan=lambda pat:None if kind=='absent' and pat==pattern else sites[pat]
+            g.core.scanForAOB=lambda pat,start:scratch if kind=='ambiguous' and pat==pattern else None
+            try:combat_owner.resolve(g.game)
+            except Exception as error:assert 'AIC Tactics:' in str(error)
+            else:raise AssertionError(('combat',kind,pattern))
+            negative+=1
+    g.core.AOBScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
+    for index,offset in [(0,18),(0,86),(0,326),(1,25),(2,132),(2,226),(3,84),
+            (4,122),(4,160),(5,49),(6,19),(6,28),(7,22),(7,27),(7,127),(8,28),
+            (9,96),(10,71),(12,3),(12,11),(12,127),(13,1),(14,33),(15,19),
+            (16,89),(17,49),(18,29),(19,14),(20,28),(21,12),(22,75)]:
+        target=contexts[index][2]+offset
+        g.core.readInteger=lambda address:0 if address==target else get(address)
+        try:combat_owner.resolve(g.game)
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError(('combat operand',index,offset))
+        negative+=1
+    for target,value in [(combat.marketPrice+7,0),(combat.combatValue+0x8C,0)]:
+        g.core.readInteger=lambda address:value if address==target else get(address)
+        try:combat_owner.resolve(g.game)
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError(('market/switch',target))
+        negative+=1
+    g.core.readInteger=get
+    for target,value in [(combat.marketPrice,0x90),(combat.combatValue+0xBC,12)]:
+        g.core.readByte=lambda address:value if address==target else uc.mem_read(address,1)[0]
+        try:combat_owner.resolve(g.game)
+        except Exception as error:assert 'AIC Tactics:' in str(error)
+        else:raise AssertionError(('owner/index',target))
+        negative+=1
+    g.core.readByte=lambda address:uc.mem_read(address,1)[0]
+    # Original caller-identified price owner: the field moves in Extreme.
+    price_cases=0
+    for resource in range(1,26):
+        for amount in (-17,-1,0,1,4,5,9,123456):
+            put(combat.gameState+get(combat.marketPrice+7)+resource*8,amount)
+            assert call(combat.marketPrice,combat.gameState,resource)==int(amount/5)&0xFFFFFFFF
+            price_cases+=1
+    weights=[call(combat.combatValue,combat.troopValues,kind) for kind in range(80)]
+    assert weights[0]==0 and weights[22]>0
+    lifecycle_cases=0
+    for player in range(1,9):
+        put(g.game.players+player*0x39F4+0x2300,0)
+        for fn in (combat.selectAttackTarget,combat.updateAIPlayerState,combat.updateRaids,combat.returnAttack):
+            call(fn,aic,player);lifecycle_cases+=1
+        put(get(combat.computeNervousness+11)+player*4,10000)
+        put(g.game.players+player*0x39F4+0x38E0,50)
+        put(g.game.players+player*0x39F4+0x3820,1)
+        call(combat.computeNervousness,aic,player)
+        assert get(g.game.players+player*0x39F4+0x3820)==0
+        lifecycle_cases+=1
+    result={'variant':a.variant,'referenceSHA256':digest,'contexts':23,'negativeCases':negative,
+        'nativePriceCases':price_cases,'nativeCombatValues':weights,'nativeLifecycleCases':lifecycle_cases,
+        'scope':'Actual native query instructions and thiscall ABI; lifecycle early returns, not active games'}
+    a.combat_output.parent.mkdir(parents=True,exist_ok=True)
+    a.combat_output.write_text(json.dumps(result,indent=2)+'\n')
+    print(json.dumps(result))

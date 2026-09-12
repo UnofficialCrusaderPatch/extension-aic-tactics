@@ -166,7 +166,7 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
         const int resources[4] = {2,4,6,7};
         typedef int (__thiscall *Price)(void*, int);
         for (int resource = 0; resource < 4; ++resource)
-            prices[resource] = reinterpret_cast<Price>(0x4588D0)(reinterpret_cast<void*>(0x112B0B8), resources[resource]);
+            prices[resource] = reinterpret_cast<Price>(nativeBindings.marketPrice)(reinterpret_cast<void*>(nativeBindings.gameState), resources[resource]);
     }
     int count = 0;
     for (int enemy = 1; enemy <= 8; ++enemy) {
