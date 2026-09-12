@@ -5,7 +5,8 @@ function, hook and pool bindings now use native discovery. Full installed-framew
 gameplay and variant acceptance remains unfinished.
 
 `config/grace.lua` resolves the original recruitment/RNG context through
-framework `core.AOBScan`, with a second framework scan rejecting ambiguity.
+the cached `core.AOBScan` shipped with UCP 3.0.7. Supported-image signature
+uniqueness is checked offline; there is no second runtime scan.
 The context is the same owner used by unchanged Legacy
 `port/ai_recruitstate_initialtimer.lua`. It decodes the tick operand, timer
 immediate, RNG singleton/value and relative next-RNG call. The 16-bit RNG value
@@ -31,7 +32,7 @@ No independent RNG or clock is introduced.
 ## Pools and native army layout
 
 `native-layout.lua` uses eight identifying native instruction contexts through
-the same framework scanner. It checks uniqueness, repeated capacity/stride
+the same framework scanner. It checks repeated capacity/stride
 operands and agreement between allocation, membership, pathfinding and building
 target writes. It decodes roots and the three army fields that move after
 Extreme's larger membership bitset. OpenSHC's corresponding `UnitsState`,
@@ -78,7 +79,7 @@ The game still owns group allocation, movement and order submission.
 
 Raid map rows and offensive role-to-group slots are decoded from those native
 consumers. C++ no longer casts fixed addresses for these group actions/tables.
-`native-context.lua` shares the framework uniqueness/call checks across layout,
+`native-context.lua` shares framework discovery and decoded-call checks across layout,
 group actions and recruitment; it adds no private scan cache or patch manager.
 
 ## Recruitment and Legacy census composition
@@ -237,16 +238,19 @@ metadata. The Extreme grace runner does not execute a calendar; none of these
 checks claims active-army behavior, live multiplayer or save/replay acceptance.
 The additional fixtures required no production signature or layout change.
 
-## Shared main-executable uniqueness
+## Superseded 0.0.4 scanner experiment
 
-Source 0.0.4 uses `core.AOBScanUnique` when the framework provides it. Its existing
+The following records the older experiment, not a current dependency. Source
+0.0.7 uses stock UCP 3.0.7 as described below.
+
+Source 0.0.4 used `core.AOBScanUnique` when the framework provided it. Its existing
 cache/RPS owner checks the first two overlapping matches in the main executable's
 code. A rejection is final: the module never retries through a less restrictive
 scan. Stock UCP 3.0.7 keeps the cached AoB plus second-scan path, but an actual
 signed installation failed the startup performance gate: after 134.17 seconds
 and 131.73 CPU seconds it was still enabling AIC, without a game window.
-Current acceptance therefore uses the complete signed secure framework preview;
-the shared scanner's final release/minimum-version contract remains outstanding.
+This led to testing a signed secure framework preview. That preview and its
+newer scanner are no longer required.
 
 Inspected framework `1d78391` ([PR149](https://github.com/UnofficialCrusaderPatch/UnofficialCrusaderPatch3/pull/149))
 and RPS `e958409` ([PR16](https://github.com/gynt/RuntimePatchingSystem/pull/16)).
@@ -296,4 +300,7 @@ Uniqueness of identifying contexts is checked against supported images in offlin
 fixtures. Stock AOBScan returns its first match; the extension does not claim an
 exhaustive runtime duplicate search on arbitrary modified executables. The extra
 runtime duplicate search in earlier previews caused the observed startup stall.
-The stock-runtime startup/composition check is pending for this revision.
+GamerGrill stock secure 3.0.7 Extreme initialized standalone AIC at 7.216 seconds
+and created its window at 7.604 seconds without errors. This was startup/setup
+only. Combined Recorder, gameplay, multiplayer and replay acceptance remain
+separate gates tracked in PR17.
