@@ -32,6 +32,7 @@ files[loader+'options.yml'] = (a.loader/'options.yml').read_bytes()
 files['AIC-TACTICS-TESTING.md'] = (root/'docs/runtime-testing.md').read_bytes()
 files['AIC-TACTICS-GRACE.md'] = (root/'docs/recruitment-grace.md').read_bytes()
 files['AIC-TACTICS-EQUIPMENT.md'] = (root/'docs/equipment-surplus.md').read_bytes()
+files['AIC-TACTICS-MOAT.md'] = (root/'docs/defense-moat.md').read_bytes()
 files['AIC-TACTICS-COMPOSITION.md'] = (root/'docs/defense-composition.md').read_bytes()
 files['sortie-test-aic-fragment.json'] = json.dumps({'RecruitPolicy':'WeightedRoles', **{
     'RecruitProb'+role+strength: 100 if role=='Sortie' else 0

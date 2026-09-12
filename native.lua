@@ -53,6 +53,9 @@ finished:
     'AIC Tactics: unsupported or already modified AI scheduler')
   assert(core.AOBScan('8B 86 F0 EE 15 01 85 C0 75 44 8B C7 69 C0 A4 02 00 00') == 0x4D3BA5,
     'AIC Tactics: unsupported recruitment opportunity')
+  assert(core.AOBScan('53 55 56 8B 74 24 10 57 33 C0 8D 91 8C 08 50 00') == 0x500180
+      and core.AOBScan('53 8B 5C 24 08 8B C3 69 C0 90 04 00 00 0F BF 88 E2 85 38 01') == 0x4CC840,
+    'AIC Tactics: unsupported or modified native moat recruitment owner')
   verifyInterval()
 
   -- Consume the existing Legacy wall counter; do not install another counter.

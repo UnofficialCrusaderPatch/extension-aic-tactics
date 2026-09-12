@@ -6,7 +6,8 @@ over after its home-defense needs. `false` matches the absence of that surplus.
 This is a condition, not a new stock limit or an instruction to buy equipment.
 
 Home needs include the remaining `DefTotal` quota, including its existing native
-multipliers, and both sortie minima, including the native ranged adjustment.
+multipliers, both sortie minima, and missing moat diggers while unfinished moat
+work remains. The native ranged-sortie adjustment still applies.
 Defenders and sorties already recruited in the current opportunity reduce these
 deficits. Each resource is accounted for separately: spare pikes without spare
 metal armor do not make a Pikeman kit. Knights also need a spare horse.

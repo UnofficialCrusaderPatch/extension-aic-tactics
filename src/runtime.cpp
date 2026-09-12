@@ -25,6 +25,7 @@ int aicValue(void* aic, int character, int offset) {
     return *reinterpret_cast<int*>(static_cast<unsigned char*>(aic) + (character - 1) * 0x2A4 + offset);
 }
 typedef void (__thiscall *PlayerAction)(void*, int);
+typedef int (__thiscall *PlayerQuery)(void*, int);
 typedef int (__thiscall *TwoIntQuery)(void*, int, int);
 typedef void (__thiscall *TwoIntAction)(void*, int, int);
 
@@ -98,6 +99,25 @@ struct Probe {
     const int* recruitedTypes;
 };
 
+int moatVacancies(void* aic, int character, int player) {
+    const int maximum = aicValue(aic, character, 0x15C);
+    if (maximum <= 0) return 0;
+    const int group = memory<short>(0x115EF18 + player * PlayerStride);
+    if (group < 0 || group >= 1250) return 0;
+    int size = 0;
+    if (group && memory<unsigned int>(Tribes + 0x34 + group * 0x334)
+        == memory<unsigned int>(0x115F0BC + player * PlayerStride)) {
+        if (memory<int>(Tribes + 0x2C + group * 0x334) != player
+            || memory<short>(Tribes + 0x40 + group * 0x334) == 0) return 0;
+        size = memory<short>(Tribes + 0x5C + group * 0x334);
+        if (size < 0) return 0;
+    }
+    if (size >= maximum) return 0;
+    // Existing moat registry owner; at most once per recruitment opportunity.
+    if (reinterpret_cast<PlayerQuery>(0x500180)(reinterpret_cast<void*>(0x1A93208), player) <= 0) return 0;
+    return maximum - size;
+}
+
 bool groupRangeAvailable(int player, int first, int count, int freeGroups, bool smallest) {
     if (first < 0 || count < 1 || first + count > 200) return false;
     bool room = false;
@@ -118,7 +138,8 @@ bool groupRangeAvailable(int player, int first, int count, int freeGroups, bool 
 bool destinationAvailable(const Probe& probe, int player, int unitType, int behaviour) {
     int first = 0, count = 1;
     bool smallest = false;
-    if (probe.role == SortieRole) first = behaviour + 160;
+    if (probe.role == DefenseRole && behaviour == 5) first = 10;
+    else if (probe.role == SortieRole) first = behaviour + 160;
     else if (probe.role == AttackRole) {
         if (behaviour < 10 || behaviour > 20) return false;
         first = memory<int>(0xB3EC1C + (behaviour - 10) * 4);
@@ -261,7 +282,7 @@ void includeEquipmentRoster(bool* types, void* aic, int character, int offset, i
 }
 
 bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
-    int recruitedDefense, int ranged, int melee) {
+    int recruitedDefense, int ranged, int melee, int missingMoat) {
     const int character = probe.character;
     void* const aic = probe.aic;
     int recipe[7][26] = {{0}};
@@ -315,6 +336,12 @@ bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
         if (type >= 22 && type <= 28 && maximum >= 0 && missing > 0)
             for (int resource = 0; resource < 26; ++resource) reserve[resource] += missing * recipe[type - 22][resource];
     }
+    const int moatType = aicValue(aic, character, 0x160);
+    if (missingMoat > 0 && moatType >= 22 && moatType <= 28) {
+        includeEquipmentType(types, moatType);
+        for (int resource = 0; resource < 26; ++resource)
+            reserve[resource] += static_cast<__int64>(missingMoat) * recipe[moatType - 22][resource];
+    }
     includeEquipmentRoster(types, aic, character, 0x184, 8);
     includeEquipmentRoster(types, aic, character, 0x1AC, 8);
     includeEquipmentRoster(types, aic, character, 0x288, 4);
@@ -339,6 +366,10 @@ bool equipmentSurplus(const Probe& probe, int player, bool compositionReady,
 
 void assign(void* aic, int player, int character, int role, const Candidate& candidate, int unit, int recruitedWalls) {
     if (role == DefenseRole) {
+        if (candidate.behaviour == 5) {
+            reinterpret_cast<PlayerAction>(0x4CC840)(aic, unit);
+            return;
+        }
         playerValue(player, 0x115EEF8) = candidate.cursor;
         const int walls = (legacyWallCounts ? legacyWallCounts[player] : playerValue(player, 0x115EEE0))
             + recruitedWalls;
@@ -394,6 +425,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
     int recruitedAttack[11] = {0};
     int ranged = 0, melee = 0;
     int recruitedWalls = 0;
+    int missingMoat = -1;
     int recruitedTypes[80] = {0};
     bool compositionReady = true;
     if (configuration.defenseComposition == PreserveSlots) {
@@ -426,6 +458,8 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
             observation.probeTypes[r] = 0;
         }
         Candidate candidates[4];
+        Candidate defenders[2];
+        int defenderCount = 0;
         Candidate attackers[11];
         int attackerCount = 0;
         unsigned int mask = 0;
@@ -445,7 +479,8 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         for (int row = 0; row < configuration.recruitment.conditionCount; ++row)
             if ((configuration.recruitment.conditions[row].requiredFacts
                 | configuration.recruitment.conditions[row].forbiddenFacts) & EquipmentSurplus) needsEquipmentFact = true;
-        if (needsEquipmentFact && equipmentSurplus(probe, player, compositionReady, recruited[DefenseRole], ranged, melee))
+        if (needsEquipmentFact && missingMoat == -1) missingMoat = moatVacancies(aic, character, player);
+        if (needsEquipmentFact && equipmentSurplus(probe, player, compositionReady, recruited[DefenseRole], ranged, melee, missingMoat))
             facts |= EquipmentSurplus;
         observation.facts = facts;
 
@@ -461,8 +496,14 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         if (playerValue(player, 0x115E964) <= 0 || playerValue(player, 0x115F76C) == 0) break;
 
         probe.role = DefenseRole;
-        if (requested.eligibleWeights.values[DefenseRole] > 0 && defenseIncomplete && compositionReady && rosterCandidate(probe, aic, character, player, 0x184,
-            playerValue(player, 0x115EEF8), 8, 1, candidates[DefenseRole])) mask |= 1U << DefenseRole;
+        if (requested.eligibleWeights.values[DefenseRole] > 0) {
+            if (defenseIncomplete && compositionReady && rosterCandidate(probe, aic, character, player, 0x184,
+                playerValue(player, 0x115EEF8), 8, 1, defenders[defenderCount])) ++defenderCount;
+            if (missingMoat == -1) missingMoat = moatVacancies(aic, character, player);
+            if (missingMoat > 0 && eligible(probe, player, aicValue(aic, character, 0x160), 5, -1,
+                defenders[defenderCount])) ++defenderCount;
+            if (defenderCount) mask |= 1U << DefenseRole;
+        }
         const int raidMaximum = reinterpret_cast<TwoIntQuery>(0x4D12A0)(aic, character - 1, player);
         probe.role = RaidRole;
         if (!initialDefense && requested.eligibleWeights.values[RaidRole] > 0 && playerValue(player, 0x115EEE4) + recruited[RaidRole] < raidMaximum
@@ -514,6 +555,12 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         if (role < 0 || role > 3) break;
         observation.role = role;
         ++observation.decisions[role];
+        if (role == DefenseRole) {
+            BoundedDraw unitDraw;
+            if (drawBounded(defenderCount, takeRandom, 0, unitDraw) != DrawSucceeded) break;
+            observation.rngSamples += unitDraw.samplesConsumed;
+            candidates[role] = defenders[unitDraw.ticket];
+        }
         if (role == AttackRole) {
             BoundedDraw unitDraw;
             if (drawBounded(attackerCount, takeRandom, 0, unitDraw) != DrawSucceeded) break;
@@ -526,7 +573,7 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
             candidate.unitType, candidate.building, player, 0);
         if (!unit) break;
         assign(aic, player, character, role, candidate, unit, recruitedWalls);
-        if (role == DefenseRole) {
+        if (role == DefenseRole && candidate.behaviour != 5) {
             if (configuration.defenseComposition == PreserveSlots)
                 ++recruitedTypes[candidate.unitType];
             if (memory<short>(0x1388976 + unit * 0x490) == 1) ++recruitedWalls;
@@ -537,7 +584,8 @@ int __cdecl recruitOpportunity(void* aic, int player, int attempts) {
         observation.hireTick = observation.tick;
         observation.hireRole = role;
         ++observation.hires[role];
-        ++recruited[role];
+        if (role == DefenseRole && candidate.behaviour == 5) --missingMoat;
+        else ++recruited[role];
         if (role == AttackRole) ++recruitedAttack[candidate.behaviour - 10];
         if (role == SortieRole) { if (candidate.behaviour == 6) ++ranged; else ++melee; }
     }
