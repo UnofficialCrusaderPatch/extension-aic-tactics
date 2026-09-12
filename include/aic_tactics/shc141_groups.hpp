@@ -12,7 +12,7 @@ struct TribeAvailability {
 // Read-only admission for the original createTribeForPlayer owner. tribes is
 // its native Tribe array (including index zero), not the enclosing TribesState.
 // This does not allocate, reserve an ID or prove an AIC role can use that slot.
-bool queryTribeAvailability(const unsigned char* tribes, int capacity,
+bool queryTribeAvailability(const unsigned char* tribes, int capacity, int stride,
     int player, TribeAvailability& result);
 
 } // namespace SHC141

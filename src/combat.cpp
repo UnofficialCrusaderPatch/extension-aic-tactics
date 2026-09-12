@@ -20,7 +20,7 @@ unsigned int originalFireDamage;
 namespace {
 template<class T> T& at(unsigned int address) { return *reinterpret_cast<T*>(address); }
 const unsigned int PlayerStride = 0x39F4;
-const unsigned int Units = 0x138854C;
+const unsigned int& Units = nativeBindings.unitRecords;
 int homeObservers[9];
 int combatValues[80];
 typedef void (__thiscall *PlayerAction)(void*, int);
@@ -30,7 +30,7 @@ int playerValue(int player, unsigned int address) { return at<int>(address + pla
 const CharacterConfiguration* configuration(int player)
 {
     if (player < 1 || player > 8) return 0;
-    const int character = playerValue(player, 0x115E0F8);
+    const int character = playerValue(player, (nativeBindings.players + 0x2300));
     return character >= 2 && character <= 17 ? &configurations[character - 1] : 0;
 }
 
@@ -55,13 +55,13 @@ bool observesIncidents(int player)
 bool hostile(int player, int other)
 {
     return player >= 1 && player <= 8 && other >= 1 && other <= 8 && player != other
-        && at<int>(0x117D548 + player * 4) != at<int>(0x117D548 + other * 4);
+        && at<int>(nativeBindings.teams + player * 4) != at<int>(nativeBindings.teams + other * 4);
 }
 
 bool atHome(int player, int x, int y)
 {
-    const int dx = x - playerValue(player, 0x115BE90);
-    const int dy = y - playerValue(player, 0x115BE94);
+    const int dx = x - playerValue(player, (nativeBindings.players + 0x98));
+    const int dy = y - playerValue(player, (nativeBindings.players + 0x9C));
     return dx >= -32 && dx <= 32 && dy >= -32 && dy <= 32 && dx * dx + dy * dy <= 32 * 32;
 }
 
@@ -69,17 +69,17 @@ DamageMemory damageMemory()
 {
     DamageMemory memory;
     memory.units = reinterpret_cast<const unsigned char*>(Units);
-    memory.unitCapacity = 2500;
-    memory.entities = reinterpret_cast<const unsigned char*>(0x2350338);
-    memory.entityCapacity = 3000;
-    memory.teams = reinterpret_cast<const int*>(0x117D548);
+    memory.unitCapacity = nativeBindings.unitCapacity;
+    memory.entities = reinterpret_cast<const unsigned char*>(nativeBindings.entities);
+    memory.entityCapacity = nativeBindings.entityCapacity;
+    memory.teams = reinterpret_cast<const int*>(nativeBindings.teams);
     return memory;
 }
 
 bool beginObservedDamage(DamageSource source, int first, int second, DamageProbe& probe)
 {
     const int victim = source == UnitDamage ? second : first;
-    if (victim <= 0 || victim >= 2500) return false;
+    if (victim <= 0 || victim >= static_cast<int>(nativeBindings.unitCapacity)) return false;
     const int player = at<short>(Units + victim * 0x490 + 0x96);
     return observesIncidents(player) && beginDamage(damageMemory(), source, first, second, probe);
 }
@@ -129,7 +129,7 @@ void __cdecl resetCombatCensus()
 
 void __cdecl countCombatUnit(int unit)
 {
-    if (unit <= 0 || unit >= 2500) return;
+    if (unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity)) return;
     countReserveUnit(unit);
     const unsigned int address = Units + unit * 0x490;
     if (at<short>(address + 0x8C) != 2 || at<short>(address + 0x2A0) != 0
@@ -219,11 +219,11 @@ bool readTargetContext(int player, TargetContext& context)
     context.owner = player;
     if (player < 1 || player > 8 || !combatCensusValid
         || at<unsigned int>(nativeBindings.gameTick) - combatCensusTick > 1) return false;
-    context.nativeFallback = playerValue(player, 0x115E9D0);
+    context.nativeFallback = playerValue(player, (nativeBindings.players + 0x2BD8));
     for (int other = 1; other <= 8; ++other) {
         if (!hostile(player, other)) continue;
         const PlayerCensus& census = combatCensus[other];
-        if (census.lord <= 0 || census.lord >= 2500) continue;
+        if (census.lord <= 0 || census.lord >= static_cast<int>(nativeBindings.unitCapacity)) continue;
         const unsigned int lord = Units + census.lord * 0x490;
         if (at<short>(lord + 0x8C) != 2 || at<short>(lord + 0x8E) != 55
             || at<short>(lord + 0x96) != other || at<int>(lord + 0x98) != census.lordUID
@@ -231,9 +231,9 @@ bool readTargetContext(int player, TargetContext& context)
         Opponent& opponent = context.players[other];
         opponent.eligible = true;
         opponent.lordUID = census.lordUID;
-        opponent.population = playerValue(other, 0x115DF78);
+        opponent.population = playerValue(other, (nativeBindings.players + 0x2180));
         opponent.troops = census.troops;
-        opponent.combatPower = playerValue(other, 0x115F6E0);
+        opponent.combatPower = playerValue(other, (nativeBindings.players + 0x38E8));
         opponent.qualifiedIncident = incidents[player].enemies[other].qualified != 0;
         opponent.incidentAge = at<unsigned int>(nativeBindings.gameTick) - incidents[player].enemies[other].qualifiedTick;
     }
@@ -286,8 +286,8 @@ int __cdecl commitOpponent(int player)
         state.attackActive ? MaintainAttack : LaunchAttack, context, nativeRandom, 0);
     if (status != TargetSelected && status != TargetUnchanged) return 0;
     if (!state.player) return 0;
-    at<int>(0x115E9CC + player * PlayerStride) = state.player;
-    at<int>(0x115E9D0 + player * PlayerStride) = state.player;
+    at<int>((nativeBindings.players + 0x2BD4) + player * PlayerStride) = state.player;
+    at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = state.player;
     noteArmyLaunch(player);
     return 1;
 }
@@ -306,10 +306,10 @@ void __fastcall selectOpponent(void* aic, void*, int player)
         reinterpret_cast<PlayerAction>(0x4D3780)(aic, player);
         if (updateTarget(config->combat.targeting, state, MaintainAttack, context, nativeRandom, 0)
             == TargetNeedsCleanup) {
-            if (playerValue(player, 0x115E99C) != 9) at<int>(0x115E99C + player * PlayerStride) = 8;
-            at<int>(0x115E9D0 + player * PlayerStride) = 0;
+            if (playerValue(player, (nativeBindings.players + 0x2BA4)) != 9) at<int>((nativeBindings.players + 0x2BA4) + player * PlayerStride) = 8;
+            at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = 0;
         } else {
-            at<int>(0x115E9D0 + player * PlayerStride) = state.player;
+            at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = state.player;
         }
         return;
     }
@@ -317,16 +317,16 @@ void __fastcall selectOpponent(void* aic, void*, int player)
         && context.players[state.player].eligible
         && context.players[state.player].lordUID == state.lordUID) {
         reinterpret_cast<PlayerAction>(0x4D3780)(aic, player);
-        at<int>(0x115E9D0 + player * PlayerStride) = state.player;
+        at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = state.player;
         return;
     }
     // Preserve native nervousness and TargetChoice/request behavior for fallback.
     reinterpret_cast<PlayerAction>(0x4D4680)(aic, player);
-    context.nativeFallback = playerValue(player, 0x115E9D0);
+    context.nativeFallback = playerValue(player, (nativeBindings.players + 0x2BD8));
     if (config->combat.targeting.policy == RandomTarget) {
         if (config->combat.targeting.commitment == UntilDefeated) {
             updateTarget(config->combat.targeting, state, InitializeTargets, context, nativeRandom, 0);
-            if (state.player) at<int>(0x115E9D0 + player * PlayerStride) = state.player;
+            if (state.player) at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = state.player;
         }
         return; // PerAttack draws only after the admitted native readiness call.
     }
@@ -334,13 +334,13 @@ void __fastcall selectOpponent(void* aic, void*, int player)
     const TargetStatus result = updateTarget(config->combat.targeting, preview,
         LaunchAttack, context, nativeRandom, 0);
     if (result == TargetSelected || result == NoTarget)
-        at<int>(0x115E9D0 + player * PlayerStride) = preview.player;
+        at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = preview.player;
 }
 
 void __fastcall updateOffensiveArmy(void* aic, void*, int player)
 {
     if (!offensiveActionsAllowed(player)) return;
-    const int phaseBefore = playerValue(player, 0x115E99C);
+    const int phaseBefore = playerValue(player, (nativeBindings.players + 0x2BA4));
     prepareArmyUpdate(aic, player);
     if (!targetPolicyActive(player)) {
         reinterpret_cast<PlayerAction>(0x4D49E0)(aic, player);
@@ -355,13 +355,13 @@ void __fastcall updateOffensiveArmy(void* aic, void*, int player)
         const TargetStatus status = updateTarget(config->combat.targeting, state,
             MaintainAttack, context, nativeRandom, 0);
         if (status == TargetNeedsCleanup) {
-            if (playerValue(player, 0x115E99C) != 9) at<int>(0x115E99C + player * PlayerStride) = 8;
-            at<int>(0x115E9D0 + player * PlayerStride) = 0;
-        } else at<int>(0x115E9D0 + player * PlayerStride) = state.player;
+            if (playerValue(player, (nativeBindings.players + 0x2BA4)) != 9) at<int>((nativeBindings.players + 0x2BA4) + player * PlayerStride) = 8;
+            at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = 0;
+        } else at<int>((nativeBindings.players + 0x2BD8) + player * PlayerStride) = state.player;
     }
     // A help request uses a separate early native dispatch path. Defer its
     // dispatch while this policy owns an army; preserve the request itself.
-    int& request = at<int>(0x115F644 + player * PlayerStride);
+    int& request = at<int>((nativeBindings.players + 0x384C) + player * PlayerStride);
     const int savedRequest = request;
     if (state.attackActive || config->combat.targeting.policy != InheritTarget) request = 0;
     reinterpret_cast<PlayerAction>(0x4D49E0)(aic, player);
@@ -374,7 +374,7 @@ void __fastcall returnFromAttack(void* aic, void*, int player)
     reinterpret_cast<PlayerAction>(0x4CEA50)(aic, player);
     const CharacterConfiguration* config = configuration(player);
     if (!config || (config->preparation == NativePreparation && !targetPolicyActive(player))) return;
-    if (playerValue(player, 0x115E974) != 0
+    if (playerValue(player, (nativeBindings.players + 0x2B7C)) != 0
         || reinterpret_cast<PlayerQuery>(0x4CFFD0)(aic, player)
         || returnArmyToCampfire(aic, player)) {
         noteArmyReturn(player);

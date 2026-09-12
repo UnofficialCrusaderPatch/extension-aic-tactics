@@ -12,8 +12,8 @@ unsigned int reserveGroupUID[1250];
 
 namespace {
 const unsigned int PlayerStride = 0x39F4;
-const unsigned int Tribes = 0x1667F78;
-const unsigned int Units = 0x138854C;
+const unsigned int& Tribes = nativeBindings.tribes;
+const unsigned int& Units = nativeBindings.unitRecords;
 const int slots[22] = {18,17,11,12,13,14,15,16,186,187,188,189,190,191,192,193,194,195,196,197,198,199};
 const int roles[22] = {10,11,12,13,14,15,16,16,17,17,17,18,19,19,20,20,20,20,20,20,20,20};
 template<class T> T& at(unsigned int address) { return *reinterpret_cast<T*>(address); }
@@ -27,14 +27,14 @@ typedef void (__thiscall *TwoAction)(void*, int, int);
 bool enabled(int player)
 {
     if (player < 1 || player > 8) return false;
-    const int character = field(player, 0x115E0F8);
+    const int character = field(player, (nativeBindings.players + 0x2300));
     return character >= 2 && character <= 17
         && configurations[character - 1].preparation == PrepareDuringAttack;
 }
 
 int aicValue(void* aic, int player, int offset)
 {
-    const int character = field(player, 0x115E0F8);
+    const int character = field(player, (nativeBindings.players + 0x2300));
     if (character < 2 || character > 17) return 0;
     return *reinterpret_cast<int*>(static_cast<unsigned char*>(aic) + (character - 1) * 0x2A4 + offset);
 }
@@ -42,23 +42,23 @@ int aicValue(void* aic, int player, int offset)
 bool validGroup(const ReserveGroup& group, int player)
 {
     return group.id > 0 && group.id < 1250
-        && at<unsigned int>(Tribes + group.id * 0x334 + 0x34) == group.uid
-        && at<int>(Tribes + group.id * 0x334 + 0x2C) == player
-        && at<short>(Tribes + group.id * 0x334 + 0x40) == 2;
+        && at<unsigned int>(Tribes + group.id * nativeBindings.tribeStride + 0x34) == group.uid
+        && at<int>(Tribes + group.id * nativeBindings.tribeStride + 0x2C) == player
+        && at<short>(Tribes + group.id * nativeBindings.tribeStride + 0x40) == 2;
 }
 
 ReserveGroup activeGroup(int player, int index)
 {
     ReserveGroup result;
-    result.id = at<short>(0x115EF04 + player * PlayerStride + slots[index] * 2);
-    result.uid = at<unsigned int>(0x115F094 + player * PlayerStride + slots[index] * 4);
+    result.id = at<short>((nativeBindings.players + 0x310C) + player * PlayerStride + slots[index] * 2);
+    result.uid = at<unsigned int>((nativeBindings.players + 0x329C) + player * PlayerStride + slots[index] * 4);
     return result;
 }
 
 void setActiveGroup(int player, int index, const ReserveGroup& group)
 {
-    at<short>(0x115EF04 + player * PlayerStride + slots[index] * 2) = static_cast<short>(group.id);
-    at<unsigned int>(0x115F094 + player * PlayerStride + slots[index] * 4) = group.uid;
+    at<short>((nativeBindings.players + 0x310C) + player * PlayerStride + slots[index] * 2) = static_cast<short>(group.id);
+    at<unsigned int>((nativeBindings.players + 0x329C) + player * PlayerStride + slots[index] * 4) = group.uid;
 }
 
 void indexGroups(int player)
@@ -74,15 +74,15 @@ void indexGroups(int player)
 int size(const ReserveGroup& group, int player)
 {
     if (!validGroup(group, player)) return 0;
-    const int count = at<short>(Tribes + group.id * 0x334 + 0x5C);
-    return count > 0 && count <= 2500 ? count : 0;
+    const int count = at<short>(Tribes + group.id * nativeBindings.tribeStride + 0x5C);
+    return count > 0 && count <= static_cast<int>(nativeBindings.unitCapacity) ? count : 0;
 }
 
 int combatLimit(void* aic, int player)
 {
     // The native writer already applied the selected Legacy growth/cap and RNG.
-    const __int64 desired = static_cast<__int64>(aicValue(aic, player, 0x1F4)) + field(player, 0x115F698);
-    return desired <= 0 ? 0 : desired > 2500 ? 2500 : static_cast<int>(desired);
+    const __int64 desired = static_cast<__int64>(aicValue(aic, player, 0x1F4)) + field(player, (nativeBindings.players + 0x38A0));
+    return desired <= 0 ? 0 : desired > nativeBindings.unitCapacity ? static_cast<int>(nativeBindings.unitCapacity) : static_cast<int>(desired);
 }
 
 int roleLimit(void* aic, int player, int role)
@@ -91,11 +91,11 @@ int roleLimit(void* aic, int player, int role)
     if (role < 10 || role > 20) return 0;
     int result = aicValue(aic, player, offsets[role - 10]);
     if (role == 10) {
-        const __int64 wave = static_cast<__int64>(field(player, 0x115F71C)) * 4;
+        const __int64 wave = static_cast<__int64>(field(player, (nativeBindings.players + 0x3924))) * 4;
         if (wave < result) result = wave <= 0 ? 0 : static_cast<int>(wave);
     }
     if (role == 20 && result < combatLimit(aic, player)) result = combatLimit(aic, player);
-    return result <= 0 ? 0 : result > 2500 ? 2500 : result;
+    return result <= 0 ? 0 : result > static_cast<int>(nativeBindings.unitCapacity) ? static_cast<int>(nativeBindings.unitCapacity) : result;
 }
 
 bool destinationRoom(void* aic, int player, int role)
@@ -118,12 +118,14 @@ bool destinationRoom(void* aic, int player, int role)
             // The native selector checks UID, not lifecycle. Wait for its
             // pending deletion to retire the UID before admitting a purchase.
             if (group.id > 0 && group.id < 1250
-                && at<unsigned int>(Tribes + group.id * 0x334 + 0x34) == group.uid) return false;
+                && at<unsigned int>(Tribes + group.id * nativeBindings.tribeStride + 0x34) == group.uid) return false;
             TribeAvailability available;
             return queryTribeAvailability(reinterpret_cast<const unsigned char*>(Tribes + 0x28),
-                1250, player, available) && available.freeSlots > 0;
+                1250, nativeBindings.tribeStride, player, available) && available.freeSlots > 0;
         }
-        if (size(group, player) < (configured > 1 ? 1000 : 2500)) return true;
+        const int groupLimit = configured > 1 ? 1000 : 3200;
+        const int poolLimit = static_cast<int>(nativeBindings.unitCapacity);
+        if (size(group, player) < (groupLimit < poolLimit ? groupLimit : poolLimit)) return true;
     }
     return false;
 }
@@ -136,7 +138,7 @@ void transferReturningReserve(void* aic, int player)
     // dense and empty groups within the same work budget on every peer.
     while (moved < 16 && inspectedWords < 64) {
         if (state.transferSlot < 0 || state.transferSlot >= 22) state.transferSlot = 0;
-        if (state.transferWord < 0 || state.transferWord >= 157) state.transferWord = 0;
+        if (state.transferWord < 0 || state.transferWord >= static_cast<int>(nativeBindings.tribeMemberWords)) state.transferWord = 0;
         const int index = state.transferSlot;
         const int role = roles[index];
         ReserveGroup& source = state.groups[index];
@@ -146,20 +148,20 @@ void transferReturningReserve(void* aic, int player)
             ++inspectedWords;
             continue;
         }
-        const int current = field(player, 0x115E9A0 + (role - 10) * 4);
-        const int combat = field(player, 0x115EEE8) - field(player, 0x115E9A0);
+        const int current = field(player, (nativeBindings.players + 0x2BA8) + (role - 10) * 4);
+        const int combat = field(player, (nativeBindings.players + 0x30F0)) - field(player, (nativeBindings.players + 0x2BA8));
         if (current >= roleLimit(aic, player, role) || (role != 10 && combat >= combatLimit(aic, player))) {
             state.transferSlot = (index + 1) % 22;
             state.transferWord = 0;
             ++inspectedWords;
             continue;
         }
-        unsigned int bits = at<unsigned short>(Tribes + source.id * 0x334 + 0x60 + state.transferWord * 2);
+        unsigned int bits = at<unsigned short>(Tribes + source.id * nativeBindings.tribeStride + 0x60 + state.transferWord * 2);
         ++inspectedWords;
         bool wordFinished = true;
         for (int bit = 0; bit < 16; ++bit) {
             const int unit = state.transferWord * 16 + bit;
-            if (!(bits & (1U << bit)) || unit <= 0 || unit >= 2500 || !isReserveUnit(unit)) continue;
+            if (!(bits & (1U << bit)) || unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity) || !isReserveUnit(unit)) continue;
             const unsigned int address = Units + unit * 0x490;
             if (at<short>(address + 0x8C) != 2 || at<short>(address + 0x2A0) != 0 || at<int>(address + 0x3C8) <= 0
                 || at<short>(address + 0x42A) != role) continue;
@@ -170,17 +172,17 @@ void transferReturningReserve(void* aic, int player)
             // Native add/remove maintain size, selection bits, unit group UID
             // and movement speed. No raw membership or unit-order writes.
             reinterpret_cast<TwoAction>(0x525A70)(reinterpret_cast<void*>(Tribes), unit, source.id);
-            reinterpret_cast<TwoAction>(0x522590)(reinterpret_cast<void*>(Tribes), unit, destination);
-            ++field(player, 0x115E9A0 + (role - 10) * 4);
-            ++field(player, 0x115EEE8);
+            reinterpret_cast<TwoAction>(nativeBindings.addUnitToTribe)(reinterpret_cast<void*>(Tribes), unit, destination);
+            ++field(player, (nativeBindings.players + 0x2BA8) + (role - 10) * 4);
+            ++field(player, (nativeBindings.players + 0x30F0));
             ++moved;
-            if (moved == 16 || field(player, 0x115E9A0 + (role - 10) * 4) >= roleLimit(aic, player, role)
-                || (role != 10 && field(player, 0x115EEE8) - field(player, 0x115E9A0) >= combatLimit(aic, player))) {
+            if (moved == 16 || field(player, (nativeBindings.players + 0x2BA8) + (role - 10) * 4) >= roleLimit(aic, player, role)
+                || (role != 10 && field(player, (nativeBindings.players + 0x30F0)) - field(player, (nativeBindings.players + 0x2BA8)) >= combatLimit(aic, player))) {
                 wordFinished = false;
                 break;
             }
         }
-        if (wordFinished && ++state.transferWord >= 157) {
+        if (wordFinished && ++state.transferWord >= static_cast<int>(nativeBindings.tribeMemberWords)) {
             state.transferWord = 0;
             state.transferSlot = (index + 1) % 22;
         }
@@ -192,7 +194,7 @@ bool reserveRecruitmentActive(int player) { return reservePlayer == player && pl
 
 int __cdecl isReserveUnit(int unit)
 {
-    if (unit <= 0 || unit >= 2500) return 0;
+    if (unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity)) return 0;
     const unsigned int address = Units + unit * 0x490;
     const int group = at<short>(address + 0x2D8);
     if (group <= 0 || group >= 1250) return 0;
@@ -201,7 +203,7 @@ int __cdecl isReserveUnit(int unit)
         || at<unsigned int>(address + 0x2E4) != reserveGroupUID[group]) return 0;
     ReserveGroup identity = {group, reserveGroupUID[group]};
     if (!validGroup(identity, player)) return 0;
-    return (at<unsigned short>(Tribes + group * 0x334 + 0x60 + (unit / 16) * 2)
+    return (at<unsigned short>(Tribes + group * nativeBindings.tribeStride + 0x60 + (unit / 16) * 2)
         & (1U << (unit % 16))) != 0 ? 1 : 0;
 }
 
@@ -211,7 +213,7 @@ bool reserveRoleAvailable(void* aic, int player, int role)
     // This also guards the shared native type lookup used by defense and raids.
     // Preparation owns only the offensive army's roles.
     if (role < 10 || role > 20) return true;
-    if (reserves[player].returning && field(player, 0x115E99C) == 0) {
+    if (reserves[player].returning && field(player, (nativeBindings.players + 0x2BA4)) == 0) {
         // Recruitment precedes the army update. Give already paid reserves
         // their bounded transfer opportunity before buying this role again.
         for (int index = 0; index < 22; ++index)
@@ -255,12 +257,12 @@ void completeReserveCensus()
         int total = 0;
         for (int role = 0; role < 11; ++role) {
             const int count = excludedCounts[player][role];
-            int& original = field(player, 0x115E9A0 + role * 4);
+            int& original = field(player, (nativeBindings.players + 0x2BA8) + role * 4);
             if (count > original) continue;
             original -= count;
             total += count;
         }
-        int& attack = field(player, 0x115EEE8);
+        int& attack = field(player, (nativeBindings.players + 0x30F0));
         if (total <= attack) attack -= total;
     }
 }
@@ -285,29 +287,29 @@ void __fastcall recruitWithReserve(void* aic, void*, int player)
         setActiveGroup(player, index, state.groups[index]);
     }
     for (int role = 0; role < 11; ++role) {
-        savedCounts[role] = field(player, 0x115E9A0 + role * 4);
-        field(player, 0x115E9A0 + role * 4) = counts[role];
+        savedCounts[role] = field(player, (nativeBindings.players + 0x2BA8) + role * 4);
+        field(player, (nativeBindings.players + 0x2BA8) + role * 4) = counts[role];
     }
-    const int savedTotal = field(player, 0x115EEE8);
-    const int savedPhase = field(player, 0x115E99C);
-    const int savedCursor = field(player, 0x115EF00);
-    field(player, 0x115EEE8) = total;
-    field(player, 0x115E99C) = 0;
-    field(player, 0x115EF00) = state.recruitCursor;
+    const int savedTotal = field(player, (nativeBindings.players + 0x30F0));
+    const int savedPhase = field(player, (nativeBindings.players + 0x2BA4));
+    const int savedCursor = field(player, (nativeBindings.players + 0x3108));
+    field(player, (nativeBindings.players + 0x30F0)) = total;
+    field(player, (nativeBindings.players + 0x2BA4)) = 0;
+    field(player, (nativeBindings.players + 0x3108)) = state.recruitCursor;
     reservePlayer = player;
     reinterpret_cast<PlayerAction>(0x4D3AE0)(aic, player);
     reservePlayer = 0;
-    state.recruitCursor = field(player, 0x115EF00);
-    field(player, 0x115EF00) = savedCursor;
-    field(player, 0x115E99C) = savedPhase;
-    field(player, 0x115EEE8) = savedTotal;
-    for (int role = 0; role < 11; ++role) field(player, 0x115E9A0 + role * 4) = savedCounts[role];
+    state.recruitCursor = field(player, (nativeBindings.players + 0x3108));
+    field(player, (nativeBindings.players + 0x3108)) = savedCursor;
+    field(player, (nativeBindings.players + 0x2BA4)) = savedPhase;
+    field(player, (nativeBindings.players + 0x30F0)) = savedTotal;
+    for (int role = 0; role < 11; ++role) field(player, (nativeBindings.players + 0x2BA8) + role * 4) = savedCounts[role];
     for (int index = 0; index < 22; ++index) {
         state.groups[index] = activeGroup(player, index);
         setActiveGroup(player, index, deployed[index]);
         if (size(state.groups[index], player) > oldSizes[index]) {
             reinterpret_cast<TwoAction>(0x4CD110)(aic, state.groups[index].id, player);
-            at<short>(Tribes + state.groups[index].id * 0x334 + 0x2E0) = 1;
+            at<short>(Tribes + state.groups[index].id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
         }
     }
     indexGroups(player);
@@ -323,14 +325,14 @@ void prepareArmyUpdate(void* aic, int player)
 {
     if (!enabled(player)) return;
     ReserveState& state = reserves[player];
-    if (state.returning && field(player, 0x115E99C) == 0) transferReturningReserve(aic, player);
+    if (state.returning && field(player, (nativeBindings.players + 0x2BA4)) == 0) transferReturningReserve(aic, player);
 }
 
 void finishArmyUpdate(int player, int phaseBefore)
 {
     const bool reserveDeployed = enabled(player) && reserves[player].deployed && !reserves[player].returning;
     if (!reserveDeployed && !committedAttackActive(player)) return;
-    int& phase = field(player, 0x115E99C);
+    int& phase = field(player, (nativeBindings.players + 0x2BA4));
     if (phase == 0 && phaseBefore == 9) {
         // A native timeout alone does not prove that surviving troops received
         // return orders. Keep cleanup pending if its destination was absent.
@@ -358,12 +360,12 @@ void noteArmyReturn(int player)
 
 bool returnArmyToCampfire(void* aic, int player)
 {
-    if ((!enabled(player) && !targetPolicyActive(player)) || field(player, 0x115BFCC) <= 0) return false;
+    if ((!enabled(player) && !targetPolicyActive(player)) || field(player, (nativeBindings.players + 0x1D4)) <= 0) return false;
     for (int index = 0; index < 22; ++index) {
         const ReserveGroup group = activeGroup(player, index);
         if (!validGroup(group, player) || size(group, player) <= 0) continue;
         reinterpret_cast<TwoAction>(0x4CD110)(aic, group.id, player);
-        at<short>(Tribes + group.id * 0x334 + 0x2E0) = 1;
+        at<short>(Tribes + group.id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
     }
     return true;
 }

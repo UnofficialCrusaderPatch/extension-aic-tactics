@@ -71,11 +71,11 @@ function M.new(native, legacyInterval, fingerprint)
     local counts, total = {}, 0
     for index = 0, censusWords - 1 do
       local count = number(bytes, offset + 8 + index * 4)
-      assert(count <= 2500 and (index >= 80 and index % 80 ~= 0 or count == 0),
+      assert(count <= native.game.unitCapacity and (index >= 80 and index % 80 ~= 0 or count == 0),
         'AIC Tactics: invalid saved defender count')
       counts[index + 1], total = count, total + count
     end
-    assert(total <= 2500, 'AIC Tactics: saved defender count exceeds the native pool')
+    assert(total <= native.game.unitCapacity, 'AIC Tactics: saved defender count exceeds the native pool')
     local combatValues = {}
     for index = 0, combat.wordCount - 1 do
       combatValues[index + 1] = number(bytes, offset + 8 + (censusWords + index) * 4)

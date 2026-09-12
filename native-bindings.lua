@@ -1,6 +1,10 @@
 local M = {}
 function M.initialize(native)
-  assert(native.nativeBindingsSize == 24, 'AIC Tactics: incompatible native binding ABI')
+  local names = {'gameTick','rngState','rngValue','rngNext','initialDefenseTicks','aicRecords',
+    'units','unitRecords','unitCapacity','tribes','tribeStride','tribeMemberWords',
+    'tribeStance','tribeTargetBuilding','tribeTargetBuildingUID','buildings','buildingCapacity',
+    'players','createTribe','addUnitToTribe','tribePath','entities','entityCapacity','teams'}
+  assert(native.nativeBindingsSize == #names * 4, 'AIC Tactics: incompatible native binding ABI')
   local game = require('config.grace').resolveNative()
   assert(type(modules.aicloader.getNativeAICLayout) == 'function',
     'AIC Tactics requires AIC Loader 1.1.4 native storage metadata')
@@ -9,7 +13,7 @@ function M.initialize(native)
       and type(layout.address) == 'number' and layout.address > 0,
     'AIC Tactics: unsupported AIC Loader native layout')
   game.aicRecords = layout.address
-  local names = {'gameTick','rngState','rngValue','rngNext','initialDefenseTicks','aicRecords'}
+  for key, value in pairs(require('native-layout').resolve()) do game[key] = value end
   for index, name in ipairs(names) do
     core.writeInteger(native.nativeBindings + (index - 1) * 4, game[name])
   end

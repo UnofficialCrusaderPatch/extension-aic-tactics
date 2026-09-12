@@ -161,6 +161,41 @@ void runCombatCases() {
         check(at<unsigned int>(Tribes+destination*0x334+0x34)==destinationUID,
             "continued handover replaced its active army group");
     }
+    // Consumer regression with detached Extreme-sized pools. Native allocation
+    // and membership on the actual Extreme image are tested by check_layout_native.
+    fixture();
+    const NativeBindings originalBindings = nativeBindings;
+    unsigned char* extraUnits = static_cast<unsigned char*>(std::calloc(10000, 0x490));
+    unsigned char* extraTribes = static_cast<unsigned char*>(std::calloc(1, 0x28 + 1250 * 0x688));
+    unsigned char* extraPlayers = static_cast<unsigned char*>(std::calloc(9, 0x39F4));
+    check(extraUnits && extraTribes && extraPlayers, "cannot allocate detached high-ID fixture");
+    nativeBindings.unitRecords = reinterpret_cast<unsigned int>(extraUnits);
+    nativeBindings.tribes = reinterpret_cast<unsigned int>(extraTribes);
+    nativeBindings.players = reinterpret_cast<unsigned int>(extraPlayers);
+    nativeBindings.unitCapacity = 10000;
+    nativeBindings.tribeStride = 0x688;
+    nativeBindings.tribeMemberWords = 625;
+    const unsigned int highUnit = nativeBindings.unitRecords + 9999 * 0x490;
+    const unsigned int highTribe = nativeBindings.tribes + 1249 * 0x688;
+    at<short>(highUnit+0x8C)=2;at<short>(highUnit+0x8E)=22;at<short>(highUnit+0x96)=1;
+    at<int>(highUnit+0x3C8)=100;at<short>(highUnit+0x42A)=20;at<short>(highUnit+0x2A4)=1;
+    at<short>(highUnit+0x2D8)=1249;at<unsigned int>(highUnit+0x2E4)=77;
+    at<unsigned int>(highTribe+0x34)=77;at<int>(highTribe+0x2C)=1;at<short>(highTribe+0x40)=2;
+    at<short>(highTribe+0x5C)=1;at<unsigned short>(highTribe+0x60+624*2)=0x8000;
+    at<int>(nativeBindings.players+0x39F4+0x2300)=2;
+    at<int>(nativeBindings.players+0x39F4+0x2BA8+10*4)=1;
+    at<int>(nativeBindings.players+0x39F4+0x30F0)=1;
+    configurations[1].preparation=PrepareDuringAttack;
+    reserves[1].groups[21].id=1249;reserves[1].groups[21].uid=77;
+    resetCombatCensus();
+    check(isReserveUnit(9999)==1 && isReserveUnit(10000)==0,"high-ID reserve membership boundary differs");
+    countCombatUnit(9999);countCombatUnit(10000);completeCombatCensus();
+    check(combatCensus[1].troops==1,"high-ID unit missing from combat census");
+    check(at<int>(nativeBindings.players+0x39F4+0x30F0)==0,"high-ID reserve missing from native role exclusion");
+    at<unsigned int>(highTribe+0x34)=78;
+    check(isReserveUnit(9999)==0,"recycled high-ID reserve UID admitted");
+    nativeBindings=originalBindings;
+    std::free(extraUnits);std::free(extraTribes);std::free(extraPlayers);
     std::printf("%d combat/reserve/raid native-layout checks passed; no running-game acceptance\n",checks);
 }
 

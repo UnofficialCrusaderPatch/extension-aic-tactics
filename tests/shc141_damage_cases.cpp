@@ -2,7 +2,9 @@
 #include <cstdlib>
 #include <cstring>
 #include "aic_tactics/shc141_damage.hpp"
+#include "aic_tactics/runtime.hpp"
 
+using namespace AicTactics;
 using namespace AicTactics::SHC141;
 static const unsigned int ImageBase = 0x400000, ImageSize = 0x2091000;
 static const unsigned int UnitArray = 0x1387F38 + 0x614;
@@ -148,6 +150,33 @@ static void identityChecks()
     }
 }
 
+static void integratedEntityAttribution()
+{
+    // Exercise the production bridge's binding consumer as well as beginDamage.
+    // A former wrong entity-array origin passed the detached adapter tests.
+    for (int mode = 0; mode < 3; ++mode) {
+        fixture(2, 500, 22, mode == 1, false);
+        std::memset(configurations, 0, sizeof(configurations));
+        std::memset(incidents, 0, sizeof(incidents));
+        at<int>(nativeBindings.players + 0x39F4 + 0x2300) = 2;
+        configurations[1].combat.activation = mode == 2 ? ImmediateAttack : AfterProvocation;
+        ProvocationRules rules = {50, 32, 50, 320};
+        configurations[1].combat.provocation = rules;
+        originalEntityDamage = 0x531920;
+        const int expected = nativeDamage(EntityDamage, 2, 0);
+        const int health = at<int>(UnitArray + 2 * 0x490 + 0x3C8);
+        fixture(2, 500, 22, mode == 1, false);
+        const int actual = observedEntityDamage(reinterpret_cast<void*>(nativeBindings.units), 0, 2, 1, 0);
+        require(actual == expected && at<int>(UnitArray + 2 * 0x490 + 0x3C8) == health,
+            "integrated projectile observation changed native damage");
+        require(incidents[1].enemies[2].hasDamage == (mode == 0 && health < 500),
+            "production projectile binding lost or misattributed the attacker");
+        for (int owner = 0; owner <= 8; ++owner)
+            if (owner != 2) require(!incidents[1].enemies[owner].hasDamage, "projectile attributed to another owner");
+    }
+    std::printf("3 production projectile-attribution bridge cases passed\n");
+}
+
 void runDamageCases(unsigned int nativeReservationOffset)
 {
     reservationOffset = nativeReservationOffset;
@@ -167,6 +196,7 @@ void runDamageCases(unsigned int nativeReservationOffset)
     check(baseline, before, FireDamage, 2, 500, 53);
     check(baseline, before, FireDamage, 2, 500, 76);
     identityChecks();
+    integratedEntityAttribution();
     std::free(baseline);
     std::free(before);
     std::printf("%d original-instruction damage cases and %d observation validation cases passed\n",

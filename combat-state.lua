@@ -27,13 +27,13 @@ function M.new(native)
     local total = 0
     for player = 0, 8 do
       local offset = 3 + player * 12
-      range(values[offset], 2500)
+      range(values[offset], native.game.unitCapacity)
       total = total + values[offset]
-      range(values[offset + 1], 2499)
+      range(values[offset + 1], native.game.unitCapacity - 1)
       if values[offset + 1] == 0 then range(values[offset + 2], 0) end
       for enemy = 0, 8 do range(values[offset + 3 + enemy], 2147483647) end
     end
-    range(total, 2500)
+    range(total, native.game.unitCapacity)
     local targetOffset = 3 + 9 * 12
     local lifecycleOffset = targetOffset + 9 * 3
     local incidentsOffset = lifecycleOffset + 9

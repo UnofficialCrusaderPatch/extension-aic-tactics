@@ -14,7 +14,10 @@ unsigned int raidBuildingCensusTick;
 int raidBuildingCensusValid;
 
 namespace {
-const unsigned int PlayerStride = 0x39F4, Tribes = 0x1667F78, Buildings = 0xF98534, Units = 0x138854C;
+const unsigned int PlayerStride = 0x39F4;
+const unsigned int& Tribes = nativeBindings.tribes;
+const unsigned int& Buildings = nativeBindings.buildings;
+const unsigned int& Units = nativeBindings.unitRecords;
 template<class T> T& at(unsigned int address) { return *reinterpret_cast<T*>(address); }
 int& field(int player, unsigned int address) { return at<int>(address + player * PlayerStride); }
 bool collecting;
@@ -26,7 +29,7 @@ typedef int (__thiscall *TwoQuery)(void*, int, int);
 const RaidConfiguration* configuration(int player)
 {
     if (player < 1 || player > 8) return 0;
-    const int character = field(player, 0x115E0F8);
+    const int character = field(player, (nativeBindings.players + 0x2300));
     if (character < 2 || character > 17) return 0;
     const RaidConfiguration& config = configurations[character - 1].raids;
     return config.policy == NativeRaids ? 0 : &config;
@@ -35,20 +38,20 @@ const RaidConfiguration* configuration(int player)
 bool hostile(int player, int other)
 {
     return other >= 1 && other <= 8 && player != other
-        && at<int>(0x117D548 + player * 4) != at<int>(0x117D548 + other * 4);
+        && at<int>(nativeBindings.teams + player * 4) != at<int>(nativeBindings.teams + other * 4);
 }
 
 bool validGroup(const ReserveGroup& group, int player)
 {
     return group.id > 0 && group.id < 1250
-        && at<unsigned int>(Tribes + group.id * 0x334 + 0x34) == group.uid
-        && at<int>(Tribes + group.id * 0x334 + 0x2C) == player
-        && at<short>(Tribes + group.id * 0x334 + 0x40) == 2;
+        && at<unsigned int>(Tribes + group.id * nativeBindings.tribeStride + 0x34) == group.uid
+        && at<int>(Tribes + group.id * nativeBindings.tribeStride + 0x2C) == player
+        && at<short>(Tribes + group.id * nativeBindings.tribeStride + 0x40) == 2;
 }
 
 int size(const ReserveGroup& group, int player)
 {
-    return validGroup(group, player) ? at<short>(Tribes + group.id * 0x334 + 0x5C) : 0;
+    return validGroup(group, player) ? at<short>(Tribes + group.id * nativeBindings.tribeStride + 0x5C) : 0;
 }
 
 bool combatant(int type)
@@ -68,19 +71,19 @@ int category(int type)
 
 bool validBuilding(int player, const RaidConfiguration& config, int id, unsigned int uid)
 {
-    if (id <= 0 || id >= 2000 || id >= at<int>(0xF98528)) return false;
-    const unsigned int address = Buildings + id * 0x32C;
+    if (id <= 0 || id >= 2000 || id >= at<int>((nativeBindings.buildings + 8))) return false;
+    const unsigned int address = Buildings + 0x14 + id * 0x32C;
     const int owner = at<short>(address + 0xD6);
     if (!hostile(player, owner)) return false;
     const PlayerCensus& census = combatCensus[owner];
-    if (census.lord <= 0 || census.lord >= 2500) return false;
+    if (census.lord <= 0 || census.lord >= static_cast<int>(nativeBindings.unitCapacity)) return false;
     const unsigned int lord = Units + census.lord * 0x490;
     if (at<short>(lord + 0x8C) != 2 || at<short>(lord + 0x8E) != 55
         || at<short>(lord + 0x96) != owner || at<int>(lord + 0x98) != census.lordUID
         || at<short>(lord + 0x2A0) != 0 || at<int>(lord + 0x3C8) <= 0) return false;
     return at<short>(address + 0xD0) == 2 && at<unsigned int>(address + 0xD8) == uid
         && at<short>(address + 0x2BE) == 0 && category(at<short>(address + 0xD2)) >= 0
-        && (config.scope == AnyRaidEnemy || field(player, 0x115E9D0) == owner);
+        && (config.scope == AnyRaidEnemy || field(player, (nativeBindings.players + 0x2BD8)) == owner);
 }
 
 void returnHome(void* aic, int player, RaidGroup& group)
@@ -89,26 +92,26 @@ void returnHome(void* aic, int player, RaidGroup& group)
     group.buildingUID = 0;
     if (validGroup(group.tribe, player)) {
         reinterpret_cast<TwoAction>(0x4CD110)(aic, group.tribe.id, player);
-        at<short>(Tribes + group.tribe.id * 0x334 + 0x2E0) = 1;
-        at<short>(Tribes + group.tribe.id * 0x334 + 0x2F8) = 0;
-        at<unsigned int>(Tribes + group.tribe.id * 0x334 + 0x2FC) = 0;
+        at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
+        at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuilding) = 0;
+        at<unsigned int>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuildingUID) = 0;
     }
 }
 
 void attack(RaidGroup& group)
 {
     typedef void (__thiscall *Relay)(void*, int, int, int, unsigned int, int);
-    reinterpret_cast<Relay>(0x5371E0)(reinterpret_cast<void*>(0x1387F38),
+    reinterpret_cast<Relay>(0x5371E0)(reinterpret_cast<void*>(nativeBindings.units),
         group.tribe.id, 9, group.building, group.buildingUID, 0);
-    at<short>(Tribes + group.tribe.id * 0x334 + 0x2F8) = static_cast<short>(group.building);
-    at<unsigned int>(Tribes + group.tribe.id * 0x334 + 0x2FC) = group.buildingUID;
-    at<short>(Tribes + group.tribe.id * 0x334 + 0x2E0) = 1;
+    at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuilding) = static_cast<short>(group.building);
+    at<unsigned int>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeTargetBuildingUID) = group.buildingUID;
+    at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + nativeBindings.tribeStance) = 1;
 }
 
 int replacementValue(int type, const int prices[4])
 {
     if (type < 1 || type >= 110) return 0;
-    const unsigned int cost = 0xF98520 + 0x18C7D4 + type * 20;
+    const unsigned int cost = nativeBindings.buildings + 0x18C7D4 + type * 20;
     __int64 value = at<int>(cost + 16);
     for (int index = 0; index < 4; ++index) {
         const int amount = at<int>(cost + index * 4);
@@ -148,8 +151,8 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
     RaidGroup& group = raidStates[player].groups[index];
     if (!combatCensusValid || at<unsigned int>(nativeBindings.gameTick) - combatCensusTick > 1
         || !raidBuildingCensusValid || at<unsigned int>(nativeBindings.gameTick) - raidBuildingCensusTick > 1) return false;
-    const int leader = at<short>(Tribes + group.tribe.id * 0x334 + 0x5A);
-    if (leader <= 0 || leader >= 2500) return false;
+    const int leader = at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + 0x5A);
+    if (leader <= 0 || leader >= static_cast<int>(nativeBindings.unitCapacity)) return false;
     const unsigned int unit = Units + leader * 0x490;
     if (at<short>(unit + 0x2D8) != group.tribe.id || at<unsigned int>(unit + 0x2E4) != group.tribe.uid) return false;
     const int fromX = at<short>(unit + 0xC4), fromY = at<short>(unit + 0xC6);
@@ -167,13 +170,13 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
     }
     int count = 0;
     for (int enemy = 1; enemy <= 8; ++enemy) {
-        if (!enemies[enemy] || (config.scope == PrimeRaidTarget && field(player, 0x115E9D0) != enemy)) continue;
-        int length = field(enemy, 0x115F47C);
+        if (!enemies[enemy] || (config.scope == PrimeRaidTarget && field(player, (nativeBindings.players + 0x2BD8)) != enemy)) continue;
+        int length = field(enemy, (nativeBindings.players + 0x3684));
         if (length < 0 || length > 100) continue;
         for (int entry = 0; entry < length; ++entry) {
-            const int building = at<short>(0x115F3B4 + enemy * PlayerStride + entry * 2);
+            const int building = at<short>((nativeBindings.players + 0x35BC) + enemy * PlayerStride + entry * 2);
             if (building <= 0 || building >= 2000) continue;
-            const unsigned int address = Buildings + building * 0x32C;
+            const unsigned int address = Buildings + 0x14 + building * 0x32C;
             const unsigned int uid = at<unsigned int>(address + 0xD8);
             if (!validBuilding(player, config, building, uid)) continue;
             bool duplicate = false;
@@ -218,7 +221,7 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
     for (int probe = 0; probe < probeBudget && probe < count; ++probe) {
         const int selected = (group.pathCursor + probe) % count;
         const Candidate& candidate = candidates[selected];
-        if (!reinterpret_cast<TwoQuery>(0x4CD250)(aic, group.tribe.id, candidate.tile)) continue;
+        if (!reinterpret_cast<TwoQuery>(nativeBindings.tribePath)(aic, group.tribe.id, candidate.tile)) continue;
         group.building = candidate.id;
         group.buildingUID = candidate.uid;
         group.pathCursor = 0;
@@ -238,12 +241,12 @@ void fillGroups(void* aic, int player, int desired, const RaidConfiguration& con
     bool poolExhausted = false;
     for (int work = 0; work < 64 && moved < 16 && desired > 0 && !poolExhausted; ++work) {
         if (state.stagingGroup < 0 || state.stagingGroup >= 10) state.stagingGroup = 0;
-        if (state.stagingWord < 0 || state.stagingWord >= 157) state.stagingWord = 0;
+        if (state.stagingWord < 0 || state.stagingWord >= static_cast<int>(nativeBindings.tribeMemberWords)) state.stagingWord = 0;
         const int sourceIndex = state.stagingGroup;
         ReserveGroup source;
         if (sourceIndex < 6) {
-            source.id = at<short>(0x115EF04 + player * PlayerStride + (180 + sourceIndex) * 2);
-            source.uid = at<unsigned int>(0x115F094 + player * PlayerStride + (180 + sourceIndex) * 4);
+            source.id = at<short>((nativeBindings.players + 0x310C) + player * PlayerStride + (180 + sourceIndex) * 2);
+            source.uid = at<unsigned int>((nativeBindings.players + 0x329C) + player * PlayerStride + (180 + sourceIndex) * 4);
         } else source = state.groups[sourceIndex - 6].tribe;
         if (sourceIndex >= 6 && sourceIndex - 6 < desired) {
             state.stagingGroup = (sourceIndex + 1) % 10; state.stagingWord = 0; continue;
@@ -251,18 +254,18 @@ void fillGroups(void* aic, int player, int desired, const RaidConfiguration& con
         if (!validGroup(source, player) || size(source, player) <= 0) {
             state.stagingGroup = (sourceIndex + 1) % 10; state.stagingWord = 0; continue;
         }
-        unsigned int bits = at<unsigned short>(Tribes + source.id * 0x334 + 0x60 + state.stagingWord * 2);
+        unsigned int bits = at<unsigned short>(Tribes + source.id * nativeBindings.tribeStride + 0x60 + state.stagingWord * 2);
         bool finished = true;
         for (int bit = 0; bit < 16; ++bit) {
             const int id = state.stagingWord * 16 + bit;
-            if (!(bits & (1U << bit)) || id <= 0 || id >= 2500) continue;
+            if (!(bits & (1U << bit)) || id <= 0 || id >= static_cast<int>(nativeBindings.unitCapacity)) continue;
             const unsigned int unit = Units + id * 0x490;
             if (at<short>(unit + 0x96) != player || at<short>(unit + 0x42A) != 2
                 || at<short>(unit + 0x2D8) != source.id || at<unsigned int>(unit + 0x2E4) != source.uid
                 || at<short>(unit + 0x8C) != 2 || at<short>(unit + 0x2A0) != 0
                 || at<int>(unit + 0x3C8) <= 0) continue;
             const bool fighter = combatant(at<short>(unit + 0x8E));
-            int destination = -1, smallest = 2501;
+            int destination = -1, smallest = static_cast<int>(nativeBindings.unitCapacity) + 1;
             for (int group = 0; group < desired; ++group) {
                 const int count = size(state.groups[group].tribe, player);
                 if (!fighter && raidGroupCensus[player][group].combatants == 0) continue;
@@ -272,22 +275,22 @@ void fillGroups(void* aic, int player, int desired, const RaidConfiguration& con
             RaidGroup& target = state.groups[destination];
             if (!validGroup(target.tribe, player)) {
                 TribeAvailability available;
-                if (!queryTribeAvailability(reinterpret_cast<const unsigned char*>(Tribes + 0x28), 1250, player, available)
+                if (!queryTribeAvailability(reinterpret_cast<const unsigned char*>(Tribes + 0x28), 1250, nativeBindings.tribeStride, player, available)
                     || available.freeSlots == 0) { poolExhausted = true; break; }
                 typedef int (__thiscall *Create)(void*, int);
-                target.tribe.id = reinterpret_cast<Create>(0x5227E0)(reinterpret_cast<void*>(Tribes), player);
+                target.tribe.id = reinterpret_cast<Create>(nativeBindings.createTribe)(reinterpret_cast<void*>(Tribes), player);
                 if (target.tribe.id <= 0 || target.tribe.id >= 1250) { poolExhausted = true; break; }
-                target.tribe.uid = at<unsigned int>(Tribes + target.tribe.id * 0x334 + 0x34);
+                target.tribe.uid = at<unsigned int>(Tribes + target.tribe.id * nativeBindings.tribeStride + 0x34);
                 target.building = 0; target.buildingUID = 0; target.pathCursor = 0;
             }
             reinterpret_cast<TwoAction>(0x525A70)(reinterpret_cast<void*>(Tribes), id, source.id);
-            reinterpret_cast<TwoAction>(0x522590)(reinterpret_cast<void*>(Tribes), id, target.tribe.id);
+            reinterpret_cast<TwoAction>(nativeBindings.addUnitToTribe)(reinterpret_cast<void*>(Tribes), id, target.tribe.id);
             // Keep census snapshots immutable between native census phases.
             // Newly formed groups wait for that census before choosing a target.
             changed[destination] = true;
             if (++moved >= 16) { finished = false; break; }
         }
-        if (finished && ++state.stagingWord >= 157) {
+        if (finished && ++state.stagingWord >= static_cast<int>(nativeBindings.tribeMemberWords)) {
             state.stagingWord = 0; state.stagingGroup = (sourceIndex + 1) % 10;
         }
     }
@@ -331,7 +334,7 @@ void resetRaidUnitCensus()
 
 void countRaidUnit(int unit, int power)
 {
-    if (!collecting || unit <= 0 || unit >= 2500) return;
+    if (!collecting || unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity)) return;
     const unsigned int address = Units + unit * 0x490;
     const int player = at<short>(address + 0x96);
     const int x = at<short>(address + 0xC4), y = at<short>(address + 0xC6);
@@ -359,7 +362,7 @@ void __cdecl resetRaidBuildingCensus()
 void __cdecl countRaidBuilding(int building)
 {
     if (building <= 0 || building >= 2000) return;
-    const unsigned int address = Buildings + building * 0x32C;
+    const unsigned int address = Buildings + 0x14 + building * 0x32C;
     const int type = at<short>(address + 0xD2);
     if (type != 60 && type != 61 && !(type >= 45 && type <= 48) && !(type >= 74 && type <= 78)
         && type != 67 && type != 68 && type != 86 && type != 87) return;
@@ -390,12 +393,12 @@ bool updateSplitRaids(void* aic, int player)
             group.pathCursor = 0;
         }
     }
-    int desired = field(player, 0x115EEE4) / config->minimumSize;
+    int desired = field(player, (nativeBindings.players + 0x30EC)) / config->minimumSize;
     if (desired < 0) desired = 0;
     if (desired > config->groups) desired = config->groups;
     fillGroups(aic, player, desired, *config);
-    int& timer = field(player, 0x115E970);
-    const int character = field(player, 0x115E0F8);
+    int& timer = field(player, (nativeBindings.players + 0x2B78));
+    const int character = field(player, (nativeBindings.players + 0x2300));
     const int interval = *reinterpret_cast<int*>(static_cast<unsigned char*>(aic) + (character - 1) * 0x2A4 + 0x1F0);
     if (interval <= 1 || timer < 0 || timer >= interval - 1) timer = 0;
     else ++timer;
@@ -412,19 +415,19 @@ bool updateSplitRaids(void* aic, int player)
     } else {
         // Detect lost area connectivity at this group's native decision phase.
         // Reserve the second path query for a bounded replacement attempt.
-        const unsigned int building = Buildings + group.building * 0x32C;
+        const unsigned int building = Buildings + 0x14 + group.building * 0x32C;
         const int x = at<short>(building + 0xFE), y = at<short>(building + 0x100);
         if (x < 0 || x >= 400 || y < 0 || y >= 400) {
             returnHome(aic, player, group);
             return true;
         }
-        const int leader = at<short>(Tribes + group.tribe.id * 0x334 + 0x5A);
-        if (leader <= 0 || leader >= 2500) return true;
+        const int leader = at<short>(Tribes + group.tribe.id * nativeBindings.tribeStride + 0x5A);
+        if (leader <= 0 || leader >= static_cast<int>(nativeBindings.unitCapacity)) return true;
         const unsigned int unit = Units + leader * 0x490;
         if (at<short>(unit + 0x2D8) != group.tribe.id || at<unsigned int>(unit + 0x2E4) != group.tribe.uid) return true;
         const int tile = at<int>(0x2337300 + y * 12) + x;
         if (tile <= 0 || tile >= 160000) { returnHome(aic, player, group); return true; }
-        if (!reinterpret_cast<TwoQuery>(0x4CD250)(aic, group.tribe.id, tile)) {
+        if (!reinterpret_cast<TwoQuery>(nativeBindings.tribePath)(aic, group.tribe.id, tile)) {
             returnHome(aic, player, group);
             chooseTarget(aic, player, index, *config, 1);
         }

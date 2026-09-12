@@ -17,6 +17,24 @@ struct BindFixture {
         nativeBindings.rngNext = 0x46A7D0;
         nativeBindings.initialDefenseTicks = 0x4D34B1;
         nativeBindings.aicRecords = 0x23FC8E8 + 676;
+        nativeBindings.units = 0x1387F38;
+        nativeBindings.unitRecords = 0x138854C;
+        nativeBindings.unitCapacity = 2500;
+        nativeBindings.tribes = 0x1667F78;
+        nativeBindings.tribeStride = 0x334;
+        nativeBindings.tribeMemberWords = 157;
+        nativeBindings.tribeStance = 0x2E0;
+        nativeBindings.tribeTargetBuilding = 0x2F8;
+        nativeBindings.tribeTargetBuildingUID = 0x2FC;
+        nativeBindings.buildings = 0xF98520;
+        nativeBindings.buildingCapacity = 2000;
+        nativeBindings.players = 0x115BDF8;
+        nativeBindings.createTribe = 0x5227E0;
+        nativeBindings.addUnitToTribe = 0x522590;
+        nativeBindings.tribePath = 0x4CD250;
+        nativeBindings.entities = 0x2350314;
+        nativeBindings.entityCapacity = 3000;
+        nativeBindings.teams = 0x117D548;
     }
 } bindFixture;
 int cases;

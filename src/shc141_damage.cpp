@@ -13,9 +13,9 @@ template<class T> static T read(const unsigned char* record, int offset)
 
 static const unsigned char* unit(const DamageMemory& memory, int id)
 {
-    // Fixed SHC 1.41 array capacity; relocated/expanded native owners require a
-    // separately admitted binding, not guessed access beyond the original pool.
-    if (!memory.units || memory.unitCapacity < 1 || memory.unitCapacity > 2500 ||
+    // The native layout owner supplies the verified pool capacity at startup.
+    // Small detached pools are also accepted by the isolated observation tests.
+    if (!memory.units || memory.unitCapacity < 1 || (memory.unitCapacity > 2500 && memory.unitCapacity != 10000) ||
         id < 1 || id >= memory.unitCapacity) return 0;
     return memory.units + id * 0x490;
 }
@@ -41,7 +41,7 @@ bool beginDamage(const DamageMemory& memory, DamageSource source,
         if (!attacker) return false;
         sourceOwner = read<short>(attacker, 0x96);
     } else if (source == EntityDamage) {
-        if (!memory.entities || memory.entityCapacity < 1 || memory.entityCapacity > 3000 ||
+        if (!memory.entities || memory.entityCapacity < 1 || (memory.entityCapacity > 3000 && memory.entityCapacity != 6000) ||
             second < 1 || second >= memory.entityCapacity) return false;
         sourceOwner = read<short>(memory.entities + second * 0xE8, 0x2C);
     }

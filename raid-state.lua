@@ -20,13 +20,13 @@ function M.new(native)
       local start = player * 24 + 1
       range(values[start], 3)
       range(values[start + 1], 9)
-      range(values[start + 2], 156)
+      range(values[start + 2], native.game.tribeMemberWords - 1)
       range(values[start + 3], 15)
       for group = 0, 3 do
         local offset = start + 4 + group * 5
         range(values[offset], 1249)
         if values[offset] == 0 then range(values[offset + 1], 0) end
-        range(values[offset + 2], 1999)
+        range(values[offset + 2], native.game.buildingCapacity - 1)
         if values[offset + 2] == 0 then range(values[offset + 3], 0) end
         range(values[offset + 4], 7)
       end
@@ -34,20 +34,20 @@ function M.new(native)
     local offset = 9 * 24 + 1
     local total = 0
     for group = 0, 9 * 4 - 1 do
-      range(values[offset + group * 2], 2500)
+      range(values[offset + group * 2], native.game.unitCapacity)
       total = total + values[offset + group * 2]
       range(values[offset + group * 2 + 1], 2147483647)
     end
-    range(total, 2500)
+    range(total, native.game.unitCapacity)
     offset = offset + 9 * 4 * 2
     for index = 0, 9 * 1024 - 1 do range(values[offset + index], 2147483647) end
     offset = offset + 9 * 1024
     total = 0
     for index = 0, 9 * 1024 - 1 do
-      range(values[offset + index], 2000)
+      range(values[offset + index], native.game.buildingCapacity)
       total = total + values[offset + index]
     end
-    range(total, 2000)
+    range(total, native.game.buildingCapacity)
     range(values[count], 1)
     return values
   end
