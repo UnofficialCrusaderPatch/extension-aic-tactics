@@ -32,7 +32,9 @@ The root `LICENSE` is the unchanged GPL version 3 text also present in Map
 Extensions (upstream license blob `f288702d2fa16d3cdf0035b15a9fcbc552cd88e7`).
 The shared payload builder includes it in local and Store module ZIPs from 0.0.10.
 
-Release provenance remains incomplete: the inspected Files tree has no root
-license file. Its upstream owner's permission is tracked separately in
+Files' owner added its GPL-3.0 license in upstream commit
+`192f207869ae1eeb61bbd1c02a279bee3cbf6db3` and closed
 <https://github.com/UnofficialCrusaderPatch/extension-files/issues/12>.
-The AIC license does not grant permission for dependency code.
+The dependent Files 1.4.2 package includes that unchanged license at its root.
+This resolves the previously reported missing-license issue; it does not replace
+runtime acceptance or dependency review.

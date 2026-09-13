@@ -23,5 +23,5 @@ The store uses `build.ps1` and `files.xml` to compile the x86 runtime and stage 
 
 AIC Tactics is licensed under the GNU General Public License, version 3
 ([GPL-3.0-only](LICENSE)). The license is included in the module ZIP starting
-with 0.0.10. Dependencies retain their own licenses; Files' upstream licensing
-permission remains unresolved.
+with 0.0.10. Dependencies retain their own licenses. Files' owner added its
+GPL-3.0 license upstream; the dependent Files 1.4.2 package includes it.

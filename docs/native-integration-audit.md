@@ -113,7 +113,9 @@ recorded identities. The five ZIPs' root manifests, payloads and nine AIC GUI
 locales passed the earlier package verification and SHC startup; that evidence
 does not cover newly corrected code. Update, 13 September: the author approved
 GPL-3.0 for AIC after Map Extensions' license was verified. AIC 0.0.10 includes
-the license; Files' upstream licensing permission remains unresolved.
+the license. Files' owner subsequently added GPL-3.0 in upstream commit
+192f207; the dependent Files 1.4.2 package includes it. The missing-license
+issue is resolved.
 
 Still required: AIC binding correction, Extreme ABI/layout and Legacy composition,
 review of shared content enumeration, Recorder owner resolution, updated dependency
