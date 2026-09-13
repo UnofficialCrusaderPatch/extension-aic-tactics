@@ -27,6 +27,12 @@ Its required-state changes are not included in this gameplay ZIP. Use the exact
 dependent recorder build for recorder acceptance. Original game/framework binaries
 are not bundled, and no modified Legacy source is included.
 
-Release provenance remains incomplete: AIC Tactics and the inspected Files tree
-have no root license file. Do not treat packaging success as license clearance
-or a release-ready result.
+AIC Tactics uses GPL-3.0-only with the author's approval on 13 September 2026.
+The root `LICENSE` is the unchanged GPL version 3 text also present in Map
+Extensions (upstream license blob `f288702d2fa16d3cdf0035b15a9fcbc552cd88e7`).
+The shared payload builder includes it in local and Store module ZIPs from 0.0.10.
+
+Release provenance remains incomplete: the inspected Files tree has no root
+license file. Its upstream owner's permission is tracked separately in
+<https://github.com/UnofficialCrusaderPatch/extension-files/issues/12>.
+The AIC license does not grant permission for dependency code.

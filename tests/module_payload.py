@@ -9,7 +9,7 @@ def module_payload(root: Path, dll: Path):
     definition = (root / 'definition.yml').read_text(encoding='utf-8')
     version = re.search(r'^version: (\d+\.\d+\.\d+)\s*$', definition, re.M)[1]
     module_id = 'aic-tactics-' + version
-    paths = [root / name for name in ('definition.yml', 'options.yml')]
+    paths = [root / name for name in ('definition.yml', 'options.yml', 'LICENSE')]
     for pattern in ('*.lua', 'config/*.lua', 'locale/*.yml',
                     'locale/description-*.md', 'docs/configuration-*.md'):
         paths.extend(root.glob(pattern))

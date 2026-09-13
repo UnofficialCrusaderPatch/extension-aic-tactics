@@ -20,3 +20,8 @@ native error boundary stops rejected loads. Corrected-package native acceptance,
 full combat, multiplayer and simulation-performance acceptance remain open.
 
 The store uses `build.ps1` and `files.xml` to compile the x86 runtime and stage the same payload as local previews. Both paths share `tests/module_payload.py`, including all nine GUI descriptions and the multiplayer package identity.
+
+AIC Tactics is licensed under the GNU General Public License, version 3
+([GPL-3.0-only](LICENSE)). The license is included in the module ZIP starting
+with 0.0.10. Dependencies retain their own licenses; Files' upstream licensing
+permission remains unresolved.

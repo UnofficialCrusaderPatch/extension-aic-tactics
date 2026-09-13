@@ -111,8 +111,9 @@ prevents a future Protocol 1.1.1 payload being mislabeled 1.1.0. Three focused
 archive tests pass. Previously published assets remain unchanged and retain their
 recorded identities. The five ZIPs' root manifests, payloads and nine AIC GUI
 locales passed the earlier package verification and SHC startup; that evidence
-does not cover newly corrected code. The AIC repository also has no root license
-file yet; repository licensing/source provenance must be settled before release.
+does not cover newly corrected code. Update, 13 September: the author approved
+GPL-3.0 for AIC after Map Extensions' license was verified. AIC 0.0.10 includes
+the license; Files' upstream licensing permission remains unresolved.
 
 Still required: AIC binding correction, Extreme ABI/layout and Legacy composition,
 review of shared content enumeration, Recorder owner resolution, updated dependency
