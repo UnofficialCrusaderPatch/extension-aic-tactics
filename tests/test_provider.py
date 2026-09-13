@@ -203,6 +203,34 @@ def test_backend_admission_rejects_live_update(lua):
       assert(#writes==0 and commits==1 and loader:getAICValue(2,'RecruitProbDefDefault')==40)
     ''')
 
+
+@pytest.mark.parametrize('native_first', [True, False], ids=['native-before-opt-in', 'native-after-opt-in'])
+def test_native_identity_is_independent_of_character_update_order(lua, native_first):
+    """Regression for a real cold-load mismatch: Caliph defaults versus zero storage."""
+    lua.globals().native_first = native_first
+    lua.execute('''
+      local native={configuration=100000,configurationSize=344,configurationLocked=200000,
+        game={gameTick=300000},preflightTargets=function()end,
+        preflightCombat=function()end,activateCombat=function()end}
+      backend.prepare=require('config.backend').new(native).prepare
+      local function nativeCaliph() loader:overwriteAIC(6,{TargetChoice='Balanced'}) end
+      local function customSaladin()
+        assert(loader:overwriteAIC(5,{AttackTargetPolicy='FewestTroops'}))
+      end
+      if native_first then nativeCaliph();customSaladin() else customSaladin();nativeCaliph() end
+      for offset=0,340,4 do
+        assert(core.readInteger(native.configuration+6*344+offset)==0,
+          'Native Caliph must have the same zero record in either update order')
+      end
+      assert(core.readInteger(native.configuration+5*344+288)==2)
+      assert(loader:getAICValue(6,'AttackTargetPolicy')=='Inherit')
+      -- Canonical storage must not discard authored values needed by later edits.
+      assert(loader:overwriteAIC(5,{AttackTargetPolicy='Inherit'}))
+      for offset=0,340,4 do assert(core.readInteger(native.configuration+5*344+offset)==0) end
+      assert(loader:overwriteAIC(5,{AttackTargetPolicy='FewestTroops'}))
+      assert(core.readInteger(native.configuration+5*344+288)==2)
+    ''')
+
 def test_collision_preserves_installed_provider(lua):
     lua.execute('''
       assert(not pcall(provider.register,loader,backend))

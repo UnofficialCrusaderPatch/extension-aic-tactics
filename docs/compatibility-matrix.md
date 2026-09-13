@@ -45,7 +45,7 @@ This prevents mixed matches from bypassing the lock through an untouched AI.
 
 Native-only saves do not declare AIC Tactics as required. Its optional Native
 state can be ignored when the module is absent or changed. New policy saves require
-Map Extensions 1.1.0's required-provider checks and exact
+Map Extensions 1.1.2's required-provider checks and exact
 package/AIC identities. Old Native saves without policy state may initialize only
 Native behavior. Existing policy saves/recordings need their original artifacts;
 there is no implicit upgrade, downgrade or live army conversion. A plain game or an
@@ -54,3 +54,13 @@ new-policy saves through those readers is unsupported. Protocol 1.1.0's admissio
 prerequisite compares full content/configuration identities before the native
 host Start path. Once that exchange begins, all AIC edits require a fresh process,
 including Native-only multiplayer. Physical-peer acceptance remains outstanding.
+
+Version 0.0.8 gives fully Native backend records one zero representation, whether
+the loader visits them before or after another AI opts in. Unused compiled defaults
+no longer change save, multiplayer or replay identity. Authored values stay in the
+existing provider for later partial edits; active policy records are unchanged.
+This corrects the 0.0.7 active-combat cold-load failure tracked in issue #19.
+Map Extensions 1.1.2 reports native save/load callback failures through UCP's fatal
+logger and stops instead of continuing with missing extension state. Use the
+original package for old preview saves/replays and start a new match with 0.0.8;
+this is not a cross-version save migration.

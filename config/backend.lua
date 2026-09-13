@@ -1,3 +1,4 @@
+local personality = require('config.personality')
 local M = {}
 
 function M.new(native)
@@ -74,6 +75,13 @@ function M.new(native)
     for _, value in ipairs(targeting.rules) do words[#words + 1] = value end
     words[#words + 1] = envelope.preparation
     for _, value in ipairs(envelope.raids) do words[#words + 1] = value end
+    -- Native neighbours may be visited before or after the first opt-in, when
+    -- provider admission starts covering every update. Keep their unused
+    -- storage identical to an unvisited record for save/MP/replay identity.
+    -- The provider retains authored values for subsequent partial edits.
+    if not personality.active(authored) then
+      for index = 1, #words do words[index] = 0 end
+    end
     return {commit = function()
       if multiplayerLocked or changesPolicy or anyPolicyActive() then admission() end
       if compiled.mode == 1 then native.activate() end
