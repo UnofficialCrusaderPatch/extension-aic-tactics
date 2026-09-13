@@ -1,0 +1,10 @@
+name: aic-tactics-example
+display-name: AIC Tactics example
+version: 0.0.1
+type: plugin
+author: Krarilotus
+dependencies:
+  aic-tactics: '=0.0.3'
+  aicloader: '^1.1.4'
+meta:
+  version: 1.0.0

@@ -2,3 +2,9 @@ legacyRecruitInterval: حفظ آهنگ سربازگیری Legacy
 legacyRecruitInterval_descr: 'جایگزین ai_recruitinterval در Legacy می‌شود: شخصیت‌های Native از فاصلهٔ ۱ استفاده می‌کنند. WeightedRoles فاصله‌های AIC را نگه می‌دارد. گزینهٔ Legacy را خاموش کنید؛ اگر قبلاً خاموش بود، این گزینه را هم خاموش بگذارید.'
 nativeInitialDefenseMonths: مدت دفاع اولیه برای هوش مصنوعی Native
 nativeInitialDefenseMonths_descr: '۰ تا ۳۰ ماه؛ پیش‌فرض ۶. مقدار قبلی زمان‌سنج اولیهٔ Legacy را اینجا وارد کنید و آن گزینهٔ Legacy را خاموش کنید. WeightedRoles از RecruitInitialDefenseMonths استفاده می‌کند.'
+nativeTargetPolicy: "انتخاب هدف برای هوش مصنوعی Native"
+nativeTargetPolicy_descr: "جایگزین Legacy ai_attacktarget است. انتخاب آن را اینجا وارد کنید و هنگام استفاده از قواعد هدف‌گیری جدید، آن گزینهٔ Legacy را خاموش کنید. Native تنظیم TargetChoice را حفظ می‌کند."
+nativeTargetPolicy_native: "TargetChoice فعلی"
+nativeTargetPolicy_nearest: "نزدیک‌ترین"
+nativeTargetPolicy_richest: "ثروتمندترین"
+nativeTargetPolicy_weakest: "ضعیف‌ترین"

@@ -18,9 +18,19 @@ static unsigned char units[0x10000];
 static unsigned char savedUnits[sizeof(units)];
 static unsigned char* savedImage;
 static int cases;
+static LONG WINAPI nativeException(EXCEPTION_POINTERS* info)
+{
+    std::fprintf(stderr, "Native fixture exception %08lX at %08lX (ESP %08lX)\n",
+        info->ExceptionRecord->ExceptionCode, info->ContextRecord->Eip, info->ContextRecord->Esp);
+    std::fflush(stderr);
+    return EXCEPTION_EXECUTE_HANDLER;
+}
 void runGroupCases();
 #ifdef AIC_RUNTIME_TESTS
 void runRuntimeCases();
+void runDamageCases(unsigned int reservationOffset);
+void runCombatCases();
+void runIntegrityBenchmark();
 #endif
 
 static void require(bool condition, const char* message)
@@ -94,7 +104,10 @@ static void check(const RecruitmentServices& services, int player, int unit,
 
 int main(int argc, char** argv)
 {
-    require(argc == 2, "Use run_shc141_probe.py with the hash-verified reference executable");
+    std::setvbuf(stdout, 0, _IONBF, 0);
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+    SetUnhandledExceptionFilter(nativeException);
+    require(argc == 2 || argc == 3, "Use run_shc141_probe.py with the hash-verified reference executable");
     void* image = reinterpret_cast<void*>(ImageBase);
     const unsigned int reservationOffset = reinterpret_cast<unsigned int>(referenceSpace) - ImageBase;
     require(reservationOffset >= 0x1000 && reservationOffset <= 0x50000,
@@ -115,6 +128,13 @@ int main(int argc, char** argv)
     require(std::fgetc(input) == EOF, "Unexpected reference image suffix");
     std::fclose(input);
     require(FlushInstructionCache(GetCurrentProcess(), image, ImageSize) != 0, "Instruction cache flush failed");
+#ifdef AIC_RUNTIME_TESTS
+    if (argc == 3) {
+        require(std::strcmp(argv[2],"--benchmark-integrity")==0,"Unknown benchmark option");
+        runIntegrityBenchmark();
+        return 0;
+    }
+#endif
     savedImage = static_cast<unsigned char*>(std::malloc(ImageSize));
     require(savedImage != 0, "Cannot allocate state comparison");
     const int types[] = {22,23,24,25,26,27,5,29,30,37,70,71,72,73,74,75,76};
@@ -153,9 +173,13 @@ int main(int argc, char** argv)
     absent.nonEuropean = 0;
     check(absent,1,70,1,false,false,0,0);
     std::printf("%d x86 original-instruction probe cases passed; no running-game acceptance claimed\n", cases);
+#ifdef AIC_RUNTIME_TESTS
+    runDamageCases(reservationOffset);
+#endif
     runGroupCases();
 #ifdef AIC_RUNTIME_TESTS
     runRuntimeCases();
+    runCombatCases();
 #endif
     std::free(savedImage);
     return 0;

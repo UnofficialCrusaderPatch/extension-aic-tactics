@@ -2,3 +2,9 @@ legacyRecruitInterval: Legacy-Rekrutierungstakt beibehalten
 legacyRecruitInterval_descr: 'Ersetzt Legacy ai_recruitinterval für Native-Persönlichkeiten: Intervall 1. WeightedRoles nutzt weiterhin die AIC-Intervalle. Die Legacy-Option muss AUS sein. War sie bisher aus, bleibt auch diese Option aus.'
 nativeInitialDefenseMonths: Anfängliche Verteidigungsphase für Native-KIs
 nativeInitialDefenseMonths_descr: '0–30 Monate, Standard 6. Übernimm hier den bisherigen Wert des Legacy-Starttimers und schalte die Legacy-Option aus. Bei WeightedRoles gilt RecruitInitialDefenseMonths.'
+nativeTargetPolicy: "Zielwahl für Native-KIs"
+nativeTargetPolicy_descr: "Ersetzt Legacy ai_attacktarget. Übernimm dessen Auswahl hier und schalte die Legacy-Option bei neuen Zielregeln aus. Native behält TargetChoice bei."
+nativeTargetPolicy_native: "Bisheriges TargetChoice"
+nativeTargetPolicy_nearest: "Nächster Gegner"
+nativeTargetPolicy_richest: "Reichster Gegner"
+nativeTargetPolicy_weakest: "Schwächster Gegner"

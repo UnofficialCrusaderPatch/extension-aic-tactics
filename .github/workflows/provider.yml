@@ -12,11 +12,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: UnofficialCrusaderPatch/extension-aicloader
-          ref: 24ea47c20f62082f8a1b06969089898a8285add9
+          ref: 82a9a1873d0c0abbf4575b2cb2621b7f58e9573a
           path: tests/deps/aicloader
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install pytest==8.4.2 lupa==2.6
-      - run: python -m pytest tests/test_provider.py tests/test_backend.py tests/test_native_bootstrap.py tests/test_state.py tests/test_grace.py -q
+      - run: python -m pytest tests -q

@@ -23,8 +23,11 @@ lua=LuaRuntime(unpack_returned_tuples=True)
 lua.globals().root=root.as_posix()
 lua.execute('''
 package.path=root..'/?.lua;'..package.path
-package.loaded['aicTactics.dll']={configurationSize=288,configuration=0x3100000}
-core={AOBScan=function()return 0x4D3B41 end,
+package.loaded['native-bindings']={initialize=function()end} -- interval bridge only
+package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3100000,
+ game={players=0x115BDF8,recruitmentSites={interval=0x4D3B41}}}
+local interval={0x8B,0x84,0xAA,0x64,1,0,0,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,2}
+core={readByte=function(a)return interval[a-0x4D3B41+1] end,
  allocateAssembly=function(text,symbols) assembly=text;bindings=symbols;return 0x3000000 end,
  writeCode=function(address,code)site=address;patch=code end}
 native=require('native').new()
@@ -53,7 +56,7 @@ for player in range(1,9):
     for interval in [-1,0,1,4,2147483647]:
      for flags in [0x202,0x247,0xA92]:
       uc.mem_write(0x115E0F8+player*0x39F4,struct.pack('<i',character+1))
-      uc.mem_write(0x3100000+character*288,struct.pack('<i',mode))
+      uc.mem_write(0x3100000+character*344,struct.pack('<i',mode))
       index=character*169+strength
       uc.mem_write(0x2300000+index*4+0x164,struct.pack('<i',interval))
       initial=[0x12345678,0x98765432,0xCC001101,0x2300000,player*0x39F4,

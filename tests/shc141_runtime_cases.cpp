@@ -8,6 +8,78 @@
 using namespace AicTactics;
 using namespace AicTactics::SHC141;
 namespace {
+// Exact-build research fixture only. Production obtains these from UCP/Loader.
+struct BindFixture {
+    BindFixture() {
+        nativeBindings.gameTick = 0x1FE7DA8;
+        nativeBindings.rngState = 0x1A279C0;
+        nativeBindings.rngValue = 0x1A279C2;
+        nativeBindings.rngNext = 0x46A7D0;
+        nativeBindings.initialDefenseTicks = 0x4D34B1;
+        nativeBindings.aicRecords = 0x23FC8E8 + 676;
+        nativeBindings.units = 0x1387F38;
+        nativeBindings.unitRecords = 0x138854C;
+        nativeBindings.unitCapacity = 2500;
+        nativeBindings.tribes = 0x1667F78;
+        nativeBindings.tribeStride = 0x334;
+        nativeBindings.tribeMemberWords = 157;
+        nativeBindings.tribeStance = 0x2E0;
+        nativeBindings.tribeTargetBuilding = 0x2F8;
+        nativeBindings.tribeTargetBuildingUID = 0x2FC;
+        nativeBindings.buildings = 0xF98520;
+        nativeBindings.buildingCapacity = 2000;
+        nativeBindings.players = 0x115BDF8;
+        nativeBindings.createTribe = 0x5227E0;
+        nativeBindings.addUnitToTribe = 0x522590;
+        nativeBindings.tribePath = 0x4CD250;
+        nativeBindings.entities = 0x2350314;
+        nativeBindings.entityCapacity = 3000;
+        nativeBindings.teams = 0x117D548;
+        nativeBindings.assignMoatDigger = 0x4CC840;
+        nativeBindings.wallDefense = 0x4D2660;
+        nativeBindings.patrolDefense = 0x4D2730;
+        nativeBindings.assignRaider = 0x4D2790;
+        nativeBindings.assignAttacker = 0x4D27E0;
+        nativeBindings.findSortieGroup = 0x4CC910;
+        nativeBindings.findAttackGroup = 0x4CCD20;
+        nativeBindings.returnTribe = 0x4CD110;
+        nativeBindings.removeUnitFromTribe = 0x525A70;
+        nativeBindings.relayRaidOrder = 0x5371E0;
+        nativeBindings.mapRows = 0x2337300;
+        nativeBindings.attackGroupSlots = 0xB3EC1C;
+        nativeBindings.recruitUpdate = 0x4D3AE0;
+        nativeBindings.rangedSortieNative = 0x4CD560;
+        nativeBindings.meleeSortieNative = 0x4CD690;
+        nativeBindings.recruitEuropean = 0x52E960;
+        nativeBindings.recruitNonEuropean = 0x52EC10;
+        nativeBindings.scenarioMode = 0x1FE7D78;
+        nativeBindings.scenarioCustom = 0x1FE9CA4;
+        nativeBindings.scenarioMission = 0x1FE9CAC;
+        nativeBindings.moat = 0x1A93208;
+        nativeBindings.moatVacancies = 0x500180;
+        nativeBindings.findRecruitmentBuilding = 0x40AAD0;
+        nativeBindings.attackRecruitType = 0x4CC250;
+        nativeBindings.raidMaximum = 0x4D12A0;
+        nativeBindings.defenseTypes = 0xB425E8;
+        nativeBindings.specialDefenders = 0xB3EB34;
+        nativeBindings.defenseSlots = 0xB42638;
+        nativeBindings.raidTypes = 0xB426C8;
+        nativeBindings.equipmentRecipes = 0xB55260;
+        nativeBindings.selectAttackTarget = 0x4D4680;
+        nativeBindings.computeNervousness = 0x4D3780;
+        nativeBindings.updateAIPlayerState = 0x4D49E0;
+        nativeBindings.returnAttack = 0x4CEA50;
+        nativeBindings.hasNoTroopsOrAllDiggers = 0x4CFFD0;
+        nativeBindings.updateRaids = 0x4D2A70;
+        nativeBindings.combatValue = 0x51C360;
+        nativeBindings.troopValues = 0x1763348;
+        nativeBindings.marketPrice = 0x4588D0;
+        nativeBindings.gameState = 0x112B0B8;
+
+
+
+    }
+} bindFixture;
 int cases;
 template<class T> T& at(unsigned int address) { return *reinterpret_cast<T*>(address); }
 void check(bool value, const char* message) {

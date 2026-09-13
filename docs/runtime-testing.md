@@ -1,79 +1,57 @@
-# Recruitment integration test
+# AIC Tactics integration testing
 
-[Download the GamerGrill-tested sortie build at 33d91be](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/actions/runs/34661062781/artifacts/10287381748)
-(CI artifact expires 2 October 2026). Newer CI artifacts include subsequent changes;
-the verification below identifies the tested source and DLL separately.
+Copy the AIC Tactics ZIP and the dependency module ZIPs from the same bundle into `ucp/modules` without unpacking them, reopen the GUI, and enable AIC Tactics; apply the Legacy settings in `AIC-TACTICS-COMPATIBILITY.md`.
+Merge one example fragment into the `aic` object of a copied personality and start a fresh process on the eight-player Green Haven spectator fixture, keeping neighbouring allied pairs and Vanilla Interpretation Castles.
+Observe recruitment, target stability, a separate next-wave reserve and distinct raid targets; the matching Recorder build is optional for recording/playback checks and its ZIP also stays zipped.
 
-Extract this ZIP into an isolated SHC 1.41 test installation with the UCP development runtime, then enable AIC Tactics and the included AIC Loader 1.1.3; require Legacy `ai_defense` ON and `ai_recruitinterval` OFF.
-Merge `sortie-test-aic-fragment.json` into the `aic` object of a copied AI personality, keeping its existing sortie types/minima and recruitment intervals, then start a fresh game process and a spectator skirmish.
-Check that this AI recruits only eligible sorties up to its existing minima, while unmodified personalities retain Native recruitment; a Wolf with Pikemen needs a barracks, gold, pikes and metal armor.
+The optional all-in-one download is an outer bundle: copy the ZIPs from its
+`ucp/modules` directory into the game's `ucp/modules`. Do not unpack those inner
+ZIPs or put the outer bundle itself in `ucp/modules`. Replace mistakenly extracted
+folders for AIC Tactics, AIC Loader, Map Extensions, Protocol, Chat and Files with their
+module ZIPs. These unsigned previews work with testers' existing security-off
+runtime. Signing and store release are separate from this packaging correction.
 
-This is a development recruitment build. It includes actual native acquisition,
-assignment, conditional role selection and equipment-purchase requests. The
-private loader version identifies the transactional API from loader PR #19;
-it is not an upstream release. Public release runtimes may reject these unsigned
-modules. No game executable or development framework is bundled.
+The current source integrates all four subsystems, required saved state and
+checkpoint digests. Its MSVC2005 build and component/native-layout checks pass;
+it has not yet been accepted in the game. The
+historical evidence below applies only to its named earlier revisions, not this
+integration. See `combat-integration.md` for bounds and implementation details.
 
-The newer composition branch requires Map Extensions 1.0.0 and includes
-[PreserveSlots and saved recruitment state](defense-composition.md); these changes
-have not yet had their own game acceptance. Start a new match for their tests.
+The test ZIP includes the unchanged, checksum-pinned store `luamemzip.dll` with
+the proposed Map Extensions state API. Map Extensions 1.1.0 and the private loader
+version are development prerequisites, not upstream release claims. No game or
+framework binary is bundled. The recorder change is a separate dependent PR;
+existing recorder versions must not be treated as compatible with this state API.
 
-This branch also implements [per-AI initial defense grace](recruitment-grace.md).
-For its tests, turn Legacy `ai_recruitstate_initialtimer` OFF and migrate the old
-global duration to `nativeInitialDefenseMonths` if needed. The earlier linked
-sortie artifact predates these additions.
+For Recorder testing, also enable UI 1.0.2 with its LuaJIT 1.0.0 and cffi 1.0.0
+dependencies, WinProc Handler 1.0.0, and the existing Legacy 2.15.2 saved-state
+prerequisite before Recorder. Let the GUI supply their option defaults. A manually
+written direct-launch profile must include those defaults from each module's
+`options.yml`; empty configuration tables are insufficient for LuaJIT/cffi.
+Keep JIT enabled and tracing/GC logging disabled for performance measurements.
 
-This branch implements [EquipmentSurplus](equipment-surplus.md), using complete
-recruitable equipment sets after accounting for home-defense deficits. It has
-component coverage but no running-game acceptance yet. [Moat diggers](defense-moat.md) use the
-Defense weight and their existing native quota/group; this integration also
-needs its own game acceptance. Next-wave
-reserves, opponent policies/retaliation and split raids are not implemented by
-this runtime yet. Do not use this build for multiplayer or historical recordings:
-configuration fingerprints and the shared save/replay state contract remain open.
-Reloaded unit membership has been sampled, but complete saved continuation has
-not passed. A test reload showed black terrain patches; attribution is unresolved.
+CI runs compilation and policy checks on pushes and PRs. Packaging currently
+requires workflow dispatch with the published repository and full commit SHA of
+the Map Extensions, Protocol and Files prerequisites; it does not substitute older APIs.
+The downloaded package must be tested separately before attaching acceptance
+evidence to it.
+
+For multiplayer, all peers need the same files, extension order and settings.
+The host's first Start action checks every human peer; press Start again after
+the replies arrive. A mismatch appears in the existing local chat display.
+AIC settings freeze at this exchange; changing them requires a fresh process.
+Single-player and replay do not run this lobby exchange.
 
 The compiled configuration stores authored character IDs 1..16; native player
-characters use 2..17. Each player has separate observation counters. These counters
-do not drive policy and are not save state. The launch log publishes their addresses
-for read-only diagnostics. Native game state and the native RNG drive decisions.
+characters use 2..17. The launch log publishes configuration and observation
+addresses for read-only inspection. Observations never drive decisions. The
+reference sampler must use the current 344-byte ABI and validate unit/group UIDs.
 
-Omitted RecruitPolicy uses Native. New role rows must total 100 and require
-WeightedRoles. The first matching condition overrides the base strength row;
-zero-weight roles are not probed or recruited. Missing equipment can create one
-native purchase request per attempt (at most four at the native opportunity), in Defense/Raid/Attack/Sortie order,
-using the existing purchase amount and nervous-recruitment rule. Purchase requests
-do not recruit, spend gold directly, advance the roster cursor or consume RNG.
-
-Recruitment buildings are checked against the native building pool, live state,
-owner and required type on every probe. Cached IDs are not accepted after removal
-or reuse as a different building. This follows the native building lookup's
-validity predicate; no additional persistent building cache is introduced.
-
-`AttMaxDefault` retains its native subrole-selection meaning: it is not a hard
-army-size cap. Once no special attack subrole has an open quota, native selection
-falls back to the main roster even above this value. An unavailable special
-subrole with an open quota does not enable that fallback. Wave size/growth and
-their Legacy limits remain separate; reserve preparation must preserve them.
-
-Supported condition facts in this development build are AttackActive (native
-attack phase nonzero), DefenseIncomplete (current native defense count below its
-quota) and HomeUnderThreat (native nervous-action tracker positive). The latter
-still needs the package's qualifying-threat semantics before release.
-
-Native-to-Native loader updates retain the loader's existing lifecycle. Changes
-that enable or disable a new policy require a fresh process; unsynchronized live
-policy changes are rejected. Legacy source is unchanged.
-
-When migrating a profile that enabled Legacy `ai_recruitinterval`, turn that option
-OFF and turn AIC Tactics `legacyRecruitInterval` ON. Native personalities then keep
-the former interval 1; WeightedRoles uses the personality's three AIC intervals.
-The authored AIC values and getters remain unchanged. If the Legacy option was
-already OFF, leave the replacement OFF (its default). This option does not change
-sortie timing, initial grace or the native attempt calculation. A clean process is
-required. The replacement has 11,520 FASM/x86 register/flags/stack checks; complete
-native command/RNG equivalence and multiplayer still require acceptance.
+Cover Native/default versus baseline, one opted-in AI, mixed repeated characters,
+quota/equipment failures, target death/alliance change, no paths, reserve losses,
+two handovers, raid regrouping, save/load, replay restore and measured performance.
+Two physical MP peers and pre-match content/configuration admission are still
+release gates. A local native fixture or parser test does not satisfy them.
 
 ## GamerGrill evidence, 12 September
 

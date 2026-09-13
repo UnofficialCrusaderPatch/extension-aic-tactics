@@ -1,0 +1,18 @@
+{
+  "AttackPreparation": "DuringAttack",
+  "AttackTargetPolicy": "LastAggressor",
+  "AttackTargetCommitment": "PerAttack",
+  "AttackActivation": "AfterProvocation",
+  "ProvocationRules": {
+    "ThreatPower": 100,
+    "CombatTicks": 200,
+    "LossPower": 100,
+    "WindowTicks": 800
+  },
+  "RaidTargetPolicy": "Opportunistic",
+  "RaidGroupCount": 2,
+  "RaidMinGroupSize": 4,
+  "RaidFocus": "Food",
+  "RaidRiskTolerance": "Low",
+  "RaidEnemyScope": "AnyEnemy"
+}

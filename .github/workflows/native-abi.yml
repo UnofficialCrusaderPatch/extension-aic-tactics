@@ -1,5 +1,29 @@
 name: Microsoft x86 adapter build
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      map_state_repository:
+        description: Repository containing the reviewed Map Extensions state prerequisite
+        required: true
+        type: string
+      map_state_ref:
+        description: Full commit SHA of the Map Extensions state prerequisite
+        required: true
+        type: string
+      protocol_repository:
+        description: Repository containing the Protocol admission prerequisite
+        required: true
+        type: string
+      protocol_ref:
+        description: Full commit SHA of the Protocol admission prerequisite
+        required: true
+        type: string
+      files_ref:
+        description: Full commit SHA of the Files traversal prerequisite
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -9,21 +33,51 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: cmake -S . -B build -A Win32 -DAIC_TACTICS_BUILD_SHC141_PROBE=ON
-      - run: cmake --build build --config Release
-      - run: ctest --test-dir build -C Release --output-on-failure
+      - run: ./build.ps1 -BuildType Release
+      - run: cmake --build build/store-native --config Release
+      - run: ctest --test-dir build/store-native -C Release --output-on-failure
       - uses: actions/checkout@v4
         with:
           repository: UnofficialCrusaderPatch/extension-aicloader
-          ref: 24ea47c20f62082f8a1b06969089898a8285add9
+          ref: 82a9a1873d0c0abbf4575b2cb2621b7f58e9573a
           path: tests/deps/aicloader
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python tests/package_runtime.py --dll build/Release/aicTactics.dll --loader tests/deps/aicloader --output build/package/aic-tactics-recruitment-test.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v4
+        if: github.event_name == 'workflow_dispatch'
         with:
-          name: aic-tactics-recruitment-test
-          path: build/package/aic-tactics-recruitment-test.zip
+          repository: ${{ inputs.map_state_repository }}
+          ref: ${{ inputs.map_state_ref }}
+          path: tests/deps/map-extensions
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.protocol_repository }}
+          ref: ${{ inputs.protocol_ref }}
+          path: tests/deps/protocol
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: gynt/ucp-extension-chat
+          ref: 8f0c58a52cdc3aa5bca2cd4fd731ad1fcf1b9921
+          path: tests/deps/chat
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: UnofficialCrusaderPatch/extension-files
+          ref: ${{ inputs.files_ref }}
+          path: tests/deps/files
+          persist-credentials: false
+      - if: github.event_name == 'workflow_dispatch'
+        run: python tests/package_runtime.py --dll build/store-native/Release/aicTactics.dll --loader tests/deps/aicloader --map-extensions tests/deps/map-extensions --protocol tests/deps/protocol --chat tests/deps/chat --files tests/deps/files --module-directory build/package/modules --output build/package/aic-tactics-combat-test.zip
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: aic-tactics-combat-test
+          path: build/package/
           retention-days: 21

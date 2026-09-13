@@ -2,7 +2,11 @@
 #define AIC_TACTICS_RUNTIME_HPP
 
 #include "aic_tactics/recruitment.hpp"
+#include "aic_tactics/native_bindings.hpp"
 #include "aic_tactics/composition.hpp"
+#include "aic_tactics/combat.hpp"
+#include "aic_tactics/army.hpp"
+#include "aic_tactics/raids.hpp"
 
 namespace AicTactics {
 namespace SHC141 {
@@ -12,6 +16,9 @@ struct CharacterConfiguration {
     RoleWeights baseRows[3];
     int defenseComposition;
     int initialDefenseTicks;
+    CombatConfiguration combat;
+    int preparation;
+    RaidConfiguration raids;
 };
 
 // Diagnostic counters are observation only; policy never reads them.
@@ -48,6 +55,10 @@ extern int* legacyWallCounts;
 extern int defenseTypeCounts[9][80];
 extern unsigned int defenseCensusTick;
 extern int defenseCensusValid;
+extern unsigned int integrityDigest[2];
+void __cdecl captureIntegrity(int legacyInterval);
+void __cdecl observeIntegrityBoundary(int legacyInterval);
+void __cdecl captureBoundaryIntegrity();
 void __cdecl resetDefenseCensus();
 void __cdecl countDefenseUnit(int player, int unitType);
 void __cdecl invalidateDefenseCensus();

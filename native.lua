@@ -1,22 +1,27 @@
 local M = {}
 
-function M.new()
+function M.new(game)
   local native = require('aicTactics.dll')
-  assert(type(native) == 'table' and native.configurationSize == 288,
+  assert(type(native) == 'table' and native.configurationSize == 344,
     'AIC Tactics: incompatible native library')
+  require('native-bindings').initialize(native, game)
+  game = native.game
+  local sites = game.recruitmentSites
   local installed = false
   local wallCounter
   local intervalHook
   local compositionHooks
-  local intervalSignature = '8B 84 AA 64 01 00 00 8B E8 F7 DD 1B ED 83 C5 02'
+  local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
   local function verifyInterval()
     if intervalHook then
-      assert(core.readByte(0x4D3B41) == 0xE9
-        and core.readInteger(0x4D3B42) == intervalHook - 0x4D3B46,
+      assert(core.readByte(sites.interval) == 0xE9
+        and core.readInteger((sites.interval+1)) == intervalHook - (sites.interval+5),
         'AIC Tactics: recruitment interval hook was replaced; restart with compatible modules')
     else
-      assert(core.AOBScan(intervalSignature) == 0x4D3B41,
-        'AIC Tactics: turn off ucp2-legacy.ai_recruitinterval and restart; use legacyRecruitInterval to retain its Native behaviour')
+      for index,value in ipairs(intervalBytes) do
+        assert(core.readByte(sites.interval+index-1)==value,
+          require('messages').legacyOff('ai_recruitinterval', 'legacyRecruitInterval'))
+      end
     end
   end
   function native.enableLegacyInterval()
@@ -26,7 +31,7 @@ function M.new()
       pushfd
       push ecx
       mov eax, dword [edx + ebp * 4 + 0x164]
-      mov ecx, dword [esi + 0x115E0F8]
+      mov ecx, dword [esi + playerCharacter]
       dec ecx
       cmp ecx, 1
       jb legacy
@@ -41,33 +46,20 @@ finished:
       pop ecx
       popfd
       jmp resume
-    ]], {configuration=native.configuration, configurationSize=native.configurationSize, resume=0x4D3B48})
-    core.writeCode(0x4D3B41, {0xE9, intervalHook - 0x4D3B46, 0x90, 0x90})
+    ]], {playerCharacter=game.players+0x2300, configuration=native.configuration, configurationSize=native.configurationSize, resume=(sites.interval+7)})
+    core.writeCode(sites.interval, {0xE9, intervalHook - (sites.interval+5), 0x90, 0x90})
   end
   function native.preflight()
   require('config.grace').preflight()
   if installed then return end
-  -- This adapter deliberately admits only the inspected SHC 1.41 image layout.
-  -- Check every patched site before loading the DLL or making a patch.
-  assert(core.AOBScan('57 8B CB E8 20 81 FF FF 57 8B CB E8 48 82 FF FF 57 8B CB E8 90 E6 FF FF') == 0x4D5438,
-    'AIC Tactics: unsupported or already modified AI scheduler')
-  assert(core.AOBScan('8B 86 F0 EE 15 01 85 C0 75 44 8B C7 69 C0 A4 02 00 00') == 0x4D3BA5,
-    'AIC Tactics: unsupported recruitment opportunity')
-  assert(core.AOBScan('53 55 56 8B 74 24 10 57 33 C0 8D 91 8C 08 50 00') == 0x500180
-      and core.AOBScan('53 8B 5C 24 08 8B C3 69 C0 90 04 00 00 0F BF 88 E2 85 38 01') == 0x4CC840,
-    'AIC Tactics: unsupported or modified native moat recruitment owner')
   verifyInterval()
-
-  -- Consume the existing Legacy wall counter; do not install another counter.
-  if core.readByte(0x4D3E6F) == 0xE9 then
-    local target = 0x4D3E74 + core.readInteger(0x4D3E70)
-    assert(core.readInteger(target) == 0x0424548B and core.readByte(target + 4) == 0x8B
-      and core.readByte(target + 5) == 0x14 and core.readByte(target + 6) == 0x95,
-      'AIC Tactics: unsupported wall-defense counter hook')
-    wallCounter = core.readInteger(target + 7)
-  else
-    error('AIC Tactics: enable ucp2-legacy.ai_defense and restart')
-  end
+  assert(require('native-context').call(sites.ranged,'ranged scheduler') == game.rangedSortieNative
+      and require('native-context').call(sites.melee,'melee scheduler') == game.meleeSortieNative,
+    'AIC Tactics: recruitment scheduler was replaced')
+  assert(core.readByte(sites.opportunity)==0x8B and core.readByte(sites.opportunity+1)==0x86
+      and core.readInteger(sites.opportunity+2)==game.players+0x30F8,
+    'AIC Tactics: recruitment opportunity was replaced')
+  wallCounter = require('native-recruitment').legacyCounter(game, compositionHooks)
   end
 
   local function branchTarget(site)
@@ -77,24 +69,16 @@ finished:
   function native.preflightComposition()
     native.preflight()
     if compositionHooks then
-      assert(branchTarget(0x579879) == compositionHooks.reset and branchTarget(0x579A7C) == compositionHooks.count,
+      assert(branchTarget(sites.wallReset) == compositionHooks.reset and branchTarget(sites.wallCount) == compositionHooks.count,
         'AIC Tactics: defense census hook was replaced; restart with compatible modules')
       return
     end
-    local reset, count = branchTarget(0x579879), branchTarget(0x579A7C)
-    assert(core.readInteger(reset) == 0x1489C031 and core.readByte(reset + 4) == 0x85
-      and core.readInteger(reset + 5) == wallCounter,
-      'AIC Tactics: unsupported Legacy defense census reset')
-    assert(core.readInteger(count) % 4294967296 == 0xC969E989 and core.readInteger(count + 4) == 0x490
-      and core.readByte(count + 8) == 0x0F and core.readByte(count + 9) == 0xB6
-      and core.readByte(count + 10) == 0x89 and core.readInteger(count + 11) == 0x1388976
-      and core.readInteger(count + 23) == wallCounter,
-      'AIC Tactics: unsupported Legacy defense census counter')
+    require('native-recruitment').legacyCounter(game, compositionHooks)
   end
   function native.activateComposition()
     if compositionHooks then return end
     native.preflightComposition()
-    local reset, count = branchTarget(0x579879), branchTarget(0x579A7C)
+    local reset, count = branchTarget(sites.wallReset), branchTarget(sites.wallCount)
     local resetHook = core.allocateAssembly([[
       pushfd
       pushad
@@ -107,7 +91,7 @@ finished:
       pushfd
       pushad
       imul ecx, ebp, 0x490
-      movsx ecx, word [ecx + 0x13885DA]
+      movsx ecx, word [ecx + unitType]
       push ecx
       push edi
       call countDefenseUnit
@@ -115,10 +99,10 @@ finished:
       popad
       popfd
       jmp original
-    ]], {countDefenseUnit=native.countDefenseUnit, original=count})
-    core.writeCode(0x579879, {0xE9, resetHook - 0x57987E})
-    core.writeCode(0x579A7C, {0xE9, countHook - 0x579A81, 0x90})
-    compositionHooks = {reset=resetHook, count=countHook}
+    ]], {unitType=game.unitRecords+0x8E, countDefenseUnit=native.countDefenseUnit, original=count})
+    core.writeCode(sites.wallReset, {0xE9, resetHook - (sites.wallReset+5)})
+    core.writeCode(sites.wallCount, {0xE9, countHook - (sites.wallCount+5), 0x90})
+    compositionHooks = {reset=resetHook, count=countHook, originalReset=reset, originalCount=count}
   end
 
   function native.activate()
@@ -141,18 +125,19 @@ finished:
     jnz handled
     popad
     popfd
-    mov eax, dword [esi + 0x115EEF0]
+    mov eax, dword [esi + spendingMode]
     jmp original
 handled:
     popad
     popfd
     jmp finished
-  ]], {recruitOpportunity=native.recruitOpportunity, original=0x4D3BAB, finished=0x4D3F16})
-  core.writeCode(0x4D3BA5, {0xE9, hook - 0x4D3BAA, 0x90})
-  core.writeCode(0x4D543B, {0xE8, native.rangedSortie - 0x4D5440})
-  core.writeCode(0x4D5443, {0xE8, native.meleeSortie - 0x4D5448})
+  ]], {spendingMode=game.players+0x30F8, recruitOpportunity=native.recruitOpportunity, original=(sites.opportunity+6), finished=sites.finished})
+  core.writeCode(sites.opportunity, {0xE9, hook - (sites.opportunity+5), 0x90})
+  core.writeCode(sites.ranged, {0xE8, native.rangedSortie - (sites.ranged+5)})
+  core.writeCode(sites.melee, {0xE8, native.meleeSortie - (sites.melee+5)})
   installed = true
   end
+  require('combat-native').attach(native)
   return native
 end
 return M

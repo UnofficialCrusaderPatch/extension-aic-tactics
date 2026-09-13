@@ -40,7 +40,7 @@ static void check(int player, int mode)
     int* nextUID = reinterpret_cast<int*>(0x1FE7DD4);
     *nextUID = 321;
     TribeAvailability result;
-    require(queryTribeAvailability(tribeState + 0x28, 1250, player, result), "valid query rejected");
+    require(queryTribeAvailability(tribeState + 0x28, 1250, 0x334, player, result), "valid query rejected");
     require(result.nextID == expectedID && result.freeSlots == free, "wrong partition admission");
     require(*nextUID == 321 && std::memcmp(before, tribeState, sizeof(before)) == 0, "query mutated state");
     typedef int (__thiscall *Create)(void*, int);
@@ -50,7 +50,7 @@ static void check(int player, int mode)
         unsigned char* record = tribeState + 0x28 + created * 0x334;
         require(at<int>(record + 4) == player && at<int>(record + 0xC) == 321, "wrong native owner/UID");
         require(at<short>(record + 0x18) == 2 && *nextUID == 322, "wrong native allocation state");
-        require(queryTribeAvailability(tribeState + 0x28, 1250, player, result), "post-allocation query failed");
+        require(queryTribeAvailability(tribeState + 0x28, 1250, 0x334, player, result), "post-allocation query failed");
         require(result.freeSlots == free - 1, "allocated slot remained free");
     } else {
         require(*nextUID == 321 && std::memcmp(before, tribeState, sizeof(before)) == 0,
@@ -63,10 +63,10 @@ void runGroupCases()
     for (int player = 1; player <= 8; ++player)
         for (int mode = 0; mode < 4; ++mode) check(player, mode);
     TribeAvailability result;
-    require(!queryTribeAvailability(0, 1250, 1, result), "null array admitted");
-    require(!queryTribeAvailability(tribeState + 0x28, 1250, 0, result), "player zero admitted");
-    require(!queryTribeAvailability(tribeState + 0x28, 1250, 9, result), "player nine admitted");
-    require(!queryTribeAvailability(tribeState + 0x28, 1251, 1, result), "unknown pool layout admitted");
+    require(!queryTribeAvailability(0, 1250, 0x334, 1, result), "null array admitted");
+    require(!queryTribeAvailability(tribeState + 0x28, 1250, 0x334, 0, result), "player zero admitted");
+    require(!queryTribeAvailability(tribeState + 0x28, 1250, 0x334, 9, result), "player nine admitted");
+    require(!queryTribeAvailability(tribeState + 0x28, 1251, 0x334, 1, result), "unknown pool layout admitted");
     require(result.nextID == 0 && result.freeSlots == 0, "invalid query left stale result");
     std::printf("%d original-instruction tribe allocation comparisons and 4 input checks passed\n", cases);
 }

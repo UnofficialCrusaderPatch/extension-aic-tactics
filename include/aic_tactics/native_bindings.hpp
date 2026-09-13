@@ -1,0 +1,83 @@
+#ifndef AIC_TACTICS_NATIVE_BINDINGS_HPP
+#define AIC_TACTICS_NATIVE_BINDINGS_HPP
+
+namespace AicTactics {
+namespace SHC141 {
+
+// Populated once from UCP/Loader-owned discovery before callbacks are installed.
+// No reference addresses or fallback bindings belong in this runtime structure.
+struct NativeBindings {
+    unsigned int gameTick;
+    unsigned int rngState;
+    unsigned int rngValue;
+    unsigned int rngNext;
+    unsigned int initialDefenseTicks;
+    unsigned int aicRecords;
+    unsigned int units;
+    unsigned int unitRecords;
+    unsigned int unitCapacity;
+    unsigned int tribes;
+    unsigned int tribeStride;
+    unsigned int tribeMemberWords;
+    unsigned int tribeStance;
+    unsigned int tribeTargetBuilding;
+    unsigned int tribeTargetBuildingUID;
+    unsigned int buildings;
+    unsigned int buildingCapacity;
+    unsigned int players;
+    unsigned int createTribe;
+    unsigned int addUnitToTribe;
+    unsigned int tribePath;
+    unsigned int entities;
+    unsigned int entityCapacity;
+    unsigned int teams;
+    unsigned int assignMoatDigger;
+    unsigned int wallDefense;
+    unsigned int patrolDefense;
+    unsigned int assignRaider;
+    unsigned int assignAttacker;
+    unsigned int findSortieGroup;
+    unsigned int findAttackGroup;
+    unsigned int returnTribe;
+    unsigned int removeUnitFromTribe;
+    unsigned int relayRaidOrder;
+    unsigned int mapRows;
+    unsigned int attackGroupSlots;
+    unsigned int recruitUpdate;
+    unsigned int rangedSortieNative;
+    unsigned int meleeSortieNative;
+    unsigned int recruitEuropean;
+    unsigned int recruitNonEuropean;
+    unsigned int scenarioMode;
+    unsigned int scenarioCustom;
+    unsigned int scenarioMission;
+    unsigned int moat;
+    unsigned int moatVacancies;
+    unsigned int findRecruitmentBuilding;
+    unsigned int attackRecruitType;
+    unsigned int raidMaximum;
+    unsigned int defenseTypes;
+    unsigned int specialDefenders;
+    unsigned int defenseSlots;
+    unsigned int raidTypes;
+    unsigned int equipmentRecipes;
+    unsigned int selectAttackTarget;
+    unsigned int computeNervousness;
+    unsigned int updateAIPlayerState;
+    unsigned int returnAttack;
+    unsigned int hasNoTroopsOrAllDiggers;
+    unsigned int updateRaids;
+    unsigned int combatValue;
+    unsigned int troopValues;
+    unsigned int marketPrice;
+    unsigned int gameState;
+
+
+
+};
+extern NativeBindings nativeBindings;
+int nativeRandom(void*);
+
+} // namespace SHC141
+} // namespace AicTactics
+#endif
