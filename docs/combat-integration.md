@@ -43,7 +43,8 @@ stateDiagram-v2
 
 The original wave writer at `0x4CDE60` increments the wave once, at launch, and
 computes the next size adjustment. Reserve size is `AttForceBase` plus that
-adjustment, bounded by the native 2,500-unit pool. Engineers retain their separate
+adjustment, bounded by the resolved native unit pool (2,500 in Crusader;
+10,000 in Extreme). Engineers retain their separate
 native quota. Native/Legacy growth and caps are not reimplemented or applied twice.
 The original weak-opponent discount is retained except for `Random + PerAttack`:
 that combination waits for the full computed requirement and draws its opponent

@@ -1,24 +1,26 @@
 # UCP integration audit, 12 September 2026
 
-## Correction status
+## Current correction status, 13 September 2026
 
-The findings below describe the published 0.0.2 bundle and its original revisions.
-Source 0.0.3 now uses runtime bindings and native layout/ABI checks; its component
-tests pass on six local/official EFIGS/Polish Crusader 1.41 and Extreme 1.41.1-E
-fixtures. See [current bindings and evidence](shared-native-bindings.md).
-Recorder's dependent [binding stack through PR25](https://github.com/Krarilotus/ucp_recorder/pull/25)
-replaces the fixed profiles and temporary header/hash whitelist, reuses the
-framework version API and consolidates context verification. Required shared
-capabilities remain in Loader, Files, Map, Protocol and UI.
+The sections below preserve the historical 0.0.2 audit; their unresolved findings
+are not a description of the current download. Source 0.0.7 uses the cached
+`core.AOBScan` already shipped with UCP 3.0.7, with decoded native bindings,
+ABI/layout checks and occupied-hook guards. No newer framework/scanner is required.
+The six local/official EFIGS/Polish Crusader and Extreme instruction fixtures pass.
+See [current bindings and evidence](shared-native-bindings.md).
 
-The old 0.0.2 download is still SHC-only. No corrected combined bundle, live
-match/save/replay, physical multiplayer or whole-game performance acceptance is
-claimed here. Licensing/provenance, combined architecture review, CI/review and
-normal merges remain release work.
+The [signed 0.0.7 test bundle](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/releases/tag/pr17-test-stock-9b4a761)
+passes combined AIC/Recorder startup on stock secure UCP 3.0.7 in both game families.
+GamerGrill Extreme also passes custom Saladin recruitment, native save/load and a
+short offline replay including backward seeking, with required AIC state digests
+verified at checkpoints and the final boundary. This does not establish sustained
+combat policies, exact native-save boundary equality, physical multiplayer or
+whole-game performance. [PR17](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/pull/17)
+tracks the remaining release gates, dependency review and normal merges.
 
-## Original bundle findings
+## Historical 0.0.2 bundle findings
 
-**Result: the current bundle does not meet the native integration release
+**Historical result: the 0.0.2 bundle does not meet the native integration release
 requirements. Do not test AIC Tactics 0.0.2 with Extreme.** Its manifest correctly
 declares only SHC 1.41, but its fixed runtime bindings must still be corrected
 before it can become the intended reusable UCP extension. Component test counts

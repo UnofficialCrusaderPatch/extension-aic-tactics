@@ -1,8 +1,10 @@
 # Shared recruitment and identity bindings
 
 Corrections after the [native audit](native-integration-audit.md). The AIC production
-function, hook and pool bindings now use native discovery. Full installed-framework,
-gameplay and variant acceptance remains unfinished.
+function, hook and pool bindings now use native discovery. The current signed
+bundle passes stock-framework startup on Crusader and Extreme; full gameplay
+acceptance remains unfinished. The final section records current native evidence;
+earlier version-specific results are retained as implementation history.
 
 `config/grace.lua` resolves the original recruitment/RNG context through
 the cached `core.AOBScan` shipped with UCP 3.0.7. Supported-image signature
@@ -141,9 +143,8 @@ paths and is compared with unchanged `ai_attacktarget.lua` below.
 No fixed executable addresses remain in AIC production Lua/C++ bindings. The
 remaining long hex values are integer limits, digest constants and a building
 cost-table field offset. Hash-pinned executable addresses remain in private tests.
-Framework `core.AOBScan` uses its existing cache; RPS 1.5.2 scans committed image
-regions, while the Lua wrapper supplies its documented range. Installed-process
-scanner/module composition still needs the real-game acceptance below.
+Framework `core.AOBScan` uses its existing cache. The extension supplies no private
+range or scanner; current installed-process evidence is recorded below.
 
 Validation performed:
 
@@ -300,7 +301,23 @@ Uniqueness of identifying contexts is checked against supported images in offlin
 fixtures. Stock AOBScan returns its first match; the extension does not claim an
 exhaustive runtime duplicate search on arbitrary modified executables. The extra
 runtime duplicate search in earlier previews caused the observed startup stall.
-GamerGrill stock secure 3.0.7 Extreme initialized standalone AIC at 7.216 seconds
-and created its window at 7.604 seconds without errors. This was startup/setup
-only. Combined Recorder, gameplay, multiplayer and replay acceptance remain
-separate gates tracked in PR17.
+The [signed build 34725267283](https://github.com/UnofficialCrusaderPatch/UCP3-extensions-store/actions/runs/34725267283)
+passes combined AIC/Recorder startup on GamerGrill with stock secure UCP
+3.0.7-77c6accf14: Crusader 1.41 and Extreme 1.41.1-E. Window creation took 9.870s
+and 9.213s respectively; Recorder initialization took 1.458s and 1.383s. These
+are single startup observations, not simulation benchmarks. The twelve signed
+module ZIPs, signatures, native DLL architecture and nine GUI descriptions verify.
+
+The same bundle ran an eight-AI Extreme Ascension Green Haven spectator match.
+Read-only memory verified four neighboring allied pairs (91–92 tiles apart),
+independent player state and custom recruitment by both Saladins. A native save
+loaded and continued; captures were 751 ticks apart, so exact save-boundary state
+equality was not measured. A 3,828-tick offline replay finished, then backward
+seeking to tick 1,194 and forwarding to the end finished again. RNG, full RNG,
+resource checks and required AIC state digests matched at ticks 1,024, 2,048,
+3,072 and the final boundary. Backward seeking used the initial snapshot.
+
+This short segment contained no active attacks or player commands. It does not
+prove active-combat or cached-snapshot restoration, complete-world equality,
+Native baseline equivalence, physical multiplayer or simulation performance.
+Those remain release gates in [PR17](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/pull/17).
