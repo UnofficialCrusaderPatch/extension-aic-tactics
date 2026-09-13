@@ -86,9 +86,14 @@ def test_native_old_save_and_new_match_initialization():
     state().execute('''
       memory[0x1FE7DA8]=1000
       assert(state.callbacks.isRequired())
-      assert(not pcall(state.callbacks.initialize) and writes==0)
-      memory[0x1FE7DA8]=0
-      state.callbacks.initialize()
+      for _,tick in ipairs({0,1000}) do
+        memory[0x1FE7DA8]=tick
+        assert(not pcall(state.callbacks.initialize) and writes==0)
+        assert(not pcall(state.callbacks.initialize,nil,{kind='save'}) and writes==0)
+        assert(not pcall(state.callbacks.validate,nil,{loadKind='save',exists=function()return false end}) and writes==0)
+      end
+      -- Maps can contain an editor tick; only the owner's file context admits them.
+      state.callbacks:initialize({kind='map'})
       assert(memory[native.defenseCensusValid]==0)
       assert(memory[native.defenseTypeCounts+(80+22)*4]==0)
       memory[0x1FE7DA8]=1000
@@ -123,7 +128,7 @@ def test_saved_combat_reserve_and_raid_state_survives_exactly():
       memory[native.raidBuildingCensusTick]=1234
       memory[native.raidBuildingCensusValid]=1
       local bytes=state.capture()
-      state.callbacks.initialize()
+      state.callbacks:initialize({kind='map'})
       state.restore(bytes)
       assert(state.capture()==bytes)
       assert(memory[native.raidStates+96+12]==15 and memory[native.reserves+196+16]==155)

@@ -104,12 +104,12 @@ function M.new(native, legacyInterval, fingerprint)
     army.restore(armyValues)
     raids.restore(raidValues)
   end
-  local function validateAbsent()
-    assert(not active() or core.readInteger(native.game.gameTick) == 0,
+  local function validateAbsent(kind)
+    assert(not active() or kind == 'map',
       'AIC Tactics: this old save has no policy state; start a new match with these parameters')
   end
-  local function initialize()
-    validateAbsent()
+  local function initialize(self, context)
+    validateAbsent(context and context.kind)
     core.writeInteger(native.defenseCensusValid, 0)
     core.setMemory(native.defenseTypeCounts, 0, censusWords * 4)
     core.writeInteger(native.defenseCensusTick, 0)
@@ -142,10 +142,11 @@ function M.new(native, legacyInterval, fingerprint)
           return
         end
         if not active() then return end
-        if handle:exists(path) then validate(handle:get(path)) else validateAbsent() end
+        if handle:exists(path) then validate(handle:get(path)) else validateAbsent(handle.loadKind) end
       end,
       deserialize = function(self, handle)
-        if active() and handle:exists(path) then restore(handle:get(path)) else initialize() end
+        if active() and handle:exists(path) then restore(handle:get(path))
+        else initialize(nil, {kind=handle.loadKind}) end
       end,
     },
   }

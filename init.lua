@@ -8,9 +8,10 @@ return {
     local mapState = assert(modules['map-extensions'], 'AIC Tactics requires Map Extensions')
     assert(type(mapState.requiredStateVersion) == 'function' and mapState:requiredStateVersion() == 1,
       'AIC Tactics requires Map Extensions 1.1.0 with required state admission')
-    assert(type(mapState.getNativeSaveInterface) == 'function'
-        and mapState:getNativeSaveInterface().failureHandling == 1,
-      'AIC Tactics requires Map Extensions 1.1.2 to stop a rejected native state restore')
+    local saveInterface = type(mapState.getNativeSaveInterface) == 'function'
+      and mapState:getNativeSaveInterface()
+    assert(saveInterface and saveInterface.failureHandling == 1 and saveInterface.readContext == 1,
+      'AIC Tactics requires Map Extensions 1.1.4 for native load context and rejected state handling')
     local identity = require('build-identity')
     require('package-identity').verify(identity)
     local native = require('native').new(nativeGame)

@@ -1,6 +1,6 @@
 name: aic-tactics
 display-name: AIC Tactics
-version: 0.0.8
+version: 0.0.9
 author: Krarilotus
 type: module
 game: [SHC==1.41, SHCE==1.41]
@@ -9,6 +9,6 @@ meta:
 dependencies:
   aicloader: ^1.1.5
   ucp2-legacy: ^2.15.1
-  map-extensions: ^1.1.2
+  map-extensions: ^1.1.4
   protocol: ^1.1.2
   chat: ^1.0.0

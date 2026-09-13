@@ -27,7 +27,7 @@ def test_entry_point_resolves_on_load_and_passes_bindings_on_enable():
       package.loaded['package-identity']={verify=function()end}
       modules={aicloader={registerAICUpdateProvider=function()end},
         ['map-extensions']={requiredStateVersion=function()return 1 end,
-          getNativeSaveInterface=function()return {failureHandling=1} end}}
+          getNativeSaveInterface=function()return {failureHandling=1,readContext=1} end}}
       local module=assert(loadfile(root..'/init.lua'))()
       assert(resolves==1)
       phase='enable'
@@ -35,10 +35,12 @@ def test_entry_point_resolves_on_load_and_passes_bindings_on_enable():
       local supported=owner.getNativeSaveInterface
       owner.getNativeSaveInterface=nil
       local missing,reason=pcall(module.enable,module,{})
-      assert(not missing and reason:find('Map Extensions 1.1.2',1,true))
+      assert(not missing and reason:find('Map Extensions 1.1.4',1,true))
       owner.getNativeSaveInterface=function()return {version=1} end
       local old,whyOld=pcall(module.enable,module,{})
-      assert(not old and whyOld:find('Map Extensions 1.1.2',1,true))
+      assert(not old and whyOld:find('Map Extensions 1.1.4',1,true))
+      owner.getNativeSaveInterface=function()return {failureHandling=1} end
+      assert(not pcall(module.enable,module,{}))
       owner.getNativeSaveInterface=supported
       local ok,why=pcall(module.enable,module,{})
       assert(not ok and why=='native enable reached')
