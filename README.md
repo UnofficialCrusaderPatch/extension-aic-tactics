@@ -21,7 +21,7 @@ full combat, multiplayer and simulation-performance acceptance remain open.
 
 The dependent siege branch adds per-AI `SafeSiegePlacement` with a default-ON
 module fallback. It guards native footprint checks against overwriting friendly
-siege engines while leaving other placement decisions with the game. Binding and
+units, including siege engines, while leaving other placement decisions with the game. Binding and
 component checks pass across the six local SHC/Extreme executables; installed-game
 acceptance and alternative-site search are pending. Engineer role accounting,
 larger forces, coordinated harassment and full resource admission remain open.

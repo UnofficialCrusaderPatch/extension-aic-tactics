@@ -8,12 +8,6 @@ int safePlacementFallback = 1;
 namespace {
 typedef int (__thiscall *TileCheck)(void*, int, int, int, int);
 
-bool siegeEngine(int type)
-{
-    return (type >= 39 && type <= 41) || type == 50
-        || (type >= 58 && type <= 61) || type == 77;
-}
-
 bool siegeConstruction(int command)
 {
     return command == 94 || (command >= 190 && command <= 194)
@@ -43,10 +37,11 @@ int __fastcall checkedSiegeTile(void* tileMap, void*, int tile, int player, int 
                 + nativeBindings.siegeTileOccupancyOffset + tile * 2);
         if (unit > 0 && unit < static_cast<int>(nativeBindings.unitCapacity)) {
             const unsigned int record = nativeBindings.unitRecords + unit * 0x490;
-            const int type = *reinterpret_cast<const short*>(record + 0x8E);
             const int owner = *reinterpret_cast<const short*>(record + 0x96);
             const int dying = *reinterpret_cast<const short*>(record + 0x2A0);
-            if (owner == player && dying == 0 && siegeEngine(type)) return 1;
+            // The native placement path can delete any friendly unit on the
+            // footprint, including a waiting engineer or an existing engine.
+            if (owner == player && dying == 0) return 1;
         }
     }
     return reinterpret_cast<TileCheck>(nativeBindings.originalSiegeTileCheck)(

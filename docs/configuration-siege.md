@@ -1,7 +1,7 @@
 # Siege placement in an individual AIC
 
 `SafeSiegePlacement` is an optional boolean. Set it to `true` to reject siege
-construction sites occupied by that AI's own equipment, or `false` to retain
+construction sites occupied by that AI's own living units, or `false` to retain
 the native placement check. If the field is absent, the AI inherits the module's
 **Protect existing siege engines** switch (`safeSiegePlacement`, default ON).
 The AIC value always takes precedence, including an explicit `false`.

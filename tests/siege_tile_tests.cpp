@@ -64,6 +64,9 @@ int main()
     assert(checkedSiegeTile(tiles, 0, 0, 1, 190, 0) == 1 && originalCalls == 2);
     assert(checkedSiegeTile(tiles, 0, 0, 1, 210, 0) == 1 && originalCalls == 2);
     assert(checkedSiegeTile(tiles, 0, 0, 1, 358, 0) == 1 && originalCalls == 2);
+    setShort(units, 1 * 0x490 + 0x8E, 30);
+    assert(checkedSiegeTile(tiles, 0, 0, 1, 190, 0) == 1 && originalCalls == 2);
+    setShort(units, 1 * 0x490 + 0x8E, 39);
     setShort(units, 1 * 0x490 + 0x2A0, 1);
     assert(checkedSiegeTile(tiles, 0, 0, 1, 190, 0) == 0 && originalCalls == 3);
     setShort(units, 1 * 0x490 + 0x2A0, 0);
