@@ -45,4 +45,8 @@
 Эти пять настроек требуют новой `RaidTargetPolicy`. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` и `RaidRetargetDelay` сохраняют действие. Возврат к исходному поведению: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
 ### Осадные орудия
 
-- `SafeSiegePlacement`: `true` защищает свои орудия при строительстве; `false` оставляет исходное размещение. Если поле не задано, действует переключатель модуля (по умолчанию включён).
+- `SafeSiegePlacement`: `true` защищает свои войска на месте осадного строительства; `false` оставляет исходное размещение. Если поля нет, действует настройка модуля (вкл.).
+
+### Квоты инженеров
+
+- `CorrectEngineerRoleCounting`: Приписанные инженеры учитываются в квотах войск; осада и масло учитываются отдельно.

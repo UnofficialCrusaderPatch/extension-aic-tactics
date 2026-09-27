@@ -46,4 +46,8 @@ Die fünf Überfalloptionen benötigen eine neue `RaidTargetPolicy`. `RaidUnitsB
 
 ### Belagerungsgeräte
 
-- `SafeSiegePlacement`: `true` schützt eigene Geräte vor Überbauung; `false` belässt die Platzierung beim Spiel. Ohne Eintrag gilt der Modulschalter (standardmäßig an).
+- `SafeSiegePlacement`: `true` schützt eigene Einheiten am Belagerungsbauplatz; `false` nutzt die Spielplatzierung. Ohne Eintrag gilt der Modulschalter (an).
+
+### Ingenieurkontingente
+
+- `CorrectEngineerRoleCounting`: Zählt zugewiesene Ingenieure für ihre Truppenkontingente. Belagerungs- und Öldienst bleiben getrennt.

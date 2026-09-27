@@ -45,4 +45,8 @@ Réglez le recrutement, la préparation des vagues, les cibles et les raids dans
 Ces cinq options nécessitent une nouvelle `RaidTargetPolicy`. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` et `RaidRetargetDelay` restent applicables. Pour rétablir les valeurs par défaut : `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
 ### Engins de siège
 
-- `SafeSiegePlacement` : `true` protège les engins de l’IA lors de la construction ; `false` garde le placement natif. Sans valeur AIC, le réglage du module s’applique (activé par défaut).
+- `SafeSiegePlacement`: `true` protège ses unités sur les sites de siège ; `false` conserve le placement d’origine. Si absent, le réglage du module s’applique (activé).
+
+### Quotas d’ingénieurs
+
+- `CorrectEngineerRoleCounting`: Compte les ingénieurs affectés dans leurs quotas de troupes, séparément du siège et de l’huile.

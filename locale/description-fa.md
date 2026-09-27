@@ -45,4 +45,8 @@
 این پنج تنظیم به یک `RaidTargetPolicy` جدید نیاز دارند. `RaidUnitsBase`، `RaidUnitsRandom`، `RaidUnit1..8` و `RaidRetargetDelay` همچنان برقرارند. بازگشت به حالت پیش‌فرض: `AttackPreparation: Native`، `AttackActivation: Immediate`، `RaidTargetPolicy: Native`.
 ### ادوات محاصره
 
-- `SafeSiegePlacement`: مقدار `true` از ادوات خودی هنگام ساخت محافظت می‌کند؛ `false` روش اصلی بازی را نگه می‌دارد. اگر فیلد حذف شود، کلید ماژول اعمال می‌شود (پیش‌فرض روشن).
+- `SafeSiegePlacement`: `true` از نیروهای خودی در محل ساخت ادوات محاصره محافظت می‌کند؛ `false` چیدمان اصلی را به‌کار می‌گیرد. بدون این فیلد، تنظیم ماژول اعمال می‌شود (روشن).
+
+### سهمیهٔ مهندسان
+
+- `CorrectEngineerRoleCounting`: مهندسانِ گماشته‌شده در سهمیهٔ نیروها شمرده می‌شوند؛ وظایف محاصره و روغن جدا هستند.

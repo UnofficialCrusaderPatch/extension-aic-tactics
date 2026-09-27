@@ -2,6 +2,15 @@ meta:
   version: 1.0.0
 options:
 - category: ['{{ai}}', '{{fixes}}']
+  name: correctEngineerRoleCounting
+  header: '{{correctEngineerRoleCounting}}'
+  text: '{{correctEngineerRoleCounting_descr}}'
+  display: UCP2Switch
+  url: aic-tactics.correctEngineerRoleCounting
+  contents:
+    type: boolean
+    value: true
+- category: ['{{ai}}', '{{fixes}}']
   name: safeSiegePlacement
   header: '{{safeSiegePlacement}}'
   text: '{{safeSiegePlacement_descr}}'

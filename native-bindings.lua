@@ -27,6 +27,7 @@ function M.resolve()
   for key, value in pairs(require('native-aic-queries').resolve(game)) do game[key] = value end
   for key, value in pairs(require('native-combat-bindings').resolve(game)) do game[key] = value end
   for key, value in pairs(require('native-siege-bindings').resolve(game)) do game[key] = value end
+  for key, value in pairs(require('native-role-bindings').resolve(game)) do game[key] = value end
   return game
 end
 
