@@ -2,7 +2,7 @@ local M = {}
 
 function M.new(game)
   local native = require('aicTactics.dll')
-  assert(type(native) == 'table' and native.configurationSize == 348,
+  assert(type(native) == 'table' and native.configurationSize == 352,
     'AIC Tactics: incompatible native library')
   require('native-bindings').initialize(native, game)
   game = native.game
@@ -13,6 +13,7 @@ function M.new(game)
   local compositionHooks
   local safePlacementHook
   local safePlacementBackoffHook
+  local engineerRoleHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
   function native.preflightSafePlacement()
     local target = require('native-context').call(game.siegePlacementCall, 'siege footprint tile check')
@@ -61,6 +62,47 @@ done:
     assert(type(fallback) == 'boolean', 'AIC Tactics: safeSiegePlacement must be boolean')
     core.writeInteger(native.safePlacementFallback, fallback and 1 or 0)
     if fallback then native.activateSafePlacement() end
+  end
+  function native.preflightEngineerRoles()
+    if engineerRoleHook then return end
+    require('native-context').verify(game.engineerRoleHook, 'AI engineer role recount',
+      '66 83 F9 1E 0F 84 ? ? ? ?')
+    assert(game.engineerRoleOrdinary == game.engineerRoleHook + 10
+        and game.engineerRoleSkip == game.engineerRoleOrdinary
+          + core.readInteger(game.engineerRoleHook + 6),
+      'AIC Tactics: engineer role recount was replaced')
+  end
+  function native.activateEngineerRoles()
+    if engineerRoleHook then return end
+    native.preflightEngineerRoles()
+    local hook = core.allocateAssembly([[
+      cmp cx, 30
+      jne ordinary
+      pushfd
+      pushad
+      push ebp
+      push edi
+      call eligible
+      add esp, 8
+      test eax, eax
+      jz excluded
+      popad
+      popfd
+      jmp ordinary
+    excluded:
+      popad
+      popfd
+      jmp skip
+    ]], {eligible=native.countableEngineerRole,
+      ordinary=game.engineerRoleOrdinary, skip=game.engineerRoleSkip})
+    core.writeCode(game.engineerRoleHook,
+      {0xE9, hook - game.engineerRoleHook - 5, 0x90, 0x90, 0x90, 0x90, 0x90})
+    engineerRoleHook = hook
+  end
+  function native.configureEngineerRoles(fallback)
+    assert(type(fallback) == 'boolean', 'AIC Tactics: correctEngineerRoleCounting must be boolean')
+    core.writeInteger(native.engineerRoleFallback, fallback and 1 or 0)
+    if fallback then native.activateEngineerRoles() end
   end
   local function verifyInterval()
     if intervalHook then

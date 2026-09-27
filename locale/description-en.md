@@ -46,4 +46,8 @@ The five raid settings require a new `RaidTargetPolicy`. Existing `RaidUnitsBase
 
 ### Siege placement
 
-- `SafeSiegePlacement`: `true` protects the AI's own siege engines from construction; `false` keeps native placement. If omitted, the module switch applies (ON by default).
+- `SafeSiegePlacement`: `true` protects the AI’s units at siege sites; `false` uses native placement. If absent, the module fallback applies (ON).
+
+### Engineer quotas
+
+- `CorrectEngineerRoleCounting`: Counts assigned engineers toward their troop quotas. Siege and oil duties stay separate.

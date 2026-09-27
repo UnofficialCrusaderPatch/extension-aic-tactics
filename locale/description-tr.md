@@ -45,4 +45,8 @@ Yapay zekânın asker alımını, dalga hazırlığını, saldırı hedeflerini 
 Bu beş akın ayarı yeni bir `RaidTargetPolicy` gerektirir. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` ve `RaidRetargetDelay` geçerlidir. Varsayılana dönüş: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
 ### Kuşatma araçları
 
-- `SafeSiegePlacement`: `true` kendi araçlarını inşaattan korur; `false` oyunun yerleştirmesini kullanır. Alan yoksa modül anahtarı geçerlidir (varsayılan açık).
+- `SafeSiegePlacement`: `true` kuşatma alanındaki kendi birliklerini korur; `false` oyunun yerleştirmesini kullanır. Alan yoksa modül ayarı geçerlidir (açık).
+
+### Mühendis kotaları
+
+- `CorrectEngineerRoleCounting`: Atanmış mühendisler birlik kotasında sayılır; kuşatma ve yağ görevleri ayrıdır.

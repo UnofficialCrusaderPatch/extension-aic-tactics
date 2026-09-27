@@ -45,6 +45,7 @@ template<class Sink> void visitIntegrity(Sink& digest, int legacyInterval)
     digest.word(*reinterpret_cast<const unsigned int*>(nativeBindings.initialDefenseTicks));
     digest.word(static_cast<unsigned int>(legacyTargetPolicy));
     digest.word(static_cast<unsigned int>(safePlacementFallback));
+    digest.word(static_cast<unsigned int>(engineerRoleFallback));
     digest.block(configurations + 1, sizeof(CharacterConfiguration) * 16);
     digest.block(reinterpret_cast<const void*>(nativeBindings.aicRecords), 676 * 16);
     digest.word(defenseCensusTick);

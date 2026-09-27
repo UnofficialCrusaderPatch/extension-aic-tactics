@@ -142,7 +142,7 @@ original={reset_site:bytes(uc.mem_read(reset_site,5)),count_site:bytes(uc.mem_re
 wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_counts=get(wall_hook+7)
 before_enable_scans=scan_count
 lua.execute('''
-package.loaded['aicTactics.dll']={configurationSize=348,configuration=0x3050000,
+package.loaded['aicTactics.dll']={configurationSize=352,configuration=0x3050000,
   nativeBindings=0x3051000,nativeBindingsSize=256,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new(preparedGame)

@@ -45,4 +45,8 @@ Configura el reclutamiento, la preparación de oleadas, los objetivos y las incu
 Estas cinco opciones requieren una nueva `RaidTargetPolicy`. Se mantienen `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` y `RaidRetargetDelay`. Para restaurar los valores predeterminados: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
 ### Máquinas de asedio
 
-- `SafeSiegePlacement`: `true` protege las máquinas propias al construir; `false` mantiene la colocación nativa. Si se omite, rige el interruptor del módulo (activado por defecto).
+- `SafeSiegePlacement`: `true` protege unidades propias en obras de asedio; `false` usa la colocación original. Sin valor, se aplica el ajuste del módulo (activado).
+
+### Cupos de ingenieros
+
+- `CorrectEngineerRoleCounting`: Cuenta los ingenieros asignados en sus cupos de tropas; excluye el asedio y el aceite.

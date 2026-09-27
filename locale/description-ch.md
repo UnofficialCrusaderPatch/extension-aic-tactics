@@ -45,4 +45,8 @@
 以上五项设置需要新的 `RaidTargetPolicy`。`RaidUnitsBase`、`RaidUnitsRandom`、`RaidUnit1..8` 和 `RaidRetargetDelay` 仍然有效。恢复默认：`AttackPreparation: Native`、`AttackActivation: Immediate`、`RaidTargetPolicy: Native`。
 ### 攻城器械
 
-- `SafeSiegePlacement`：`true` 防止建造时覆盖自己的攻城器械；`false` 使用原版放置规则。省略时使用模块开关（默认开启）。
+- `SafeSiegePlacement`: `true` 保护攻城建造地点的己方单位；`false` 使用原版放置规则。省略时采用模块开关（默认开启）。
+
+### 工程兵配额
+
+- `CorrectEngineerRoleCounting`: 按实际部队职责统计工程兵；攻城和油锅任务单独计算。

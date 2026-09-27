@@ -77,6 +77,22 @@ def test_safe_siege_setting_is_per_ai_and_preserves_false(lua):
       assert(loader:getAICValue(1,'SafeSiegePlacement')==nil)
     ''')
 
+
+def test_engineer_role_setting_is_per_ai_and_preserves_false(lua):
+    lua.execute('''
+      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
+      assert(loader:overwriteAIC(1,{CorrectEngineerRoleCounting=false}))
+      assert(loader:overwriteAIC(2,{CorrectEngineerRoleCounting=true}))
+      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==false)
+      assert(loader:getAICValue(2,'CorrectEngineerRoleCounting')==true)
+      assert(loader:getAICValue(3,'CorrectEngineerRoleCounting')==nil)
+      assert(loader:overwriteAIC(1,{TargetChoice='Balanced'}))
+      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==false)
+      assert(loader:overwriteAIC(1,{CorrectEngineerRoleCounting='yes'})==false)
+      loader:resetAIC(1)
+      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
+    ''')
+
 @pytest.mark.parametrize('spec', [
     "{RecruitPolicy='WeightedRoles',RecruitProbSortieWeak=1}",
     "{RecruitPolicy='WeightedRoles',RecruitProbSortieStrong=101}",
@@ -225,7 +241,7 @@ def test_native_identity_is_independent_of_character_update_order(lua, native_fi
     """Regression for a real cold-load mismatch: Caliph defaults versus zero storage."""
     lua.globals().native_first = native_first
     lua.execute('''
-      local native={configuration=100000,configurationSize=348,configurationLocked=200000,
+      local native={configuration=100000,configurationSize=352,configurationLocked=200000,
         game={gameTick=300000},preflightTargets=function()end,
         preflightCombat=function()end,activateCombat=function()end}
       backend.prepare=require('config.backend').new(native).prepare
@@ -234,17 +250,17 @@ def test_native_identity_is_independent_of_character_update_order(lua, native_fi
         assert(loader:overwriteAIC(5,{AttackTargetPolicy='FewestTroops'}))
       end
       if native_first then nativeCaliph();customSaladin() else customSaladin();nativeCaliph() end
-      for offset=0,344,4 do
-        assert(core.readInteger(native.configuration+6*348+offset)==0,
+      for offset=0,348,4 do
+        assert(core.readInteger(native.configuration+6*352+offset)==0,
           'Native Caliph must have the same zero record in either update order')
       end
-      assert(core.readInteger(native.configuration+5*348+288)==2)
+      assert(core.readInteger(native.configuration+5*352+288)==2)
       assert(loader:getAICValue(6,'AttackTargetPolicy')=='Inherit')
       -- Canonical storage must not discard authored values needed by later edits.
       assert(loader:overwriteAIC(5,{AttackTargetPolicy='Inherit'}))
-      for offset=0,344,4 do assert(core.readInteger(native.configuration+5*348+offset)==0) end
+      for offset=0,348,4 do assert(core.readInteger(native.configuration+5*352+offset)==0) end
       assert(loader:overwriteAIC(5,{AttackTargetPolicy='FewestTroops'}))
-      assert(core.readInteger(native.configuration+5*348+288)==2)
+      assert(core.readInteger(native.configuration+5*352+288)==2)
     ''')
 
 def test_collision_preserves_installed_provider(lua):

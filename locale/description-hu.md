@@ -45,4 +45,8 @@ A `When` feltételei: `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat
 Az öt portyabeállításhoz új `RaidTargetPolicy` szükséges. A `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` és `RaidRetargetDelay` továbbra is érvényes. Visszaállítás: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
 ### Ostromgépek
 
-- `SafeSiegePlacement`: a `true` megvédi a saját ostromgépeket az építkezéstől; a `false` megtartja az eredeti elhelyezést. Hiányzó mezőnél a modul kapcsolója érvényes (alapból bekapcsolva).
+- `SafeSiegePlacement`: `true` védi a saját egységeket az ostromépítés helyén; `false` az eredeti elhelyezést használja. Hiányzó értéknél a modul kapcsolója érvényes (be).
+
+### Mérnöki keretek
+
+- `CorrectEngineerRoleCounting`: A beosztott mérnökök beleszámítanak a csapatkeretbe; az ostrom és az olaj külön marad.

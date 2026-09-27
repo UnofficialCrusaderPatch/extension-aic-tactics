@@ -1,7 +1,7 @@
 local M = {}
 local path = 'recruitment-state.bin'
-local header = 'AICTACT\008'
-local configurationBytes, aicBytes, censusWords = 16 * 348, 16 * 676, 9 * 80
+local header = 'AICTACT\009'
+local configurationBytes, aicBytes, censusWords = 16 * 352, 16 * 676, 9 * 80
 
 local function word(value)
   if value < 0 then value = value + 4294967296 end
@@ -20,7 +20,7 @@ end
 
 function M.new(native, legacyInterval, fingerprint)
   assert(type(fingerprint) == 'string' and #fingerprint == 64, 'AIC Tactics: missing package fingerprint')
-  assert(native.configurationSize == 348, 'AIC Tactics: incompatible save ABI')
+  assert(native.configurationSize == 352, 'AIC Tactics: incompatible save ABI')
   local combat = require('combat-state').new(native)
   local army = require('army-state').new(native)
   local raids = require('raid-state').new(native)
@@ -36,12 +36,14 @@ function M.new(native, legacyInterval, fingerprint)
   end
   local function active()
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
+    if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     for ai = 1, 16 do
-      local address = native.configuration + ai * 348
+      local address = native.configuration + ai * 352
       if core.readInteger(address) ~= 0 or core.readInteger(address + 288) ~= 0
           or core.readInteger(address + 292) ~= 0 or core.readInteger(address + 296) ~= 0
           or core.readInteger(address + 316) ~= 0 or core.readInteger(address + 320) ~= 0
-          or core.readInteger(address + 344) ~= 0 then return true end
+          or core.readInteger(address + 344) ~= 0
+          or core.readInteger(address + 348) ~= 0 then return true end
     end
     return false
   end
@@ -49,7 +51,8 @@ function M.new(native, legacyInterval, fingerprint)
     return header .. fingerprint .. word(legacyInterval and 1 or 0) .. word(core.readInteger(native.game.initialDefenseTicks))
       .. word(core.readInteger(native.legacyTargetPolicy))
       .. word(core.readInteger(native.safePlacementFallback))
-      .. core.readString(native.configuration + 348, configurationBytes)
+      .. word(core.readInteger(native.engineerRoleFallback))
+      .. core.readString(native.configuration + 352, configurationBytes)
       .. core.readString(native.game.aicRecords, aicBytes)
   end
   local function capture()

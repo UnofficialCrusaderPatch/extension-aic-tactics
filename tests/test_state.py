@@ -10,7 +10,7 @@ def state():
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       memory,writes={},0
-      native={configurationSize=348,configuration=10000,defenseTypeCounts=20000,
+      native={configurationSize=352,configuration=10000,defenseTypeCounts=20000,
         game={gameTick=0x1FE7DA8,initialDefenseTicks=0x4D34B1,aicRecords=0x23FC8E8+676,unitCapacity=2500,buildingCapacity=2000,tribeMemberWords=157,players=0x115BDF8,tribes=0x1667F78,tribeStride=0x334},
         defenseCensusTick=23000,defenseCensusValid=23004, legacyTargetPolicy=23008,
         incidentSize=2632,combatCensusTick=24000,combatCensusValid=24004,
@@ -35,8 +35,8 @@ def state():
         writeInteger=function(a,v)memory[a]=v;writes=writes+1 end,
         setMemory=function(a,v,n)for i=0,n-1,4 do memory[a+i]=v end end}
       state=require('state').new(native,true,fingerprint)
-      memory[native.configuration+4*348]=1
-      memory[native.configuration+4*348+280]=1
+      memory[native.configuration+4*352]=1
+      memory[native.configuration+4*352+280]=1
       memory[native.defenseCensusTick]=1234
       memory[native.defenseCensusValid]=1
       memory[native.defenseTypeCounts+(80+22)*4]=7
@@ -64,9 +64,9 @@ def test_bad_payload_and_configuration_do_not_write():
       for _,bad in ipairs({bytes:sub(2),bytes..'x','bad'}) do
         assert(not pcall(state.restore,bad) and writes==0)
       end
-      memory[native.configuration+4*348+280]=0
+      memory[native.configuration+4*352+280]=0
       assert(not pcall(state.restore,bytes) and writes==0)
-      memory[native.configuration+4*348+280]=1
+      memory[native.configuration+4*352+280]=1
       memory[0x23FC8E8+676+0x184]=24
       assert(not pcall(state.restore,bytes) and writes==0)
       memory[0x23FC8E8+676+0x184]=0
@@ -74,9 +74,9 @@ def test_bad_payload_and_configuration_do_not_write():
       memory[0x4D34B1]=800
       assert(not pcall(state.restore,bytes) and writes==0)
       memory[0x4D34B1]=0
-      memory[native.configuration+4*348+284]=800
+      memory[native.configuration+4*352+284]=800
       assert(not pcall(state.restore,bytes) and writes==0)
-      memory[native.configuration+4*348+284]=0
+      memory[native.configuration+4*352+284]=0
       local bad=bytes:sub(1,#bytes-4)..string.char(255,255,255,127)
       assert(not pcall(state.restore,bad) and writes==0)
     ''')
@@ -97,7 +97,7 @@ def test_native_old_save_and_new_match_initialization():
       assert(memory[native.defenseCensusValid]==0)
       assert(memory[native.defenseTypeCounts+(80+22)*4]==0)
       memory[0x1FE7DA8]=1000
-      memory[native.configuration+4*348]=0
+      memory[native.configuration+4*352]=0
       assert(not state.callbacks.isRequired())
       state.callbacks.initialize()
       assert(memory[native.defenseCensusValid]==0)
@@ -108,7 +108,7 @@ def test_default_on_siege_fallback_requires_state_but_map_starts_fresh():
     state().execute('''
       native.safePlacementFallback=190000
       memory[native.safePlacementFallback]=1
-      memory[native.configuration+4*348]=0
+      memory[native.configuration+4*352]=0
       assert(state.callbacks.isRequired())
       local onIdentity=state.identity()
       local missing={loadKind='save',exists=function()return false end}
@@ -117,6 +117,25 @@ def test_default_on_siege_fallback_requires_state_but_map_starts_fresh():
       memory[native.safePlacementFallback]=0
       assert(not state.callbacks.isRequired())
       assert(state.identity()~=onIdentity)
+    ''')
+
+
+def test_engineer_role_fallback_and_per_ai_override_enter_save_identity():
+    state().execute('''
+      native.engineerRoleFallback=190100
+      memory[native.configuration+4*352]=0
+      memory[native.engineerRoleFallback]=1
+      assert(state.callbacks.isRequired())
+      local inherited=state.identity()
+      memory[native.engineerRoleFallback]=0
+      assert(not state.callbacks.isRequired())
+      assert(state.identity()~=inherited)
+      memory[native.configuration+4*352+348]=1
+      assert(state.callbacks.isRequired())
+      local explicit=state.identity()
+      memory[native.configuration+4*352+348]=2
+      assert(state.identity()~=explicit)
+      state.callbacks:initialize({kind='map'})
     ''')
 
 
@@ -174,7 +193,7 @@ def test_invalid_late_state_and_changed_build_rejected_before_any_write():
 
 def test_native_only_optional_state_does_not_impose_new_package_requirement():
     state().execute('''
-      memory[native.configuration+4*348]=0
+      memory[native.configuration+4*352]=0
       local bytes=state.capture()
       local reader={exists=function()return true end,get=function()return bytes end}
       local other=require('state').new(native,true,string.rep('b',64))
