@@ -1,4 +1,4 @@
-Réglez le recrutement, la préparation des vagues, les cibles et les raids dans l’AIC de votre IA. Sans nouvelles options, son comportement reste inchangé.
+Réglez le recrutement, la préparation des vagues, les cibles et les raids dans l’AIC de votre IA. Les champs AIC absents prennent leur valeur par défaut.
 
 ### Recrutement
 
@@ -43,3 +43,6 @@ Réglez le recrutement, la préparation des vagues, les cibles et les raids dans
 - `RaidEnemyScope` : `PrimeTarget` (défaut) ou `AnyEnemy`. Ne change pas la cible de l’armée principale.
 
 Ces cinq options nécessitent une nouvelle `RaidTargetPolicy`. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` et `RaidRetargetDelay` restent applicables. Pour rétablir les valeurs par défaut : `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
+### Engins de siège
+
+- `SafeSiegePlacement` : `true` protège les engins de l’IA lors de la construction ; `false` garde le placement natif. Sans valeur AIC, le réglage du module s’applique (activé par défaut).

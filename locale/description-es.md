@@ -1,4 +1,4 @@
-Configura el reclutamiento, la preparación de oleadas, los objetivos y las incursiones mediante el AIC de tu IA. Sin opciones nuevas, se conserva su comportamiento.
+Configura el reclutamiento, la preparación de oleadas, los objetivos y las incursiones mediante el AIC de tu IA. Los campos AIC omitidos usan sus valores predeterminados.
 
 ### Reclutamiento
 
@@ -43,3 +43,6 @@ Configura el reclutamiento, la preparación de oleadas, los objetivos y las incu
 - `RaidEnemyScope`: `PrimeTarget` (predeterminado) o `AnyEnemy`. No cambia el objetivo del ejército principal.
 
 Estas cinco opciones requieren una nueva `RaidTargetPolicy`. Se mantienen `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` y `RaidRetargetDelay`. Para restaurar los valores predeterminados: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
+### Máquinas de asedio
+
+- `SafeSiegePlacement`: `true` protege las máquinas propias al construir; `false` mantiene la colocación nativa. Si se omite, rige el interruptor del módulo (activado por defecto).

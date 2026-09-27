@@ -15,6 +15,9 @@ return {
     local identity = require('build-identity')
     require('package-identity').verify(identity)
     local native = require('native').new(nativeGame)
+    local safePlacement = config and config.safeSiegePlacement
+    if safePlacement == nil then safePlacement = true end
+    native.configureSafePlacement(safePlacement)
     native.enableNativeTargetPolicy(config and config.nativeTargetPolicy or 'Native')
     local legacyInterval = config and config.legacyRecruitInterval
     assert(legacyInterval == nil or type(legacyInterval) == 'boolean',
@@ -42,7 +45,7 @@ return {
         or 'AIC Tactics: checking settings. Press Start again when all players have responded.',0,0)
     end)
     mapState:registerSection('aic-tactics', self.recruitmentState.callbacks,
-      {required=true, format='aic-tactics-state-7', fingerprint=identity.sha256})
+      {required=true, format='aic-tactics-state-8', fingerprint=identity.sha256})
     log(INFO, string.format('[aic-tactics] configuration=0x%X size=%d observations=0x%X size=%d',
       native.configuration, native.configurationSize, native.observations, native.observationSize))
     local addresses = {}

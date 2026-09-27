@@ -1,7 +1,7 @@
 # extension-aic-tactics
 Opt-in recruitment, attack and raid policies for AI personalities in UCP3; under development
 
-Source 0.0.8 declares Crusader and Extreme 1.41 and uses verified UCP native
+Source 0.0.11 declares Crusader and Extreme 1.41 and uses verified UCP native
 bindings. [Component evidence and remaining acceptance](docs/shared-native-bindings.md)
 are recorded separately. Installed-runtime acceptance remains in progress.
 
@@ -18,6 +18,13 @@ update order, so configuration validation rejected the save before restoring sta
 Source 0.0.8 canonicalizes Native records and requires Map Extensions 1.1.2, whose
 native error boundary stops rejected loads. Corrected-package native acceptance,
 full combat, multiplayer and simulation-performance acceptance remain open.
+
+The dependent siege branch adds per-AI `SafeSiegePlacement` with a default-ON
+module fallback. It guards native footprint checks against overwriting friendly
+units, including siege engines, while leaving other placement decisions with the game. Binding and
+component checks pass across the six local SHC/Extreme executables; installed-game
+acceptance and alternative-site search are pending. Engineer role accounting,
+larger forces, coordinated harassment and full resource admission remain open.
 
 The store uses `build.ps1` and `files.xml` to compile the x86 runtime and stage the same payload as local previews. Both paths share `tests/module_payload.py`, including all nine GUI descriptions and the multiplayer package identity.
 

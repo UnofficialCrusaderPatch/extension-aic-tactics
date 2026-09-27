@@ -2,7 +2,7 @@ local M = {}
 
 function M.new(game)
   local native = require('aicTactics.dll')
-  assert(type(native) == 'table' and native.configurationSize == 344,
+  assert(type(native) == 'table' and native.configurationSize == 348,
     'AIC Tactics: incompatible native library')
   require('native-bindings').initialize(native, game)
   game = native.game
@@ -11,7 +11,57 @@ function M.new(game)
   local wallCounter
   local intervalHook
   local compositionHooks
+  local safePlacementHook
+  local safePlacementBackoffHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
+  function native.preflightSafePlacement()
+    local target = require('native-context').call(game.siegePlacementCall, 'siege footprint tile check')
+    assert(target == (safePlacementHook and native.checkedSiegeTile or game.originalSiegeTileCheck),
+      'AIC Tactics: siege footprint check was replaced; restart with compatible modules')
+    for _, branch in ipairs({{game.siegeNoSpotBranch,0x84},{game.siegeFailedBranch,0x85}}) do
+      local site, opcode = branch[1], branch[2]
+      assert(core.readByte(site)==0x0F and core.readByte(site+1)==opcode,
+        'AIC Tactics: siege retry branch was replaced')
+      local destination = site+6+core.readInteger(site+2)
+      assert(destination == (safePlacementBackoffHook or game.siegeFailureExit),
+        'AIC Tactics: siege retry branch was replaced')
+    end
+  end
+  function native.activateSafePlacement()
+    if safePlacementHook then return end
+    native.preflightSafePlacement()
+    local backoff = core.allocateAssembly([[
+      pushfd
+      pushad
+      mov ecx, dword [esp + 0x38]
+      push ecx
+      call policyEnabled
+      add esp, 4
+      test eax, eax
+      jz done
+      mov ecx, dword [esp + 0x38]
+      imul ecx, ecx, 0x39F4
+      mov dword [ecx + timeout], 8
+done:
+      popad
+      popfd
+      jmp finished
+    ]], {policyEnabled=native.siegePlacementPolicyEnabled,
+      timeout=game.players+0x3918, finished=game.siegeFailureExit})
+    core.writeCode(game.siegePlacementCall,
+      {0xE8, native.checkedSiegeTile - game.siegePlacementCall - 5})
+    core.writeCode(game.siegeNoSpotBranch,
+      {0x0F,0x84,backoff-game.siegeNoSpotBranch-6})
+    core.writeCode(game.siegeFailedBranch,
+      {0x0F,0x85,backoff-game.siegeFailedBranch-6})
+    safePlacementBackoffHook = backoff
+    safePlacementHook = true
+  end
+  function native.configureSafePlacement(fallback)
+    assert(type(fallback) == 'boolean', 'AIC Tactics: safeSiegePlacement must be boolean')
+    core.writeInteger(native.safePlacementFallback, fallback and 1 or 0)
+    if fallback then native.activateSafePlacement() end
+  end
   local function verifyInterval()
     if intervalHook then
       assert(core.readByte(sites.interval) == 0xE9

@@ -7,7 +7,8 @@ local names = {'gameTick','rngState','rngValue','rngNext','initialDefenseTicks',
     'findSortieGroup','findAttackGroup','returnTribe','removeUnitFromTribe','relayRaidOrder','mapRows','attackGroupSlots','recruitUpdate','rangedSortieNative','meleeSortieNative',
     'recruitEuropean','recruitNonEuropean','scenarioMode','scenarioCustom','scenarioMission','moat','moatVacancies','findRecruitmentBuilding','attackRecruitType','raidMaximum',
     'defenseTypes','specialDefenders','defenseSlots','raidTypes','equipmentRecipes',
-    'selectAttackTarget','computeNervousness','updateAIPlayerState','returnAttack','hasNoTroopsOrAllDiggers','updateRaids','combatValue','troopValues','marketPrice','gameState'}
+    'selectAttackTarget','computeNervousness','updateAIPlayerState','returnAttack','hasNoTroopsOrAllDiggers','updateRaids','combatValue','troopValues','marketPrice','gameState',
+    'originalSiegeTileCheck','siegeTileOccupancyOffset'}
 -- Framework loads every module before enabling Legacy's native patches.
 -- Resolve identifying contexts here; hook preflights still check current bytes
 -- when a feature is activated after all dependencies have enabled.
@@ -25,6 +26,7 @@ function M.resolve()
   for key, value in pairs(require('native-recruitment').resolve(game)) do game[key] = value end
   for key, value in pairs(require('native-aic-queries').resolve(game)) do game[key] = value end
   for key, value in pairs(require('native-combat-bindings').resolve(game)) do game[key] = value end
+  for key, value in pairs(require('native-siege-bindings').resolve(game)) do game[key] = value end
   return game
 end
 

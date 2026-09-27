@@ -1,4 +1,4 @@
-Yapay zekânın asker alımını, dalga hazırlığını, saldırı hedeflerini ve akınlarını AIC üzerinden ayarlayın. Yeni ayarlar olmadan mevcut davranış korunur.
+Yapay zekânın asker alımını, dalga hazırlığını, saldırı hedeflerini ve akınlarını AIC üzerinden ayarlayın. Belirtilmeyen AIC alanları varsayılan değerlerini kullanır.
 
 ### Asker alımı
 
@@ -43,3 +43,6 @@ Yapay zekânın asker alımını, dalga hazırlığını, saldırı hedeflerini 
 - `RaidEnemyScope`: `PrimeTarget` (varsayılan) veya `AnyEnemy`. Ana ordunun hedefini değiştirmez.
 
 Bu beş akın ayarı yeni bir `RaidTargetPolicy` gerektirir. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` ve `RaidRetargetDelay` geçerlidir. Varsayılana dönüş: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
+### Kuşatma araçları
+
+- `SafeSiegePlacement`: `true` kendi araçlarını inşaattan korur; `false` oyunun yerleştirmesini kullanır. Alan yoksa modül anahtarı geçerlidir (varsayılan açık).

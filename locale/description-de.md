@@ -1,4 +1,4 @@
-Steuere Rekrutierung, die Vorbereitung weiterer Angriffswellen, Angriffsziele und Überfälle über deine AIC. Ohne neue Angaben bleibt das bisherige Verhalten erhalten.
+Steuere Rekrutierung, die Vorbereitung weiterer Angriffswellen, Angriffsziele und Überfälle über deine AIC. Fehlende AIC-Werte nutzen ihre Standardwerte.
 
 ### Rekrutierung
 
@@ -43,3 +43,7 @@ In `When` kannst du `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` 
 - `RaidEnemyScope`: `PrimeTarget` (Standard) oder `AnyEnemy`. Das Ziel der Hauptarmee bleibt davon unberührt.
 
 Die fünf Überfalloptionen benötigen eine neue `RaidTargetPolicy`. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` und `RaidRetargetDelay` gelten weiter. Zurück zum bisherigen Verhalten: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
+
+### Belagerungsgeräte
+
+- `SafeSiegePlacement`: `true` schützt eigene Geräte vor Überbauung; `false` belässt die Platzierung beim Spiel. Ohne Eintrag gilt der Modulschalter (standardmäßig an).
