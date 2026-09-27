@@ -71,6 +71,8 @@ struct NativeBindings {
     unsigned int troopValues;
     unsigned int marketPrice;
     unsigned int gameState;
+    unsigned int originalSiegeTileCheck;
+    unsigned int siegeTileOccupancyOffset;
 
 
 

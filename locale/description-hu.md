@@ -1,4 +1,4 @@
-Az AIC-ben állíthatod be az MI toborzását, a következő hullám előkészítését, célpontjait és portyáit. Új beállítások nélkül a viselkedés változatlan.
+Az AIC-ben állíthatod be az MI toborzását, a következő hullám előkészítését, célpontjait és portyáit. A hiányzó AIC-mezők az alapértéküket használják.
 
 ### Toborzás
 
@@ -43,3 +43,6 @@ A `When` feltételei: `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat
 - `RaidEnemyScope`: `PrimeTarget` (alapérték) vagy `AnyEnemy`. A fő sereg célpontját nem módosítja.
 
 Az öt portyabeállításhoz új `RaidTargetPolicy` szükséges. A `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` és `RaidRetargetDelay` továbbra is érvényes. Visszaállítás: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
+### Ostromgépek
+
+- `SafeSiegePlacement`: a `true` megvédi a saját ostromgépeket az építkezéstől; a `false` megtartja az eredeti elhelyezést. Hiányzó mezőnél a modul kapcsolója érvényes (alapból bekapcsolva).

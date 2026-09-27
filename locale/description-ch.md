@@ -1,4 +1,4 @@
-通过 AIC 设置 AI 的招募、下一波备战、进攻目标和袭扰。未设置的新选项保留原有行为。
+通过 AIC 设置 AI 的招募、下一波备战、进攻目标和袭扰。未填写的 AIC 字段使用默认值。
 
 ### 招募
 
@@ -43,3 +43,6 @@
 - `RaidEnemyScope`：`PrimeTarget`（默认）或 `AnyEnemy`，不改变主力军队的目标。
 
 以上五项设置需要新的 `RaidTargetPolicy`。`RaidUnitsBase`、`RaidUnitsRandom`、`RaidUnit1..8` 和 `RaidRetargetDelay` 仍然有效。恢复默认：`AttackPreparation: Native`、`AttackActivation: Immediate`、`RaidTargetPolicy: Native`。
+### 攻城器械
+
+- `SafeSiegePlacement`：`true` 防止建造时覆盖自己的攻城器械；`false` 使用原版放置规则。省略时使用模块开关（默认开启）。

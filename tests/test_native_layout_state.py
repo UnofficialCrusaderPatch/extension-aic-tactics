@@ -40,7 +40,7 @@ def test_army_restore_uses_resolved_player_and_tribe_roots_and_stride():
       native.game.players=200000;native.game.tribes=900000
       native.game.unitCapacity=10000;native.game.tribeMemberWords=625;native.game.tribeStride=0x688
       memory[native.game.players+0x39F4+0x2300]=5
-      memory[native.configuration+4*344+316]=1
+      memory[native.configuration+4*348+316]=1
       memory[native.reserves+196+20]=1249
       memory[native.reserves+196+24]=123
       local tribe=native.game.tribes+1249*0x688

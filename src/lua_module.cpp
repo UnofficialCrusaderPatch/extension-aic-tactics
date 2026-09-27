@@ -2,7 +2,7 @@
 #include <windows.h>
 #include "aic_tactics/runtime.hpp"
 
-typedef char ConfigurationABI[sizeof(AicTactics::SHC141::CharacterConfiguration) == 344 ? 1 : -1];
+typedef char ConfigurationABI[sizeof(AicTactics::SHC141::CharacterConfiguration) == 348 ? 1 : -1];
 typedef char ReserveABI[sizeof(AicTactics::SHC141::ReserveState) == 196 ? 1 : -1];
 typedef char RaidABI[sizeof(AicTactics::SHC141::RaidState) == 96 ? 1 : -1];
 typedef char IncidentABI[sizeof(AicTactics::IncidentState) == 2632 ? 1 : -1];
@@ -38,7 +38,8 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "raidStates", "raidStateSize", "raidGroupCensus", "raidUnitPower", "raidStaticDefenses",
         "raidBuildingCensusTick", "raidBuildingCensusValid", "resetRaidBuildingCensus",
         "countRaidBuilding", "completeRaidBuildingCensus", "integrityDigest", "captureIntegrity",
-        "observeIntegrityBoundary", "captureBoundaryIntegrity", "nativeBindings", "nativeBindingsSize"};
+        "observeIntegrityBoundary", "captureBoundaryIntegrity", "nativeBindings", "nativeBindingsSize",
+        "safePlacementFallback", "checkedSiegeTile", "siegePlacementPolicyEnabled"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
@@ -71,7 +72,9 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(&countRaidBuilding), reinterpret_cast<unsigned int>(&completeRaidBuildingCensus),
         reinterpret_cast<unsigned int>(integrityDigest), reinterpret_cast<unsigned int>(&captureIntegrity),
         reinterpret_cast<unsigned int>(&observeIntegrityBoundary), reinterpret_cast<unsigned int>(&captureBoundaryIntegrity),
-        reinterpret_cast<unsigned int>(&nativeBindings), sizeof(NativeBindings)};
+        reinterpret_cast<unsigned int>(&nativeBindings), sizeof(NativeBindings),
+        reinterpret_cast<unsigned int>(&safePlacementFallback), reinterpret_cast<unsigned int>(&checkedSiegeTile),
+        reinterpret_cast<unsigned int>(&siegePlacementPolicyEnabled)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);

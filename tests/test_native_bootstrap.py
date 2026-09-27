@@ -13,7 +13,7 @@ def runtime():
       -- its own real-executable and failure-before-write checks.
       package.loaded['native-bindings']={initialize=function()end}
       package.loaded['config.grace']={preflight=function()end}
-      package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3100000,
+      package.loaded['aicTactics.dll']={configurationSize=348,configuration=0x3100000,
         game={players=0x115BDF8,rangedSortieNative=0x4CD560,meleeSortieNative=0x4CD690,
           recruitmentSites={interval=0x4D3B41,ranged=0x4D543B,melee=0x4D5443,opportunity=0x4D3BA5}}}
       package.loaded['native-recruitment']={legacyCounter=function()return 0x4100000 end}

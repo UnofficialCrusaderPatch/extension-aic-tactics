@@ -142,7 +142,7 @@ original={reset_site:bytes(uc.mem_read(reset_site,5)),count_site:bytes(uc.mem_re
 wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_counts=get(wall_hook+7)
 before_enable_scans=scan_count
 lua.execute('''
-package.loaded['aicTactics.dll']={configurationSize=344,configuration=0x3050000,
+package.loaded['aicTactics.dll']={configurationSize=348,configuration=0x3050000,
   nativeBindings=0x3051000,nativeBindingsSize=256,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new(preparedGame)
@@ -259,7 +259,7 @@ for player in range(1,9):
     for fn in (game.rangedSortieNative,game.meleeSortieNative):
         put(game.players+player*0x39F4+0x2300,0)
         sp=0x308F000;put(sp,0x307F000);put(sp+4,player)
-        initial=[0x12345678,0x98765432,0x3050000,0,0x10203040,0x50607080,0x12344321,sp,0x202]
+        initial=[0x12345678,0x98765432,0x3050000,0,0x10203040,0x50607080,0x12348321,sp,0x202]
         for reg,value in zip(registers,initial):uc.reg_write(reg,value)
         uc.emu_start(fn,0x307F000,count=100)
         assert uc.reg_read(UC_X86_REG_ESP)==sp+8
@@ -432,7 +432,7 @@ if a.combat:
             results=[]
             for entry in [site,trampoline]:
                 uc.mem_write(site,displaced);uc.ctl_remove_cache(site,site+length)
-                initial=[0x12345678,0x98765432,game.units,3,0x11223344,0x55667788,0xABCD,0x308F000,flags]
+                initial=[0x12345678,0x98765432,game.units,3,0x11223348,0x55667788,0xABCD,0x308F000,flags]
                 uc.mem_write(initial[7]-64,bytes(range(128)))
                 for register,value in zip(registers,initial):uc.reg_write(register,value)
                 uc.emu_start(entry,site+length,count=30)

@@ -1,4 +1,4 @@
-Configure your AI’s recruitment, next-wave preparation, attack targets and raids through its AIC. Omitted settings keep existing behavior.
+Configure your AI’s recruitment, next-wave preparation, attack targets and raids through its AIC. Omitted AIC fields use their defaults.
 
 ### Recruitment
 
@@ -43,3 +43,7 @@ Configure your AI’s recruitment, next-wave preparation, attack targets and rai
 - `RaidEnemyScope`: `PrimeTarget` (default) or `AnyEnemy`. Main-army targets stay unchanged.
 
 The five raid settings require a new `RaidTargetPolicy`. Existing `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` and `RaidRetargetDelay` still apply. Return these systems to their defaults with `AttackPreparation: Native`, `AttackActivation: Immediate` and `RaidTargetPolicy: Native`.
+
+### Siege placement
+
+- `SafeSiegePlacement`: `true` protects the AI's own siege engines from construction; `false` keeps native placement. If omitted, the module switch applies (ON by default).

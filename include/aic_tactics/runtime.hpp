@@ -19,6 +19,7 @@ struct CharacterConfiguration {
     CombatConfiguration combat;
     int preparation;
     RaidConfiguration raids;
+    int safeSiegePlacement; // 0=module fallback, 1=on, 2=off
 };
 
 // Diagnostic counters are observation only; policy never reads them.
@@ -55,6 +56,9 @@ extern int* legacyWallCounts;
 extern int defenseTypeCounts[9][80];
 extern unsigned int defenseCensusTick;
 extern int defenseCensusValid;
+extern int safePlacementFallback;
+int __fastcall checkedSiegeTile(void* tileMap, void*, int tile, int player, int command, int flags);
+int __cdecl siegePlacementPolicyEnabled(int player);
 extern unsigned int integrityDigest[2];
 void __cdecl captureIntegrity(int legacyInterval);
 void __cdecl observeIntegrityBoundary(int legacyInterval);
