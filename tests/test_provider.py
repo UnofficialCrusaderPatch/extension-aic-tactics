@@ -92,6 +92,24 @@ def test_siege_payment_setting_is_per_ai_and_preserves_false(lua):
     ''')
 
 
+def test_siege_harassment_setting_is_per_ai_and_preserves_zero(lua):
+    lua.execute('''
+      assert(loader:getAICValue(1,'CoordinatedSiegeHarassment')==nil)
+      assert(loader:getAICValue(1,'SiegeHarassMinEngines')==nil)
+      assert(loader:overwriteAIC(1,{CoordinatedSiegeHarassment=false,SiegeHarassMinEngines=0}))
+      assert(loader:overwriteAIC(2,{CoordinatedSiegeHarassment=true,SiegeHarassMinEngines=10}))
+      assert(loader:getAICValue(1,'CoordinatedSiegeHarassment')==false)
+      assert(loader:getAICValue(1,'SiegeHarassMinEngines')==0)
+      assert(loader:getAICValue(2,'CoordinatedSiegeHarassment')==true)
+      assert(loader:getAICValue(2,'SiegeHarassMinEngines')==10)
+      assert(loader:getAICValue(3,'SiegeHarassMinEngines')==nil)
+      assert(loader:overwriteAIC(1,{SiegeHarassMinEngines=21})==false)
+      loader:resetAIC(1)
+      assert(loader:getAICValue(1,'CoordinatedSiegeHarassment')==nil)
+      assert(loader:getAICValue(1,'SiegeHarassMinEngines')==nil)
+    ''')
+
+
 def test_engineer_role_setting_is_per_ai_and_preserves_false(lua):
     lua.execute('''
       assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
@@ -257,6 +275,8 @@ def test_native_identity_is_independent_of_character_update_order(lua, native_fi
     lua.execute('''
       local native={configuration=100000,configurationSize=352,configurationLocked=200000,
         siegePaymentPolicy=500000,siegePaymentFallback=500080,
+        siegeHarassPolicy=500100,siegeHarassMinimum=500200,
+        siegeHarassFallback=500300,
         game={gameTick=300000},preflightTargets=function()end,
         preflightCombat=function()end,activateCombat=function()end}
       backend.prepare=require('config.backend').new(native).prepare

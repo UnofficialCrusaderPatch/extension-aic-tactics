@@ -143,7 +143,7 @@ wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_co
 before_enable_scans=scan_count
 lua.execute('''
 package.loaded['aicTactics.dll']={configurationSize=352,configuration=0x3050000,
-  nativeBindings=0x3051000,nativeBindingsSize=276,
+  nativeBindings=0x3051000,nativeBindingsSize=280,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new(preparedGame)
 native.preflightCombat();native.preflightTargets();native.preflightRaids()

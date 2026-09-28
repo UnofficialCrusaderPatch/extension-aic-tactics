@@ -42,7 +42,10 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "safePlacementFallback", "checkedSiegeTile", "siegePlacementPolicyEnabled",
         "siegeTentCandidateAllowed", "failedSiegeTent",
         "engineerRoleFallback", "countableEngineerRole", "siegePaymentFallback",
-        "siegePaymentPolicy", "siegeResourceAdmission", "siegePaymentEnabledForGoldOffset"};
+        "siegePaymentPolicy", "siegeResourceAdmission", "siegePaymentEnabledForGoldOffset",
+        "siegeHarassFallback", "siegeHarassMinimumFallback", "siegeHarassPolicy",
+        "siegeHarassMinimum", "siegeHarassPlans", "siegeHarassPlanSize",
+        "suppressNativeSiegeHarassMove"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
@@ -85,7 +88,13 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(&siegePaymentFallback),
         reinterpret_cast<unsigned int>(siegePaymentPolicy),
         reinterpret_cast<unsigned int>(&siegeResourceAdmission),
-        reinterpret_cast<unsigned int>(&siegePaymentEnabledForGoldOffset)};
+        reinterpret_cast<unsigned int>(&siegePaymentEnabledForGoldOffset),
+        reinterpret_cast<unsigned int>(&siegeHarassFallback),
+        reinterpret_cast<unsigned int>(&siegeHarassMinimumFallback),
+        reinterpret_cast<unsigned int>(siegeHarassPolicy),
+        reinterpret_cast<unsigned int>(siegeHarassMinimum),
+        reinterpret_cast<unsigned int>(siegeHarassPlans), sizeof(SiegeHarassPlan),
+        reinterpret_cast<unsigned int>(&suppressNativeSiegeHarassMove)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);

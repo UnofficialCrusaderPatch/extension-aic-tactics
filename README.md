@@ -19,24 +19,17 @@ Source 0.0.8 canonicalizes Native records and requires Map Extensions 1.1.2, who
 native error boundary stops rejected loads. Corrected-package native acceptance,
 full combat, multiplayer and simulation-performance acceptance remain open.
 
-The dependent siege branch adds per-AI `SafeSiegePlacement` with a default-ON
-module fallback. It guards native footprint checks against overwriting friendly
-units, including siege engines. The current completion branch also rejects occupied
-attack-angle candidates inside the game's existing bounded search, so the game can
-try another site. A failed final placement restores the prior reservation and
-skips the construction order. Other placement decisions remain native. Binding
-and component checks pass across six local SHC/Extreme executables; installed-game
-acceptance remains pending. The next dependent branch
-adds per-AI `CorrectEngineerRoleCounting` with a default-ON module fallback.
-It lets the native AI recount include assigned engineers in troop-role quotas;
-siege crews, oil duty and unattached units remain separate. AOB and component
-checks pass on six SHC/Extreme fixtures; live recruitment, losses, save/load and
-composition with Fixed Engineers 0.2.0 remain unverified. Larger forces,
-coordinated harassment remain open. The resource-policy draft adds optional
-per-AI admission through the native construction and AI trade owners and skips
-the defensive path's second gold subtraction for opted-in AIs. Its component
-checks pass; actual stock/gold deltas, shortages, cancellation, save/load and
-GamerGrill acceptance remain pending.
+The dependent siege drafts provide per-AI safe placement (fallback ON), correct
+engineer role counting (ON), actual resource admission (OFF), and coordinated
+mobile siege harassment (OFF). Placement uses native footprint checks and attack
+angle search; payment uses native construction debit and AI trade. Harassment
+gathers catapults and fire ballistas before issuing bounded native path and
+group-move commands. Its minimum is per AI (module fallback 3), with a one-month
+timeout. The native `HarassingSiegeEnginesMax` can request ten engines without
+changing the eight composition slots. An independent larger **main-assault**
+force policy is not implemented yet. Binding and component checks cover six local
+Crusader/Extreme executables; installed-game recruitment, placement, stock/gold,
+harassment, save/load, replay and performance acceptance are still pending.
 
 The store uses `build.ps1` and `files.xml` to compile the x86 runtime and stage the same payload as local previews. Both paths share `tests/module_payload.py`, including all nine GUI descriptions and the multiplayer package identity.
 

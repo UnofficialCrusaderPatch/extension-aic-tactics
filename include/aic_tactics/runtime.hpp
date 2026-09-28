@@ -61,6 +61,38 @@ extern int safePlacementFallback;
 extern int engineerRoleFallback;
 extern int siegePaymentFallback;
 extern int siegePaymentPolicy[17];
+extern int siegeHarassFallback;
+extern int siegeHarassMinimumFallback;
+extern int siegeHarassPolicy[17];
+extern int siegeHarassMinimum[17];
+struct SiegeHarassEngine {
+    int unit;
+    int uid;
+    int tribe;
+    int tribeUID;
+    int type;
+};
+struct SiegeHarassCensus {
+    int count;
+    SiegeHarassEngine engines[20];
+};
+struct SiegeHarassPlan {
+    int target;
+    int lordUID;
+    unsigned int firstSeenTick;
+    unsigned int nextDecisionTick;
+    int cursor;
+    int phase;
+    int issuedCount;
+    int x;
+    int y;
+};
+extern SiegeHarassCensus siegeHarassCensus[9];
+extern SiegeHarassPlan siegeHarassPlans[9];
+void __cdecl resetSiegeHarassCensus();
+void __cdecl countSiegeHarassUnit(int unit);
+void __cdecl updateSiegeHarassment(void* aic, int player);
+int __cdecl suppressNativeSiegeHarassMove(int unitOffset);
 int __cdecl countableEngineerRole(int player, int unit);
 int __fastcall checkedSiegeTile(void* tileMap, void*, int tile, int player, int command, int flags);
 int __cdecl siegePlacementPolicyEnabled(int player);

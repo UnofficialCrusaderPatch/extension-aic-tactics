@@ -18,6 +18,7 @@ function M.new(game)
   local siegePaymentHook
   local siegeGoldHook
   local siegeDirectHook
+  local siegeHarassHooks
   local engineerRoleHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
   function native.preflightSafePlacement()
@@ -256,6 +257,58 @@ defer:
     assert(type(fallback) == 'boolean', 'AIC Tactics: actualSiegeResourcePayment must be boolean')
     core.writeInteger(native.siegePaymentFallback, fallback and 1 or 0)
     if fallback then native.activateSiegePayment() end
+  end
+  function native.preflightSiegeHarassment()
+    for index, site in ipairs({game.siegeCatapultPathGate, game.siegeFirePathGate}) do
+      if siegeHarassHooks then
+        assert(core.readByte(site) == 0xE9
+            and site + 5 + core.readInteger(site + 1) == siegeHarassHooks[index],
+          'AIC Tactics: native siege harassment movement was replaced')
+      else
+        require('native-context').verify(site, 'native siege harassment movement',
+          '80 BE ? ? ? ? 03')
+      end
+    end
+  end
+  function native.activateSiegeHarassment()
+    if siegeHarassHooks then return end
+    native.preflightSiegeHarassment()
+    native.activateCombat()
+    local hooks = {}
+    for index, site in ipairs({game.siegeCatapultPathGate, game.siegeFirePathGate}) do
+      local exit = index == 1 and game.siegeCatapultPathExit or game.siegeFirePathExit
+      local hook = core.allocateAssembly([[
+        pushfd
+        pushad
+        push esi
+        call suppress
+        add esp, 4
+        test eax, eax
+        jnz coordinated
+        popad
+        popfd
+        cmp byte [esi + harassMode], 3
+        jmp resume
+coordinated:
+        popad
+        popfd
+        jmp nativeExit
+      ]], {suppress=native.suppressNativeSiegeHarassMove,
+        harassMode=game.unitRecords+0x3fe, resume=site+7, nativeExit=exit})
+      core.writeCode(site, {0xE9,hook-site-5,0x90,0x90})
+      hooks[index] = hook
+    end
+    siegeHarassHooks = hooks
+  end
+  function native.configureSiegeHarassment(fallback, minimum)
+    assert(type(fallback) == 'boolean',
+      'AIC Tactics: coordinatedSiegeHarassment must be boolean')
+    assert(type(minimum) == 'number' and minimum == math.floor(minimum)
+        and minimum >= 0 and minimum <= 20,
+      'AIC Tactics: siegeHarassMinEngines must be 0 to 20')
+    core.writeInteger(native.siegeHarassFallback, fallback and 1 or 0)
+    core.writeInteger(native.siegeHarassMinimumFallback, minimum)
+    if fallback then native.activateSiegeHarassment() end
   end
   function native.preflightEngineerRoles()
     if engineerRoleHook then return end

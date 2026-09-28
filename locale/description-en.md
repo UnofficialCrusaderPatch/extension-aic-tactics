@@ -48,6 +48,7 @@ The five raid settings require a new `RaidTargetPolicy`. Existing `RaidUnitsBase
 
 - `SafeSiegePlacement`: `true` protects the AI’s units at siege sites; `false` uses native placement. If absent, the module fallback applies (ON).
 - `ActualSiegeResourcePayment`: `true` requires materials and gold before building; shortages enter normal AI trade. `false` keeps native admission. If absent, the module fallback applies (OFF).
+- `CoordinatedSiegeHarassment`: `true` gathers siege engines and sends them to reachable firing positions. `SiegeHarassMinEngines` (0–20, default 3) sets how many to await; after one game month, available engines depart. Omitted fields use module fallbacks (OFF, 3). `HarassingSiegeEnginesMax` still limits the total.
 
 ### Engineer quotas
 

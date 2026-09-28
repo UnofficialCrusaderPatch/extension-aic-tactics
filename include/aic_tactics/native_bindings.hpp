@@ -78,6 +78,7 @@ struct NativeBindings {
     unsigned int siegeTribeIndexOffset;
     unsigned int siegePlacementFail;
     unsigned int siegeResourceCheck;
+    unsigned int siegeGroupMove;
 };
 extern NativeBindings nativeBindings;
 int nativeRandom(void*);

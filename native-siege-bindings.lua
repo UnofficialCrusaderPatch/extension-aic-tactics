@@ -115,6 +115,34 @@ function M.resolve(game)
   local directExit = direct + 0x81 + core.readInteger(direct + 0x7d)
   assert(directExit == goldSub + 0x37,
     'AIC Tactics: incompatible defensive siege retry exit')
+  local siegeCommand = context.find('native siege tribe command',
+    '83 EC 14 53 55 56 8B 74 24 24 8B C6 69 C0 F4 39 00 00 '..
+    '8D 88 74 01 00 00 0F BF 81 ? ? ? ?')
+  local groupMove = context.find('native siege group movement',
+    '83 EC 34 33 C0 55 8B 6C 24 44 57 8B 7C 24 44 3B F8 '..
+    '89 4C 24 08 89 44 24 18')
+  assert(context.call(siegeCommand + 0x22a, 'siege tribe movement') == groupMove,
+    'AIC Tactics: incompatible native siege group movement owner')
+  local catapultUpdate = context.find('native catapult update',
+    '83 EC 74 53 8B 1D ? ? ? ? 55 56 8B F3 69 F6 90 04 00 00 '..
+    '0F BF 86 ? ? ? ? 57 8B F8 69 FF F4 39 00 00')
+  local fireUpdate = context.find('native fire ballista update',
+    '83 EC 74 53 55 56 8B 35 ? ? ? ? 69 F6 90 04 00 00 '..
+    '0F BF 9E ? ? ? ? 8B C3 69 C0 F4 39 00 00')
+  local function autoMoveGate(owner, offset, name)
+    local site = owner + offset
+    context.verify(site, name, '80 BE ? ? ? ? 03 0F 85 ? ? ? ?')
+    assert(not game.unitRecords or core.readInteger(site + 2) == game.unitRecords + 0x3fe,
+      'AIC Tactics: incompatible native siege movement layout')
+    local exit = site + 13 + core.readInteger(site + 9)
+    assert(exit > site and exit < owner + 0x2000,
+      'AIC Tactics: incompatible native siege movement exit')
+    return site, exit
+  end
+  local catapultGate, catapultExit = autoMoveGate(catapultUpdate, 0x733,
+    'native catapult solo movement')
+  local fireGate, fireExit = autoMoveGate(fireUpdate, 0x803,
+    'native fire ballista solo movement')
   return {siegePlacementCall = callSite + 15, originalSiegeTileCheck = original,
     siegeTileOccupancyOffset = offset, siegeNoSpotBranch = noSpotBranch,
     siegeFailedBranch = failedBranch, siegeFailureExit = exit,
@@ -126,7 +154,10 @@ function M.resolve(game)
     siegeBuildingOwner = buildingOwner, siegeBuildingAdmission = admission,
     siegeBuildingFailureExit = failureExit, siegeResourceCheck = resourceCheck,
     siegeGoldSub = goldSub, siegeGoldAddress = goldAddress,
-    siegeDirectSpawn = direct, siegeDirectExit = directExit}
+    siegeDirectSpawn = direct, siegeDirectExit = directExit,
+    siegeGroupMove = groupMove, siegeCatapultPathGate = catapultGate,
+    siegeCatapultPathExit = catapultExit, siegeFirePathGate = fireGate,
+    siegeFirePathExit = fireExit}
 end
 
 return M

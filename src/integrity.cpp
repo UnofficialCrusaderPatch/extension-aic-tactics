@@ -48,6 +48,10 @@ template<class Sink> void visitIntegrity(Sink& digest, int legacyInterval)
     digest.word(static_cast<unsigned int>(engineerRoleFallback));
     digest.word(static_cast<unsigned int>(siegePaymentFallback));
     digest.block(siegePaymentPolicy + 1, sizeof(int) * 16);
+    digest.word(static_cast<unsigned int>(siegeHarassFallback));
+    digest.word(static_cast<unsigned int>(siegeHarassMinimumFallback));
+    digest.block(siegeHarassPolicy + 1, sizeof(int) * 16);
+    digest.block(siegeHarassMinimum + 1, sizeof(int) * 16);
     digest.block(configurations + 1, sizeof(CharacterConfiguration) * 16);
     digest.block(reinterpret_cast<const void*>(nativeBindings.aicRecords), 676 * 16);
     digest.word(defenseCensusTick);
@@ -64,6 +68,7 @@ template<class Sink> void visitIntegrity(Sink& digest, int legacyInterval)
     digest.block(raidGroupCensus, sizeof(raidGroupCensus));
     digest.block(raidUnitPower, sizeof(raidUnitPower));
     digest.block(raidStaticDefenses, sizeof(raidStaticDefenses));
+    digest.block(siegeHarassPlans, sizeof(siegeHarassPlans));
     digest.word(raidBuildingCensusTick);
     digest.word(static_cast<unsigned int>(raidBuildingCensusValid));
 }
@@ -71,7 +76,8 @@ typedef char BoundaryCapacity[(sizeof(CharacterConfiguration) * 16 + 676 * 16
     + sizeof(defenseTypeCounts) + sizeof(combatCensus) + sizeof(targetStates)
     + sizeof(targetLifecycle) + sizeof(incidents) + sizeof(reserves)
     + sizeof(raidStates) + sizeof(raidGroupCensus) + sizeof(raidUnitPower)
-    + sizeof(raidStaticDefenses) + sizeof(int) * 16 + 128 <= sizeof(boundaryWords)) ? 1 : -1];
+    + sizeof(raidStaticDefenses) + sizeof(siegeHarassPlans)
+    + sizeof(int) * 48 + 128 <= sizeof(boundaryWords)) ? 1 : -1];
 }
 
 // Observational, allocation-free checkpoint of the explicitly serialized words.
