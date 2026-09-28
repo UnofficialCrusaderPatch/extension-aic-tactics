@@ -9,8 +9,9 @@ AI inherits the module's **Protect units at siege sites** switch
 The AIC value always takes precedence, including an explicit `false`.
 
 `ActualSiegeResourcePayment` is also an optional boolean. `true` checks the
-configured material and gold costs before native siege construction, including
-directly spawned defensive equipment. Missing goods enter the game's existing
+configured material and gold costs after the game's site check and before
+siege construction, including directly spawned defensive equipment. Missing
+goods enter the game's existing
 AI trade queue; construction retries at a later opportunity. The module keeps
 the native debit and skips the defensive path's extra gold subtraction when
 this policy is enabled. `false` retains native admission. Its module

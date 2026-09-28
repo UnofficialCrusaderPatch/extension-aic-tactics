@@ -54,13 +54,16 @@ def test_siege_payment_hooks_use_verified_owner_sites():
       local game=native.game
       game.siegeBuildingOwner=0x500000
       game.siegeGoldSub=0x500100
+      game.siegeBuildingAdmission=0x500080
+      game.siegeBuildingFailureExit=0x500090
+      game.buildings=0x110700
       game.siegeGoldAddress=0x110500
       game.siegeDirectSpawn=0x500200
       game.siegePlacementFail=0x110600
       game.siegeAnglePlacedBuilding=0x110604
       game.siegeDirectExit=0x500300
-      for i,byte in ipairs({0x83,0xEC,0x08,0x53,0x55}) do
-        memory[game.siegeBuildingOwner+i-1]=byte
+      for i,byte in ipairs({0x53,0xB9,0,0,0,0,0x89,0x96,0x30,0x49,0x55,0}) do
+        memory[game.siegeBuildingAdmission+i-1]=byte
       end
       memory[game.siegeGoldSub]=0x29
       memory[game.siegeGoldSub+1]=0x82

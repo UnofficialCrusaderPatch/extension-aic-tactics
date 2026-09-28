@@ -131,14 +131,14 @@ failed:
     if fallback then native.activateSafePlacement() end
   end
   function native.preflightSiegePayment()
-    local owner = game.siegeBuildingOwner
+    local owner = game.siegeBuildingAdmission
     if siegePaymentHook then
       assert(core.readByte(owner)==0xE9
           and owner+5+core.readInteger(owner+1)==siegePaymentHook,
         'AIC Tactics: native siege resource admission was replaced')
     else
-      require('native-context').verify(owner, 'native building placement entry',
-        '83 EC 08 53 55')
+      require('native-context').verify(owner, 'native building placement admission',
+        '53 B9 ? ? ? ? 89 96 30 49 55 00')
     end
     local gold = game.siegeGoldSub
     if siegeGoldHook then
@@ -165,31 +165,40 @@ failed:
     native.preflightSiegePayment()
     local admission = core.allocateAssembly([[
       pushfd
+      cmp dword [esi + bypassCheck], 0
+      jnz bypass
+      popfd
+      pushfd
       pushad
-      mov eax, dword [esp + 0x34]
-      mov edx, dword [esp + 0x28]
+      mov eax, dword [esp + 0x4c]
+      mov edx, dword [esp + 0x40]
       push eax
       push edx
       call checkResources
       add esp, 8
       test eax, eax
-      jnz allowed
+      jnz checkedAllowed
       popad
       popfd
       mov dword [placementFail], 1
       mov dword [placedBuilding], 0
-      ret 0x18
-allowed:
+      jmp failedExit
+checkedAllowed:
       popad
       popfd
-      sub esp, 8
+      jmp allowed
+bypass:
+      popfd
+allowed:
       push ebx
-      push ebp
+      mov ecx, buildings
       jmp resume
     ]], {checkResources=native.siegeResourceAdmission,
+      bypassCheck=0x554930, buildings=game.buildings,
       placementFail=game.siegePlacementFail,
       placedBuilding=game.siegeAnglePlacedBuilding,
-      resume=game.siegeBuildingOwner+5})
+      failedExit=game.siegeBuildingFailureExit,
+      resume=game.siegeBuildingAdmission+6})
     local gold = core.allocateAssembly([[
       pushfd
       pushad
@@ -233,8 +242,8 @@ defer:
     ]], {checkResources=native.siegeResourceAdmission,
       resume=game.siegeDirectSpawn+8,
       finished=game.siegeDirectExit})
-    core.writeCode(game.siegeBuildingOwner,
-      {0xE9,admission-game.siegeBuildingOwner-5})
+    core.writeCode(game.siegeBuildingAdmission,
+      {0xE9,admission-game.siegeBuildingAdmission-5,0x90})
     core.writeCode(game.siegeGoldSub,
       {0xE9,gold-game.siegeGoldSub-5,0x90})
     core.writeCode(game.siegeDirectSpawn,
