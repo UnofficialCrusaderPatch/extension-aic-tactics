@@ -73,9 +73,10 @@ struct NativeBindings {
     unsigned int gameState;
     unsigned int originalSiegeTileCheck;
     unsigned int siegeTileOccupancyOffset;
-
-
-
+    unsigned int siegeTileMap;
+    unsigned int siegeTentPointX;
+    unsigned int siegeTribeIndexOffset;
+    unsigned int siegePlacementFail;
 };
 extern NativeBindings nativeBindings;
 int nativeRandom(void*);

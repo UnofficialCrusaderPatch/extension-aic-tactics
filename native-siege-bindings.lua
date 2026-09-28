@@ -28,9 +28,60 @@ function M.resolve(game)
   assert(core.readInteger(timeout + 2) == game.players + 0x3918
       and core.readInteger(timeout + 15) == game.players + 0x3918,
     'AIC Tactics: unsupported native siege retry timer')
+
+  -- Resolve the attack-angle finder from its unique tent-point reservation
+  -- writer. The similar tunnel-entrance placer is not this owner.
+  local reservation = context.find('siege attack-angle reservation',
+    'C7 80 ? ? ? ? 00 00 00 00 C7 80 ? ? ? ? 00 00 00 00 6A 0F '..
+    '8B C7 C1 E0 05 89 88 ? ? ? ? 8B 88 ? ? ? ? 6A 03 52 8B 90 ? ? ? ?')
+  local placer = reservation - 0x64
+  context.verify(placer, 'siege attack-angle placer',
+    '53 8B 5C 24 08 56 8B F3 69 F6 ? ? ? ? 0F BF 86 ? ? ? ? '..
+    '69 C0 90 04 00 00 0F BF 88 ? ? ? ? 0F BF 90 ? ? ? ? '..
+    '57 53 51 52 68 C8 00 00 00 B9 ? ? ? ? E8 ? ? ? ?')
+  assert(core.readInteger(placer + 10) == game.tribeStride,
+    'AIC Tactics: incompatible siege tribe layout')
+  local finder = context.call(placer + 0x37, 'siege attack-angle finder')
+  local candidate = finder + 0x1a1
+  context.verify(candidate, 'siege attack-angle candidate',
+    '8B C8 C1 E1 05 83 B9 ? ? ? ? 00 75 ? 83 B9 ? ? ? ? 00 0F 84 ? ? ? ?')
+  local candidateBranch = candidate + 0x15
+  assert(core.readByte(candidateBranch) == 0x0F and core.readByte(candidateBranch+1) == 0x84,
+    'AIC Tactics: incompatible siege candidate branch')
+  local candidateAccept = candidateBranch+6+core.readInteger(candidateBranch+2)
+  context.verify(candidateAccept, 'siege candidate return', '5D 5F 5E 5B C2 10 00')
+  local pointX = core.readInteger(placer + 0x90)
+  assert(pointX > 0 and core.readInteger(placer + 0x87) == pointX + 4
+      and core.readInteger(reservation + 2) == pointX + 0x10
+      and core.readInteger(reservation + 12) == pointX + 0x14,
+    'AIC Tactics: incompatible siege tent-point layout')
+  context.verify(placer + 0xb3, 'siege tile-map owner',
+    'B9 ? ? ? ? 66 89 BE ? ? ? ? E8 ? ? ? ?')
+  local tileMap = core.readInteger(placer + 0xb4)
+  assert(tileMap > 0 and game.mapRows > 0,
+    'AIC Tactics: incompatible siege tile-map layout')
+  local indexOffset = core.readInteger(placer + 0x49) - game.tribes
+  assert(indexOffset > 0 and indexOffset < game.tribeStride
+      and core.readInteger(placer + 0x5a) == game.tribes + indexOffset + 2
+      and core.readInteger(placer + 0x4f) == game.tribes + 0x34,
+    'AIC Tactics: incompatible siege tribe reservation layout')
+  context.verify(placer + 0xbf, 'siege attack-angle placement call',
+    'E8 ? ? ? ? 8B 0D ? ? ? ? 0F BF 96')
+  context.verify(placer + 0xfe, 'siege attack-angle failure return',
+    '5F 5E 33 C0 5B C2 08 00')
+  local postPlace = placer + 0xc4
+  local placedBuilding = core.readInteger(postPlace + 2)
+  local placementFail = core.readInteger(failed + 2)
+  assert(placedBuilding > 0 and placementFail > 0,
+    'AIC Tactics: incompatible siege placement result layout')
   return {siegePlacementCall = callSite + 15, originalSiegeTileCheck = original,
     siegeTileOccupancyOffset = offset, siegeNoSpotBranch = noSpotBranch,
-    siegeFailedBranch = failedBranch, siegeFailureExit = exit}
+    siegeFailedBranch = failedBranch, siegeFailureExit = exit,
+    siegeAngleCandidateBranch = candidateBranch, siegeAngleCandidateContinue = candidateBranch + 6,
+    siegeAngleCandidateAccept = candidateAccept, siegeTileMap = tileMap,
+    siegeTentPointX = pointX, siegeTribeIndexOffset = indexOffset,
+    siegePlacementFail = placementFail, siegeAnglePostPlace = postPlace,
+    siegeAnglePlacedBuilding = placedBuilding, siegeAngleFailureReturn = placer + 0xfe}
 end
 
 return M

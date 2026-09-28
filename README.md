@@ -21,9 +21,12 @@ full combat, multiplayer and simulation-performance acceptance remain open.
 
 The dependent siege branch adds per-AI `SafeSiegePlacement` with a default-ON
 module fallback. It guards native footprint checks against overwriting friendly
-units, including siege engines, while leaving other placement decisions with the game. Binding and
-component checks pass across the six local SHC/Extreme executables; installed-game
-acceptance and alternative-site search are pending. The next dependent branch
+units, including siege engines. The current completion branch also rejects occupied
+attack-angle candidates inside the game's existing bounded search, so the game can
+try another site. A failed final placement restores the prior reservation and
+skips the construction order. Other placement decisions remain native. Binding
+and component checks pass across six local SHC/Extreme executables; installed-game
+acceptance remains pending. The next dependent branch
 adds per-AI `CorrectEngineerRoleCounting` with a default-ON module fallback.
 It lets the native AI recount include assigned engineers in troop-role quotas;
 siege crews, oil duty and unattached units remain separate. AOB and component

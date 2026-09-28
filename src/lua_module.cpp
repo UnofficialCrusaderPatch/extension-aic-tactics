@@ -40,6 +40,7 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "countRaidBuilding", "completeRaidBuildingCensus", "integrityDigest", "captureIntegrity",
         "observeIntegrityBoundary", "captureBoundaryIntegrity", "nativeBindings", "nativeBindingsSize",
         "safePlacementFallback", "checkedSiegeTile", "siegePlacementPolicyEnabled",
+        "siegeTentCandidateAllowed", "failedSiegeTent",
         "engineerRoleFallback", "countableEngineerRole"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
@@ -76,6 +77,8 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(&nativeBindings), sizeof(NativeBindings),
         reinterpret_cast<unsigned int>(&safePlacementFallback), reinterpret_cast<unsigned int>(&checkedSiegeTile),
         reinterpret_cast<unsigned int>(&siegePlacementPolicyEnabled),
+        reinterpret_cast<unsigned int>(&siegeTentCandidateAllowed),
+        reinterpret_cast<unsigned int>(&failedSiegeTent),
         reinterpret_cast<unsigned int>(&engineerRoleFallback),
         reinterpret_cast<unsigned int>(&countableEngineerRole)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
