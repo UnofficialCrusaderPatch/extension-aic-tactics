@@ -21,7 +21,9 @@ function M.new(native)
   local function anyPolicyActive()
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
+    if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
     for ai = 1, 16 do
+      if core.readInteger(native.siegePaymentPolicy + ai * 4) ~= 0 then return true end
       local address = native.configuration + ai * native.configurationSize
       for _, offset in ipairs({0,288,292,296,316,320,344,348}) do
         if core.readInteger(address + offset) ~= 0 then return true end
@@ -34,18 +36,20 @@ function M.new(native)
     multiplayerLocked = function() return multiplayerLocked end,
     prepare = function(ai, authored, envelope)
     assert(ai >= 1 and ai <= 16 and ai == math.floor(ai), 'Invalid AI character')
-    assert(envelope.schemaVersion == 6, 'Unsupported personality schema')
+    assert(envelope.schemaVersion == 7, 'Unsupported personality schema')
     local compiled, targeting = envelope.recruitment, envelope.targeting
     assert(compiled.schemaVersion == 3, 'Unsupported recruitment schema')
     assert(targeting.schemaVersion == 2, 'Unsupported targeting schema')
     local previous = readRecord(ai)
+    local previousPayment = core.readInteger(native.siegePaymentPolicy + ai * 4)
     local changesPolicy = compiled.mode ~= 0 or previous[1] ~= 0
       or targeting.policy ~= 0 or targeting.commitment ~= 0 or targeting.activation ~= 0
       or previous[73] ~= 0 or previous[74] ~= 0 or previous[75] ~= 0
       or envelope.preparation ~= 0 or previous[80] ~= 0
       or envelope.raids[1] ~= 0 or previous[81] ~= 0
-      or envelope.siege ~= 0 or previous[87] ~= 0
+      or envelope.siege[1] ~= 0 or previous[87] ~= 0
       or envelope.roles ~= 0 or previous[88] ~= 0
+      or envelope.siege[2] ~= 0 or previousPayment ~= 0
     if multiplayerLocked or changesPolicy or anyPolicyActive() then admission() end
     if compiled.mode == 1 then native.preflight() end
     if compiled.mode == 1 and compiled.defenseComposition == 1 then native.preflightComposition() end
@@ -59,7 +63,8 @@ function M.new(native)
     if needsCombat then native.preflightCombat() end
     if envelope.raids[1] ~= 0 then native.preflightRaids() end
     if targeting.policy ~= 0 or targeting.commitment ~= 0 then native.preflightTargets() end
-    if envelope.siege == 1 then native.preflightSafePlacement() end
+    if envelope.siege[1] == 1 then native.preflightSafePlacement() end
+    if envelope.siege[2] == 1 then native.preflightSiegePayment() end
     if envelope.roles == 1 then native.preflightEngineerRoles() end
     local words = {compiled.mode, #compiled.conditions}
     for index = 1, 8 do
@@ -82,7 +87,7 @@ function M.new(native)
     for _, value in ipairs(targeting.rules) do words[#words + 1] = value end
     words[#words + 1] = envelope.preparation
     for _, value in ipairs(envelope.raids) do words[#words + 1] = value end
-    words[#words + 1] = envelope.siege
+    words[#words + 1] = envelope.siege[1]
     words[#words + 1] = envelope.roles
     -- Native neighbours may be visited before or after the first opt-in, when
     -- provider admission starts covering every update. Keep their unused
@@ -97,11 +102,16 @@ function M.new(native)
       if compiled.mode == 1 and compiled.defenseComposition == 1 then native.activateComposition() end
       if needsCombat then native.activateCombat() end
       if envelope.raids[1] ~= 0 then native.activateRaids() end
-      if envelope.siege == 1 then native.activateSafePlacement() end
+      if envelope.siege[1] == 1 then native.activateSafePlacement() end
+      if envelope.siege[2] == 1 then native.activateSiegePayment() end
       if envelope.roles == 1 then native.activateEngineerRoles() end
       writeRecord(ai, words)
+      core.writeInteger(native.siegePaymentPolicy + ai * 4, envelope.siege[2])
     end,
-      rollback = function() writeRecord(ai, previous) end}
+      rollback = function()
+        writeRecord(ai, previous)
+        core.writeInteger(native.siegePaymentPolicy + ai * 4, previousPayment)
+      end}
   end}
 end
 return M

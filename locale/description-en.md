@@ -47,6 +47,7 @@ The five raid settings require a new `RaidTargetPolicy`. Existing `RaidUnitsBase
 ### Siege placement
 
 - `SafeSiegePlacement`: `true` protects the AI’s units at siege sites; `false` uses native placement. If absent, the module fallback applies (ON).
+- `ActualSiegeResourcePayment`: `true` requires materials and gold before building; shortages enter normal AI trade. `false` keeps native admission. If absent, the module fallback applies (OFF).
 
 ### Engineer quotas
 

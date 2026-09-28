@@ -49,6 +49,36 @@ def test_default_does_not_install_interval_override():
     runtime().execute('assert(#writes==0 and #allocations==0)')
 
 
+def test_siege_payment_hooks_use_verified_owner_sites():
+    runtime().execute('''
+      local game=native.game
+      game.siegeBuildingOwner=0x500000
+      game.siegeGoldSub=0x500100
+      game.siegeGoldAddress=0x110500
+      game.siegeDirectSpawn=0x500200
+      game.siegePlacementFail=0x110600
+      game.siegeAnglePlacedBuilding=0x110604
+      game.siegeDirectExit=0x500300
+      for i,byte in ipairs({0x83,0xEC,0x08,0x53,0x55}) do
+        memory[game.siegeBuildingOwner+i-1]=byte
+      end
+      memory[game.siegeGoldSub]=0x29
+      memory[game.siegeGoldSub+1]=0x82
+      memory[game.siegeGoldSub+2]=game.siegeGoldAddress
+      for i,byte in ipairs({0x8B,0x44,0x24,0x3C,0x8B,0x7C,0x24,0x44}) do
+        memory[game.siegeDirectSpawn+i-1]=byte
+      end
+      native.siegeResourceAdmission=0x3101000
+      native.siegePaymentEnabledForGoldOffset=0x3102000
+      native.preflightSiegePayment()
+      native.activateSiegePayment()
+      assert(#allocations==3 and #writes==3)
+      native.preflightSiegePayment()
+      native.activateSiegePayment()
+      assert(#allocations==3 and #writes==3)
+    ''')
+
+
 def test_interval_override_is_explicit_and_installed_once():
     runtime().execute('''
       native.enableLegacyInterval();native.enableLegacyInterval()

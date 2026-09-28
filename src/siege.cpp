@@ -4,9 +4,12 @@ namespace AicTactics {
 namespace SHC141 {
 
 int safePlacementFallback = 1;
+int siegePaymentFallback = 0;
+int siegePaymentPolicy[17];
 
 namespace {
 typedef int (__thiscall *TileCheck)(void*, int, int, int, int);
+typedef int (__thiscall *ResourceCheck)(void*, int, int, int);
 
 bool siegeConstruction(int command)
 {
@@ -15,6 +18,30 @@ bool siegeConstruction(int command)
 }
 
 } // namespace
+
+int __cdecl siegeResourceAdmission(int player, int command)
+{
+    if (player < 1 || player > 8 || !siegeConstruction(command)) return 1;
+    const unsigned int playerAddress = nativeBindings.players + player * 0x39F4;
+    const int character = *reinterpret_cast<const int*>(playerAddress + 0x2300);
+    if (character < 2 || character > 17) return 1;
+    const int choice = siegePaymentPolicy[character - 1];
+    if (choice == 2 || (choice == 0 && !siegePaymentFallback)) return 1;
+    return reinterpret_cast<ResourceCheck>(nativeBindings.siegeResourceCheck)(
+        reinterpret_cast<void*>(nativeBindings.gameState), command, player, 0) != 0;
+}
+
+int __cdecl siegePaymentEnabledForGoldOffset(int playerStrideOffset)
+{
+    if (playerStrideOffset < 0 || playerStrideOffset % 0x39F4 != 0) return 0;
+    const int player = playerStrideOffset / 0x39F4;
+    if (player < 1 || player > 8) return 0;
+    const unsigned int playerAddress = nativeBindings.players + playerStrideOffset;
+    const int character = *reinterpret_cast<const int*>(playerAddress + 0x2300);
+    if (character < 2 || character > 17) return 0;
+    const int choice = siegePaymentPolicy[character - 1];
+    return choice == 1 || (choice == 0 && siegePaymentFallback != 0);
+}
 
 int __cdecl siegePlacementPolicyEnabled(int player)
 {

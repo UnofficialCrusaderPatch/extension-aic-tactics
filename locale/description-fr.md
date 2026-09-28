@@ -46,6 +46,7 @@ Ces cinq options nécessitent une nouvelle `RaidTargetPolicy`. `RaidUnitsBase`, 
 ### Engins de siège
 
 - `SafeSiegePlacement`: `true` protège ses unités sur les sites de siège ; `false` conserve le placement d’origine. Si absent, le réglage du module s’applique (activé).
+- `ActualSiegeResourcePayment` : `true` exige matériaux et or avant la construction ; les manques passent par le commerce normal de l’IA. `false` conserve l’admission d’origine. Si absent, le réglage du module s’applique (désactivé).
 
 ### Quotas d’ingénieurs
 

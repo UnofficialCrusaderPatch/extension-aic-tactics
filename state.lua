@@ -1,6 +1,6 @@
 local M = {}
 local path = 'recruitment-state.bin'
-local header = 'AICTACT\009'
+local header = 'AICTACT\010'
 local configurationBytes, aicBytes, censusWords = 16 * 352, 16 * 676, 9 * 80
 
 local function word(value)
@@ -37,7 +37,9 @@ function M.new(native, legacyInterval, fingerprint)
   local function active()
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
+    if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
     for ai = 1, 16 do
+      if core.readInteger(native.siegePaymentPolicy + ai * 4) ~= 0 then return true end
       local address = native.configuration + ai * 352
       if core.readInteger(address) ~= 0 or core.readInteger(address + 288) ~= 0
           or core.readInteger(address + 292) ~= 0 or core.readInteger(address + 296) ~= 0
@@ -52,6 +54,8 @@ function M.new(native, legacyInterval, fingerprint)
       .. word(core.readInteger(native.legacyTargetPolicy))
       .. word(core.readInteger(native.safePlacementFallback))
       .. word(core.readInteger(native.engineerRoleFallback))
+      .. word(core.readInteger(native.siegePaymentFallback))
+      .. core.readString(native.siegePaymentPolicy + 4, 16 * 4)
       .. core.readString(native.configuration + 352, configurationBytes)
       .. core.readString(native.game.aicRecords, aicBytes)
   end

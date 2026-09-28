@@ -20,6 +20,15 @@ options:
     type: boolean
     value: true
 - category: [AIC Tactics]
+  name: actualSiegeResourcePayment
+  header: '{{actualSiegeResourcePayment}}'
+  text: '{{actualSiegeResourcePayment_descr}}'
+  display: UCP2Switch
+  url: aic-tactics.actualSiegeResourcePayment
+  contents:
+    type: boolean
+    value: false
+- category: [AIC Tactics]
   name: nativeTargetPolicy
   header: '{{nativeTargetPolicy}}'
   text: '{{nativeTargetPolicy_descr}}'

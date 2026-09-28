@@ -74,6 +74,32 @@ function M.resolve(game)
   local placementFail = core.readInteger(failed + 2)
   assert(placedBuilding > 0 and placementFail > 0,
     'AIC Tactics: incompatible siege placement result layout')
+  local buildingOwner = context.call(placer + 0xbf, 'native building placement owner')
+  context.verify(buildingOwner, 'native building placement entry',
+    '83 EC 08 53 55 8B 6C 24 18 56 8B F1 8B 4C 24 24')
+  local resourceCheck = context.find('native construction resource admission',
+    '83 EC 18 8B 44 24 1C 53 55 56 57 89 4C 24 20 BE 01 00 00 00 '..
+    '50 B9 ? ? ? ? 89 74 24 14 C7 44 24 18 00 00 00 00 E8 ? ? ? ?')
+  local gold = context.find('defensive siege extra-gold debit',
+    '8B 54 24 10 8B 44 24 30 29 82 ? ? ? ? 8B 0D ? ? ? ? 8D 04 B3')
+  local goldSub = gold + 8
+  local goldAddress = core.readInteger(goldSub + 2)
+  assert(goldAddress == game.players + 0x50c and game.gameState > 0
+      and context.call(goldSub - 0x15, 'defensive siege native placement') == buildingOwner,
+    'AIC Tactics: incompatible native siege resource layout')
+  local direct = context.find('defensive siege direct-spawn admission',
+    '8B 44 24 3C 8B 7C 24 44 50 8B 44 24 30 69 C0 2C 03 00 00 '..
+    '0F BF 80 ? ? ? ? 50 8D 0C CD 04 00 00 00')
+  context.verify(direct + 0x64, 'defensive siege construction metadata',
+    '8B CE C1 E1 04 8B 91 ? ? ? ?')
+  local metaBuildingType = core.readInteger(direct + 0x6b)
+  assert(core.readInteger(metaBuildingType) == 86
+      and core.readInteger(metaBuildingType + 16) == 87
+      and core.readByte(direct + 0x7c) == 0xE9,
+    'AIC Tactics: incompatible defensive siege resource flow')
+  local directExit = direct + 0x81 + core.readInteger(direct + 0x7d)
+  assert(directExit == goldSub + 0x37,
+    'AIC Tactics: incompatible defensive siege retry exit')
   return {siegePlacementCall = callSite + 15, originalSiegeTileCheck = original,
     siegeTileOccupancyOffset = offset, siegeNoSpotBranch = noSpotBranch,
     siegeFailedBranch = failedBranch, siegeFailureExit = exit,
@@ -81,7 +107,10 @@ function M.resolve(game)
     siegeAngleCandidateAccept = candidateAccept, siegeTileMap = tileMap,
     siegeTentPointX = pointX, siegeTribeIndexOffset = indexOffset,
     siegePlacementFail = placementFail, siegeAnglePostPlace = postPlace,
-    siegeAnglePlacedBuilding = placedBuilding, siegeAngleFailureReturn = placer + 0xfe}
+    siegeAnglePlacedBuilding = placedBuilding, siegeAngleFailureReturn = placer + 0xfe,
+    siegeBuildingOwner = buildingOwner, siegeResourceCheck = resourceCheck,
+    siegeGoldSub = goldSub, siegeGoldAddress = goldAddress,
+    siegeDirectSpawn = direct, siegeDirectExit = directExit}
 end
 
 return M

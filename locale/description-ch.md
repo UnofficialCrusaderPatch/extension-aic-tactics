@@ -46,6 +46,7 @@
 ### 攻城器械
 
 - `SafeSiegePlacement`: `true` 保护攻城建造地点的己方单位；`false` 使用原版放置规则。省略时采用模块开关（默认开启）。
+- `ActualSiegeResourcePayment`：`true` 要求建造前备足材料和金币；缺少的材料交由 AI 常规贸易购买。`false` 保留原版检查。省略时采用模块开关（默认关闭）。
 
 ### 工程兵配额
 

@@ -46,6 +46,7 @@ Estas cinco opciones requieren una nueva `RaidTargetPolicy`. Se mantienen `RaidU
 ### Máquinas de asedio
 
 - `SafeSiegePlacement`: `true` protege unidades propias en obras de asedio; `false` usa la colocación original. Sin valor, se aplica el ajuste del módulo (activado).
+- `ActualSiegeResourcePayment`: `true` exige materiales y oro antes de construir; los faltantes pasan al comercio habitual de la IA. `false` conserva la comprobación original. Si se omite, rige el ajuste del módulo (desactivado).
 
 ### Cupos de ingenieros
 
