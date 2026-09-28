@@ -69,13 +69,13 @@ through the live locale registry.
 
 ## Native values remain the baseline
 
-The native AIC record is character configuration shared by every player using
-that character. Native current strength, spending flags, raid parameters and
-pressure trackers are live player state. Never rewrite the shared native AIC
-record on a state transition, store Very Strong/Overpowered in its three-value
-strength enum, or change a field merely to make an overlay easier to read.
-Two Wolves in different game states must be able to use different effective
-values while retaining the same authored AIC baseline.
+Each installed AIC slot has one character configuration. Two different
+installed slots can have different tactics; two players using the same slot
+share that configuration, and separate profiles for them are not a supported
+goal. Native current strength, spending flags, raid parameters and pressure
+trackers are live game state. Never rewrite the slot's native AIC record on a
+state transition, store Very Strong/Overpowered in its three-value strength
+enum, or change a field merely to make an overlay easier to read.
 
 Resolve one property at its native owner's decision boundary, in this order:
 
@@ -94,8 +94,9 @@ row for that property. The Toolkit must show this provenance clearly and
 allow a state-specific override when the author wants a different Weak or
 Strong value. An absent policy follows the original call/RNG path exactly.
 
-The overlay is per player, but its authored configuration is per character.
-Evaluate state on the original AI decision schedule, after the native state
+The authored policy is keyed by installed AIC slot. At a native decision,
+look up that slot's policy and use the decision's current game state. Evaluate
+state on the original AI decision schedule, after the native state
 has been updated. By default a native emergency Weak result takes precedence;
 an explicit pressure policy is the only route to changing that trigger.
 At wave or raid creation, snapshot values that must remain fixed until that
@@ -122,8 +123,9 @@ pressure responses and RNG path unchanged. One optional policy contains
 ordered **state rules** and sparse **state effects**. Pressure responses use
 a separate optional policy because fear and supply shortage are not strength
 levels. Both use the existing AIC Loader atomic provider. The installed AIC
-Tactics module must still be enabled. Different players
-using the same character evaluate their own live game facts.
+Tactics module must still be enabled. Multiplayer peers must install matching
+AICs and module configuration; this design does not promise independent
+configurations for duplicate uses of one AIC slot.
 
 The UI should say **Normal**; the serialized base state may retain the AIC's
 established `Default` name. `Weak`, `Normal` and `Strong` keep their native
@@ -241,3 +243,39 @@ game state. Initialize fresh snapshots for a saved game started as a new map.
 Benchmark 200-tick census cost and AI decision cost against native/missing-
 policy baselines on normal Crusader and Extreme, then compare replay hashes.
 These are acceptance requirements, not completed measurements.
+
+## Implementation sequence
+
+1. **Slot-scoped authoring contract:** register `AICTactics` as one owned AIC
+   value, validate its nested category schema, and normalize existing flat
+   extension fields through the same `config.personality` provider. Preserve
+   old files. Treat a submitted nested object as a complete replacement;
+   reject contradictory flat/nested assignments with both paths in the error.
+   Keep native AIC fields in their original record and preserve `false`/`0`.
+2. **Native-derived state selection:** add bounded rule compilation and a
+   five-state *effective* policy for an installed slot, evaluated on the
+   original monthly/Extreme-weekly AI schedule. Keep the native three-value
+   enum and original emergency behaviour. Do not publish wealth or hostile-
+   radius predicates before their owner and cost are verified.
+3. **Decision-owner integration:** make state effects available at each proven
+   recruitment, attack, raid and trade decision. Keep an unconfigured slot's
+   original path and RNG. Attack mix owns the existing native role selector;
+   ratios include engineers but respect native quotas. Audit every consumer
+   before exposing a replacement for a native field. Coordinate wave growth
+   with Legacy's installed option, leaving Legacy source unchanged.
+4. **Pressure and siege:** add warning/severe-pressure conditions at their
+   separate native owners, using the existing friendly count and hostile
+   census. Integrate only verified state-dependent siege limits with the
+   independent per-AIC siege controls; do not create another planner.
+5. **Editor and delivery:** generate the schema and concise nine-language
+   labels/help from one field catalog, implement a sparse nested editor in
+   AI Toolkit, and migrate flat extension fields on edit. Verify per-slot
+   opposing configurations, native fallback, zero/OFF, load/replay and
+   normal/Extreme binding and performance. Multiplayer peers use matching
+   AIC/module packages; duplicate instances of one slot get no special
+   compatibility promise. Live gameplay acceptance waits for the user's
+   tester setup, as requested.
+
+Each stage must be delivered as a focused dependent change with its relevant
+schema/runtime/UI migration together. Do not advertise a nested key or a
+state effect before its consumer and save/replay path are implemented.
