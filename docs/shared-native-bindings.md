@@ -1,9 +1,9 @@
 # Shared recruitment and identity bindings
 
 Corrections after the [native audit](native-integration-audit.md). The AIC production
-function, hook and pool bindings now use native discovery. The current signed
-bundle passes stock-framework startup on Crusader and Extreme; full gameplay
-acceptance remains unfinished. The final section records current native evidence;
+function, hook and pool bindings now use native discovery. The previous signed
+preview passed stock-framework startup on Crusader and Extreme; this branch's
+new recovery hook and full gameplay acceptance remain untested in game. The final section records current native evidence;
 earlier version-specific results are retained as implementation history.
 
 `config/grace.lua` resolves the original recruitment/RNG context through
@@ -23,7 +23,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 280-byte
+`native-bindings.lua` passes the resolved values into the DLL's 288-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -145,6 +145,13 @@ remaining long hex values are integer limits, digest constants and a building
 cost-table field offset. Hash-pinned executable addresses remain in private tests.
 Framework `core.AOBScan` uses its existing cache. The extension supplies no private
 range or scanner; current installed-process evidence is recorded below.
+
+The siege adapter also identifies the assault batch from its scheduler and checks
+the exact native construction call, its target and the batch's engineer-pop owner.
+When safe placement or resource admission is enabled for an AI, a failed native
+construction returns that attempt's selected engineers to the original attack
+engineer tribe through native pop/add membership calls. A successful placement
+is untouched. The call-site preflight rejects another owner's replacement.
 
 Validation performed:
 

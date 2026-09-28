@@ -98,6 +98,8 @@ int __fastcall checkedSiegeTile(void* tileMap, void*, int tile, int player, int 
 int __cdecl siegePlacementPolicyEnabled(int player);
 int __cdecl siegeTentCandidateAllowed(int tribe, int point);
 int __cdecl failedSiegeTent(int tribe, int point);
+int __fastcall placeSiegeTentAndRecoverEngineers(void* troopValue, void*, int tribe,
+    int command, unsigned int distance, int instruction);
 int __cdecl siegeResourceAdmission(int player, int command);
 int __cdecl siegePaymentEnabledForGoldOffset(int playerStrideOffset);
 extern unsigned int integrityDigest[2];

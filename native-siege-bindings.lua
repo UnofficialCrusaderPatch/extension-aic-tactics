@@ -123,6 +123,24 @@ function M.resolve(game)
     '89 4C 24 08 89 44 24 18')
   assert(context.call(siegeCommand + 0x22a, 'siege tribe movement') == groupMove,
     'AIC Tactics: incompatible native siege group movement owner')
+  local assaultCall = context.find('native assault siege batch scheduler',
+    'E8 ? ? ? ? 6A 01 56 8B CB E8 ? ? ? ? 56 8B CB E8 ? ? ? ? 56 8B CB E8 ? ? ? ?')
+  local assault = context.call(assaultCall, 'native assault siege batch')
+  context.verify(assault, 'native assault siege batch',
+    '83 EC 18 8B D1 8B 4C 24 1C 69 C9 F4 39 00 00 8B 81 ? ? ? ?')
+  assert(core.readInteger(assault + 17) == game.players + 0x2300,
+    'AIC Tactics: incompatible native assault siege player layout')
+  local assaultPlacementCall = assault + 0x18b
+  context.verify(assaultPlacementCall, 'native assault siege construction call',
+    'E8 ? ? ? ? 83 C6 01 83 C7 04 83 FE 08 0F 8C ? ? ? ?')
+  local placeTent = context.call(assaultPlacementCall, 'native assault siege construction')
+  context.verify(placeTent, 'native assault siege construction',
+    '53 8B 5C 24 08 55 56 57 8B 6C 24 1C 8B FB 69 FF ? ? ? ?')
+  assert(core.readInteger(placeTent + 16) == game.tribeStride,
+    'AIC Tactics: incompatible native assault siege construction layout')
+  local popUnit = context.call(assault + 0xe2, 'native engineer tribe pop')
+  context.verify(popUnit, 'native engineer tribe pop',
+    '53 8B 5C 24 08 56 57 6A 00 53 8B F9 E8 ? ? ? ? 8B F0 85 F6')
   local catapultUpdate = context.find('native catapult update',
     '83 EC 74 53 8B 1D ? ? ? ? 55 56 8B F3 69 F6 90 04 00 00 '..
     '0F BF 86 ? ? ? ? 57 8B F8 69 FF F4 39 00 00')
@@ -155,7 +173,9 @@ function M.resolve(game)
     siegeBuildingFailureExit = failureExit, siegeResourceCheck = resourceCheck,
     siegeGoldSub = goldSub, siegeGoldAddress = goldAddress,
     siegeDirectSpawn = direct, siegeDirectExit = directExit,
-    siegeGroupMove = groupMove, siegeCatapultPathGate = catapultGate,
+    siegeGroupMove = groupMove, siegePlaceTent = placeTent,
+    popUnitFromTribe = popUnit, siegeAssaultPlacementCall = assaultPlacementCall,
+    siegeCatapultPathGate = catapultGate,
     siegeCatapultPathExit = catapultExit, siegeFirePathGate = fireGate,
     siegeFirePathExit = fireExit}
 end

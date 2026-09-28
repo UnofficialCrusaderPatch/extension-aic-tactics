@@ -62,6 +62,10 @@ def test_siege_payment_hooks_use_verified_owner_sites():
       game.siegePlacementFail=0x110600
       game.siegeAnglePlacedBuilding=0x110604
       game.siegeDirectExit=0x500300
+      game.siegeAssaultPlacementCall=0x500400
+      game.siegePlaceTent=0x500500
+      memory[game.siegeAssaultPlacementCall]=0xE8
+      memory[game.siegeAssaultPlacementCall+1]=game.siegePlaceTent-game.siegeAssaultPlacementCall-5
       for i,byte in ipairs({0x53,0xB9,0,0,0,0,0x89,0x96,0x30,0x49,0x55,0}) do
         memory[game.siegeBuildingAdmission+i-1]=byte
       end
@@ -73,12 +77,16 @@ def test_siege_payment_hooks_use_verified_owner_sites():
       end
       native.siegeResourceAdmission=0x3101000
       native.siegePaymentEnabledForGoldOffset=0x3102000
+      native.placeSiegeTentAndRecoverEngineers=0x3103000
       native.preflightSiegePayment()
       native.activateSiegePayment()
-      assert(#allocations==3 and #writes==3)
+      assert(#allocations==3 and #writes==4)
       native.preflightSiegePayment()
       native.activateSiegePayment()
-      assert(#allocations==3 and #writes==3)
+      assert(#allocations==3 and #writes==4)
+      memory[game.siegeAssaultPlacementCall+1]=0x500600-game.siegeAssaultPlacementCall-5
+      assert(not pcall(native.preflightSiegePayment))
+      assert(#writes==4)
     ''')
 
 

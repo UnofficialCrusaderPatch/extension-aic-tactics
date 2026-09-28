@@ -10,6 +10,9 @@ int siegePaymentPolicy[17];
 namespace {
 typedef int (__thiscall *TileCheck)(void*, int, int, int, int);
 typedef int (__thiscall *ResourceCheck)(void*, int, int, int);
+typedef int (__thiscall *PlaceTent)(void*, int, int, unsigned int, int);
+typedef int (__thiscall *PopUnit)(void*, int);
+typedef int (__thiscall *AddUnit)(void*, unsigned int, int);
 
 bool siegeConstruction(int command)
 {
@@ -41,6 +44,49 @@ int __cdecl siegePaymentEnabledForGoldOffset(int playerStrideOffset)
     if (character < 2 || character > 17) return 0;
     const int choice = siegePaymentPolicy[character - 1];
     return choice == 1 || (choice == 0 && siegePaymentFallback != 0);
+}
+
+// The native assault constructor creates a new engineer tribe before finding
+// a site. Its caller ignores a failed placement, leaving those engineers in
+// a tribe with no order. Return them to the attack engineer tribe through the
+// native membership owner; the next attack can use them normally.
+int __fastcall placeSiegeTentAndRecoverEngineers(void* troopValue, void*, int tribe,
+    int command, unsigned int distance, int instruction)
+{
+    const int result = reinterpret_cast<PlaceTent>(nativeBindings.siegePlaceTent)(
+        troopValue, tribe, command, distance, instruction);
+    if (result || tribe <= 0 || tribe >= 1250) return result;
+    const unsigned int group = nativeBindings.tribes + tribe * nativeBindings.tribeStride;
+    const int player = *reinterpret_cast<const int*>(group + 0x2C);
+    if (player < 1 || player > 8) return result;
+    const int offset = player * 0x39F4;
+    if (!siegePlacementPolicyEnabled(player)
+        && !siegePaymentEnabledForGoldOffset(offset)) return result;
+    const unsigned int owner = nativeBindings.players + offset;
+    const int source = *reinterpret_cast<const short*>(owner + 0x3130);
+    const unsigned int sourceUID = *reinterpret_cast<const unsigned int*>(owner + 0x32E4);
+    if (source <= 0 || source >= 1250 || source == tribe) return result;
+    const unsigned int sourceGroup = nativeBindings.tribes + source * nativeBindings.tribeStride;
+    if (*reinterpret_cast<const unsigned int*>(sourceGroup + 0x34) != sourceUID
+        || *reinterpret_cast<const int*>(sourceGroup + 0x2C) != player) return result;
+    const int size = *reinterpret_cast<const short*>(group + 0x5C);
+    if (size <= 0 || size > 16) return result;
+    for (int index = 0; index < size; ++index) {
+        const int unit = reinterpret_cast<PopUnit>(nativeBindings.popUnitFromTribe)(
+            reinterpret_cast<void*>(nativeBindings.tribes), tribe);
+        if (unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity)) break;
+        const unsigned int record = nativeBindings.unitRecords + unit * 0x490;
+        if (*reinterpret_cast<const short*>(record + 0x8E) != 30
+            || *reinterpret_cast<const short*>(record + 0x96) != player
+            || *reinterpret_cast<const short*>(record + 0x42A) != 10) {
+            reinterpret_cast<AddUnit>(nativeBindings.addUnitToTribe)(
+                reinterpret_cast<void*>(nativeBindings.tribes), unit, tribe);
+            break;
+        }
+        reinterpret_cast<AddUnit>(nativeBindings.addUnitToTribe)(
+            reinterpret_cast<void*>(nativeBindings.tribes), unit, source);
+    }
+    return result;
 }
 
 int __cdecl siegePlacementPolicyEnabled(int player)
