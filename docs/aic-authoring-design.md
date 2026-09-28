@@ -1,5 +1,72 @@
 # AIC Tactics authoring model (proposal; no new keys supported yet)
 
+## Proposed JSON shape
+
+Use one additional field, `AICTactics`, inside each AI's existing
+`Personality`. It contains category objects: `Recruitment`, `Attacks`,
+`Targeting`, `Raids`, `Siege`, `States` and `Pressure`. These categories are
+for AIC authoring, separate from the module-wide controls in UCP
+Customizations. Ordinary native AIC fields remain at `Personality` level.
+The new names in this example are illustrative, **not supported keys**:
+This is the Loader's `AICharacters` file shape; the Toolkit's character
+document would put the same `AICTactics` object under its `aic` object.
+
+```json
+{
+  "AICharacters": [{
+    "Name": "Wolf",
+    "Personality": {
+      "RecruitGoldThreshold": 200,
+      "AICTactics": {
+        "Attacks": {"Preparation": "DuringAttack"},
+        "Siege": {"SafePlacement": true, "Harassment": false},
+        "States": {
+          "Rules": [{
+            "State": "VeryStrong",
+            "All": [{"GoldAtLeast": 10000}, {"KeepEnclosed": true}]
+          }],
+          "Effects": {
+            "Normal": {"Recruitment": {
+              "Weights": {"Defense": 15, "Raid": 15, "Attack": 70, "Sortie": 0}
+            }},
+            "VeryStrong": {"Attacks": {
+              "ForceBase": 140,
+              "MixPercent": {"Engineers": 10, "Laddermen": 5}
+            }}
+          }
+        }
+      }
+    }
+  }]
+}
+```
+
+The first version should register `AICTactics` through AIC Loader's existing
+exclusive additional-field and atomic-provider APIs. Its nested record is
+validated by the AIC Tactics provider and compiled once into the existing
+runtime owner. JSON nesting changes authoring, not the native 676-byte AIC
+array. The current 352-byte AIC Tactics runtime record has no room for these
+new policies; extend its actual backend/state owner with a versioned migration
+before publishing this format. The Loader already reads JSON AIC files via its
+YAML parser (`resources/vanilla.json` is an installed example).
+
+Treat each submitted `AICTactics` object as an atomic replacement. Omission
+inside that object means inherit; `false` and `0` are explicit values. An
+empty object removes all nested overrides. Existing flat AIC Tactics fields
+remain accepted for old personalities. If old and nested representations
+assign the same behavior in one effective personality, reject a conflicting
+pair with a path-specific error rather than silently choosing one. The
+Toolkit should write the nested representation for new work and migrate old
+flat fields on edit, preserving values and defaults. Do not move native AIC
+fields or require authors to repeat inherited state rows.
+
+The current Toolkit editor recursively flattens objects and arrays into
+primitive controls and its template supplies many defaults. It needs a
+dedicated `AICTactics` editor for optional categories, ordered rule rows and
+per-state overrides; pre-populating five states would erase inheritance.
+Localize category headings, field help, validation and inherited-value labels
+through the live locale registry.
+
 ## One sparse policy per AI character
 
 An absent policy leaves the native three-state calculation, AIC values,
