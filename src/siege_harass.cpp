@@ -63,6 +63,15 @@ int clamp(int value, int lo, int hi)
 {
     return value < lo ? lo : value > hi ? hi : value;
 }
+int approachRadius(int type)
+{
+    // Native target acquisition bounds its BFS in map tiles. Leave a quarter
+    // of the range for buildings away from the target keep and terrain costs.
+    const int range = type == 77
+        ? at<int>(nativeBindings.siegeFireRange)
+        : at<unsigned char>(nativeBindings.siegeCatapultRange);
+    return range >= 16 && range <= 240 ? clamp(range * 3 / 4, 6, 70) : 0;
+}
 typedef int (__thiscall *Path)(void*, int, int);
 typedef int (__thiscall *Move)(void*, int, unsigned int, unsigned int, int, int, int);
 }
@@ -152,7 +161,7 @@ void __cdecl updateSiegeHarassment(void* aic, int player)
         return;
     }
     if (plan.phase == 1 && census.count == plan.issuedCount) {
-        int distant = 0;
+        int distant = 0, aiming = 0;
         for (int index = 0; index < census.count; ++index) {
             const SiegeHarassEngine& engine = census.engines[index];
             const unsigned int unit = nativeBindings.unitRecords + engine.unit * 0x490;
@@ -161,8 +170,9 @@ void __cdecl updateSiegeHarassment(void* aic, int player)
             if (dx < 0) dx = -dx;
             if (dy < 0) dy = -dy;
             if ((dx > dy ? dx : dy) > 8) ++distant;
+            if (at<int>(unit + 0x3BC) > 0 || at<short>(unit + 0x39C) == 9) ++aiming;
         }
-        if (distant == 0) {
+        if (distant == 0 && aiming == census.count) {
             plan.nextDecisionTick = now + 400;
             return;
         }
@@ -175,9 +185,15 @@ void __cdecl updateSiegeHarassment(void* aic, int player)
         plan.nextDecisionTick = now + 400;
         return;
     }
-    int radius = 8;
-    for (int index = 0; index < census.count; ++index)
-        if (census.engines[index].type == 77) radius = 5;
+    int radius = 70;
+    for (int index = 0; index < census.count; ++index) {
+        const int engineRadius = approachRadius(census.engines[index].type);
+        if (engineRadius < radius) radius = engineRadius;
+    }
+    if (!radius) {
+        plan.nextDecisionTick = now + 400;
+        return;
+    }
     const int sideX = ownX < targetX ? -1 : 1;
     const int sideY = ownY < targetY ? -1 : 1;
     const int directionX[8] = {sideX, sideX, 0, -sideX, -sideX, -sideX, 0, sideX};
@@ -192,13 +208,13 @@ void __cdecl updateSiegeHarassment(void* aic, int player)
         if (!validEngine(player, engine)) continue;
         const unsigned int unit = nativeBindings.unitRecords + engine.unit * 0x490;
         if (at<short>(unit + 0x432) != target) continue;
-        // Native siege groups contain one engine. Give them separate sites in
-        // shallow rows; even the outer column remains within the shorter
-        // fire-ballista acquisition range when mixed equipment is present.
+        // Native siege groups contain one engine. Keep the group together,
+        // while longer-range engines stand a few tiles farther back.
         const int row = index / 5;
         const int width = census.count < 5 ? census.count : 5;
         const int column = index % 5 - (width - 1) / 2;
-        const int step = clamp(direction - row, 2, 9);
+        const int extra = clamp((approachRadius(engine.type) - radius) / 3, 0, 8);
+        const int step = clamp(direction + extra - row, 2, 70);
         const int x = targetX + directionX[choice] * step - directionY[choice] * column;
         const int y = targetY + directionY[choice] * step + directionX[choice] * column;
         if (x <= 0 || x >= 399 || y <= 0 || y >= 399) continue;
@@ -210,8 +226,10 @@ void __cdecl updateSiegeHarassment(void* aic, int player)
             reachable[count++] = index;
         }
     }
-    // A blocked member must not hold the entire force after the rally timeout.
-    const int required = now - plan.firstSeenTick < 800 ? desired : 1;
+    // After the timeout, move a reachable subset, but do not turn a requested
+    // group into a serial single-engine assault. Explicit minimum 0/1 allows one.
+    const int required = now - plan.firstSeenTick < 800 ? desired
+        : desired > 1 ? 2 : 1;
     if (count < required) {
         plan.nextDecisionTick = now + 100;
         return;

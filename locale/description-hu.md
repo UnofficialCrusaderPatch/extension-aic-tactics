@@ -47,7 +47,7 @@ Az öt portyabeállításhoz új `RaidTargetPolicy` szükséges. A `RaidUnitsBas
 
 - `SafeSiegePlacement`: `true` védi a saját egységeket az ostromépítés helyén; `false` az eredeti elhelyezést használja. Hiányzó értéknél a modul kapcsolója érvényes (be).
 - `ActualSiegeResourcePayment`: `true` építés előtt anyagot és aranyat követel; a hiányt a szokásos MI-kereskedés kezeli. `false` megtartja az eredeti ellenőrzést. Hiányzó értéknél a modul kapcsolója érvényes (ki).
-- `CoordinatedSiegeHarassment`: `true` összegyűjti az ostromgépeket, majd elérhető tüzelőállásokba küldi őket. A `SiegeHarassMinEngines` (0–20, alapérték 3) a várt gépek száma; egy játékbeli hónap után a meglévők indulnak. Hiányzó mezőknél a modulértékek érvényesek (ki, 3). A `HarassingSiegeEnginesMax` továbbra is korlátoz.
+- `CoordinatedSiegeHarassment`: `true` összegyűjti az ostromgépeket, majd elérhető tüzelőállásokba küldi őket. A `SiegeHarassMinEngines` (0–20, alapérték 3) a várt gépek száma; egy játékbeli hónap után két elérhető gép is elindulhat. A 0 vagy 1 egyetlen gépet is enged. Hiányzó mezőknél a modulértékek érvényesek (ki, 3). A `HarassingSiegeEnginesMax` továbbra is korlátoz.
 - `LargerSiegeForces`: `true` a fő támadásnál ismétli a beállított ostromgép-összetételt a `SiegeForceMax` határáig (0–20, alapérték 10). A **0** megtartja az eredeti egyszeri építést. Hiányzó mezőknél a modulértékek érvényesek (ki, 10); az `AttMaxEngineers` továbbra is korlátozza a mérnököket.
 
 ### Mérnöki keretek

@@ -50,7 +50,7 @@ An AIC value takes precedence; an omitted field uses its module value (default i
 
 - `SafeSiegePlacement` (**ON**): Avoid occupied sites and protect friendly units. `false` uses native placement.
 - `ActualSiegeResourcePayment` (**OFF**): Require materials and gold before building; shortages enter normal AI trade.
-- `CoordinatedSiegeHarassment` (**OFF**): Gather engines and move them together to reachable firing positions. `SiegeHarassMinEngines` (0–20, default 3) sets the wait count; reachable engines leave after one game month. `HarassingSiegeEnginesMax` remains the total limit.
+- `CoordinatedSiegeHarassment` (**OFF**): Gather engines and move them together to reachable firing positions. `SiegeHarassMinEngines` (0–20, default 3) sets the wait count; after one game month a reachable pair may leave. Set 0 or 1 to allow one engine. `HarassingSiegeEnginesMax` remains the total limit.
 - `LargerSiegeForces` (**OFF**): Repeat the authored assault mix up to `SiegeForceMax` (0–20, default 10). **0** keeps one native batch; `AttMaxEngineers` limits crews.
 
 ### Engineer quotas

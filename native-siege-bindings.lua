@@ -163,6 +163,18 @@ function M.resolve(game)
     '66 83 F9 28 74 ? 66 83 F9 3A 74 ?')
   assert(core.readInteger(unitCount + 10) == game.unitRecords + 0x490 + 0x8e,
     'AIC Tactics: incompatible native siege equipment census')
+  local harassTargeting = context.find('native siege target acquisition',
+    '83 EC 10 53 55 56 57 8B 7C 24 24 8B C7 69 C0 90 04 00 00 '..
+    '0F BF AC 08 ? ? ? ? 8D 34 08')
+  context.verify(harassTargeting + 0x1eb, 'fire ballista target range',
+    'B9 ? ? ? ? EB ?')
+  context.verify(harassTargeting + 0x1fc, 'catapult target range',
+    '83 C1 ? 83 3D ? ? ? ? 00')
+  local fireRange = core.readInteger(harassTargeting + 0x1ec)
+  local catapultRange = core.readByte(harassTargeting + 0x1fe)
+  assert(fireRange >= 16 and fireRange <= 240
+      and catapultRange >= 16 and catapultRange <= 240,
+    'AIC Tactics: unsupported native siege target ranges')
   local catapultUpdate = context.find('native catapult update',
     '83 EC 74 53 8B 1D ? ? ? ? 55 56 8B F3 69 F6 90 04 00 00 '..
     '0F BF 86 ? ? ? ? 57 8B F8 69 FF F4 39 00 00')
@@ -200,6 +212,9 @@ function M.resolve(game)
     popUnitFromTribe = popUnit, siegeAssaultPlacementCall = assaultPlacementCall,
     siegeAssaultBatchCall = assaultCall, siegeAssaultBatch = assault,
     siegeUnitCount = unitCount, siegeGetUnitForIndex = getUnit,
+    siegeHarassTargeting = harassTargeting,
+    siegeCatapultRange = harassTargeting + 0x1fe,
+    siegeFireRange = harassTargeting + 0x1ec,
     siegeCatapultPathGate = catapultGate,
     siegeCatapultPathExit = catapultExit, siegeFirePathGate = fireGate,
     siegeFirePathExit = fireExit}

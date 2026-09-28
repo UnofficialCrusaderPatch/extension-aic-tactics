@@ -33,6 +33,6 @@ Ein AIC-Wert hat Vorrang; fehlt er, gilt der jeweilige Modulwert (Standard in Kl
 
 - `SafeSiegePlacement` (**an**): Meidet belegte Bauplätze und schützt eigene Einheiten. `false` nutzt die bisherige Platzierung.
 - `ActualSiegeResourcePayment` (**aus**): Verlangt Rohstoffe und Gold vor dem Bau; Fehlmengen kauft die KI über ihren normalen Handel.
-- `CoordinatedSiegeHarassment` (**aus**): Sammelt Belagerungsgeräte und schickt sie gemeinsam zu erreichbaren Schusspositionen. `SiegeHarassMinEngines` (0–20, Standard 3) legt die Wartezahl fest; nach einem Spielmonat ziehen die erreichbaren Geräte los. `HarassingSiegeEnginesMax` bleibt die Gesamtgrenze.
+- `CoordinatedSiegeHarassment` (**aus**): Sammelt Belagerungsgeräte und schickt sie zu erreichbaren Schusspositionen. `SiegeHarassMinEngines` (0–20, Standard 3) legt die Wartezahl fest; nach einem Spielmonat genügt ein erreichbares Paar. Mit 0 oder 1 darf ein Gerät allein losziehen. `HarassingSiegeEnginesMax` bleibt die Gesamtgrenze.
 - `LargerSiegeForces` (**aus**): Wiederholt beim Hauptangriff den eingestellten Gerätemix bis `SiegeForceMax` (0–20, Standard 10). **0** belässt eine normale Bauserie; `AttMaxEngineers` begrenzt die Besatzungen.
 - `CorrectEngineerRoleCounting` (**an**): Zählt Ingenieure im zugewiesenen Truppenverband. Belagerungsbesatzungen und Öldienst zählen nicht für Truppenkontingente.

@@ -307,6 +307,13 @@ defer:
     if fallback then native.activateSiegePayment() end
   end
   function native.preflightSiegeHarassment()
+    local context = require('native-context')
+    context.verify(game.siegeHarassTargeting, 'native siege target acquisition',
+      '83 EC 10 53 55 56 57')
+    context.verify(game.siegeFireRange - 1, 'fire ballista target range',
+      'B9 ? ? ? ?')
+    context.verify(game.siegeCatapultRange - 2, 'catapult target range',
+      '83 C1 ?')
     for index, site in ipairs({game.siegeCatapultPathGate, game.siegeFirePathGate}) do
       if siegeHarassHooks then
         assert(core.readByte(site) == 0xE9

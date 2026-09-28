@@ -386,3 +386,16 @@ source additionally allows a partial native siege batch when only some tribe
 slots remain and lets reachable harassment engines depart after the one-month
 rally timeout even if another member has no route. Both cases have focused x86
 component tests; game acceptance and simulation timing remain open.
+
+Source 0.0.16 confirms that `findSpotNearEngineersGuild` marks the
+chosen heat-map cell and its finder excludes marked cells on the next search.
+The existing eight-tick retry timer stays; clearing that mark would repeatedly
+pick the blocked site. The native target search takes a map-tile distance
+(83 for catapults and 52 for fire ballistas in the unmodified reference). The
+approach planner reads those current values from the validated owner at each
+decision, stands off at three-quarters of the shorter range, and keeps
+longer-range engines up to eight tiles farther back. Once the group arrives,
+it tries another direction after a scheduled delay if no engine acquires a
+target. Its AoB contexts matched six normal/Extreme executable fixtures and
+the x86 harassment component test passed. Those checks do not demonstrate
+in-game range, crowded-site or spending behavior.
