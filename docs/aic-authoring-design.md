@@ -67,6 +67,54 @@ per-state overrides; pre-populating five states would erase inheritance.
 Localize category headings, field help, validation and inherited-value labels
 through the live locale registry.
 
+## Native values remain the baseline
+
+The native AIC record is character configuration shared by every player using
+that character. Native current strength, spending flags, raid parameters and
+pressure trackers are live player state. Never rewrite the shared native AIC
+record on a state transition, store Very Strong/Overpowered in its three-value
+strength enum, or change a field merely to make an overlay easier to read.
+Two Wolves in different game states must be able to use different effective
+values while retaining the same authored AIC baseline.
+
+Resolve one property at its native owner's decision boundary, in this order:
+
+1. A more specific, already-authored situational rule where that system has
+   one (for example `RecruitConditions`). Preserve that rule's old semantics.
+2. An explicit override for the selected effective state.
+3. An explicit Normal override used as the author's cross-state default.
+4. The existing AIC value for the appropriate native row. Very Strong and
+   Overpowered use Strong for a three-row field; a scalar uses its sole value.
+5. The existing module fallback only for a module-owned option absent in
+   that AI's effective AIC.
+
+Resolve by *presence*, never truthiness: `false` and `0` win when authored.
+An explicit Normal override intentionally supersedes a native Weak/Strong
+row for that property. The Toolkit must show this provenance clearly and
+allow a state-specific override when the author wants a different Weak or
+Strong value. An absent policy follows the original call/RNG path exactly.
+
+The overlay is per player, but its authored configuration is per character.
+Evaluate state on the original AI decision schedule, after the native state
+has been updated. By default a native emergency Weak result takes precedence;
+an explicit pressure policy is the only route to changing that trigger.
+At wave or raid creation, snapshot values that must remain fixed until that
+force completes. Other values resolve when their existing native owner next
+uses them. Do not patch a generic AIC getter while leaving direct native
+reads unchanged: audit every consumer of a property and integrate at its
+actual writer/decision owner. If a field has uncontrolled consumers, keep
+that state override unpublished until its semantics can be made consistent.
+For example, `RecruitGoldThreshold` writes a shared spending flag with
+several consumers; changing the threshold scope requires an owner-by-owner
+audit rather than a second flag or a silent reinterpretation.
+
+Native saves continue to own native counters and flags. Only genuinely new
+per-player decisions or in-progress force snapshots belong in AIC Tactics'
+existing Map Extensions state and replay digest, with versioned migration.
+On save/load restore the same effective plan; when a save is started as a new
+map, discard the old plan and recompute from fresh game state. The nested
+JSON is compiled at load, not parsed on AI updates.
+
 ## One sparse policy per AI character
 
 An absent policy leaves the native three-state calculation, AIC values,

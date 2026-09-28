@@ -1,5 +1,11 @@
 # Strength-state extension investigation (proposal, not implemented AIC fields)
 
+The current authoring decision is in
+[aic-authoring-design.md](aic-authoring-design.md); its ordered AND-rule
+format, native emergency priority and JSON layout supersede the preliminary
+interface ideas below. The native findings and implementation leads here
+remain investigation evidence.
+
 Tracked in [AIC Tactics #29](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/issues/29).
 The separate native warning, severe pressure and supply-crisis paths are
 recorded in [native-pressure-investigation.md](native-pressure-investigation.md)
