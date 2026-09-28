@@ -19,9 +19,25 @@ function M.new(game)
   local siegeGoldHook
   local siegeDirectHook
   local siegeHarassHooks
+  local siegeRecoveryInstalled = false
   local engineerRoleHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
+  function native.preflightAssaultCrewRecovery()
+    local target = require('native-context').call(game.siegeAssaultPlacementCall,
+      'AI assault siege construction')
+    assert(target == (siegeRecoveryInstalled and native.placeSiegeTentAndRecoverEngineers
+        or game.siegePlaceTent),
+      'AIC Tactics: AI assault siege construction was replaced')
+  end
+  function native.activateAssaultCrewRecovery()
+    if siegeRecoveryInstalled then return end
+    native.preflightAssaultCrewRecovery()
+    local site = game.siegeAssaultPlacementCall
+    core.writeCode(site, {0xE8, native.placeSiegeTentAndRecoverEngineers-site-5})
+    siegeRecoveryInstalled = true
+  end
   function native.preflightSafePlacement()
+    native.preflightAssaultCrewRecovery()
     local target = require('native-context').call(game.siegePlacementCall, 'siege footprint tile check')
     assert(target == (safePlacementHook and native.checkedSiegeTile or game.originalSiegeTileCheck),
       'AIC Tactics: siege footprint check was replaced; restart with compatible modules')
@@ -125,6 +141,7 @@ failed:
     safePlacementCandidateHook = candidate
     safePlacementFailureHook = failure
     safePlacementHook = true
+    native.activateAssaultCrewRecovery()
   end
   function native.configureSafePlacement(fallback)
     assert(type(fallback) == 'boolean', 'AIC Tactics: safeSiegePlacement must be boolean')
@@ -132,6 +149,7 @@ failed:
     if fallback then native.activateSafePlacement() end
   end
   function native.preflightSiegePayment()
+    native.preflightAssaultCrewRecovery()
     local owner = game.siegeBuildingAdmission
     if siegePaymentHook then
       assert(core.readByte(owner)==0xE9
@@ -252,6 +270,7 @@ defer:
     siegePaymentHook = admission
     siegeGoldHook = gold
     siegeDirectHook = direct
+    native.activateAssaultCrewRecovery()
   end
   function native.configureSiegePayment(fallback)
     assert(type(fallback) == 'boolean', 'AIC Tactics: actualSiegeResourcePayment must be boolean')

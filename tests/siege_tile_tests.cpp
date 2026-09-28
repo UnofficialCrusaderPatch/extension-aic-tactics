@@ -13,7 +13,7 @@ namespace {
 unsigned char players[9 * 0x39F4 + 0x2304];
 unsigned char units[4 * 0x490];
 unsigned char tiles[0x23D7E0 + 80400 * 2];
-unsigned char tribes[2 * 0x334];
+unsigned char tribes[3 * 0x334];
 unsigned char points[216 * 32];
 unsigned char rows[400 * 12];
 int placementFail;
@@ -22,6 +22,12 @@ int resourceCalls;
 int resourceResult;
 int checkedPlayer;
 int checkedCommand;
+int placeResult;
+int placeCalls;
+int popCalls;
+int addCalls;
+int crewMembers[4];
+void setShort(unsigned char* memory, unsigned int offset, short value);
 
 int __fastcall originalTile(void*, void*, int, int, int, int)
 {
@@ -36,6 +42,35 @@ int __fastcall checkResources(void*, void*, int command, int player, int sound)
     checkedPlayer = player;
     checkedCommand = command;
     return resourceResult;
+}
+
+int __fastcall originalPlace(void*, void*, int tribe, int command, unsigned int distance,
+    int instruction)
+{
+    assert(tribe == 1 && command == 190 && distance == 60 && instruction == 15);
+    ++placeCalls;
+    return placeResult;
+}
+
+int __fastcall popCrew(void*, void*, int tribe)
+{
+    assert(tribe == 1);
+    ++popCalls;
+    short& size = *reinterpret_cast<short*>(tribes + 0x334 + 0x5C);
+    if (size <= 0) return 0;
+    const int unit = crewMembers[--size];
+    setShort(units, unit * 0x490 + 0x2A0, 0);
+    return unit;
+}
+
+int __fastcall addCrew(void*, void*, unsigned int unit, int tribe)
+{
+    assert(unit > 0 && unit < 4 && (tribe == 1 || tribe == 2));
+    ++addCalls;
+    short& size = *reinterpret_cast<short*>(tribes + tribe * 0x334 + 0x5C);
+    ++size;
+    setShort(units, unit * 0x490 + 0x2A0, static_cast<short>(tribe));
+    return 1;
 }
 
 void setShort(unsigned char* memory, unsigned int offset, short value)
@@ -67,6 +102,9 @@ int main()
     nativeBindings.siegePlacementFail = reinterpret_cast<unsigned int>(&placementFail);
     nativeBindings.siegeResourceCheck = reinterpret_cast<unsigned int>(&checkResources);
     nativeBindings.gameState = 1;
+    nativeBindings.siegePlaceTent = reinterpret_cast<unsigned int>(&originalPlace);
+    nativeBindings.popUnitFromTribe = reinterpret_cast<unsigned int>(&popCrew);
+    nativeBindings.addUnitToTribe = reinterpret_cast<unsigned int>(&addCrew);
     setInt(players, 1 * 0x39F4 + 0x2300, 2);
     setInt(players, 2 * 0x39F4 + 0x2300, 3);
     setShort(tiles, 0x23D7E0, 1);
@@ -167,5 +205,41 @@ int main()
     assert(siegeResourceAdmission(1, 189) == 1 && resourceCalls == 3);
     assert(siegeResourceAdmission(0, 190) == 1 && resourceCalls == 3);
     assert(siegePaymentEnabledForGoldOffset(0x39F4 + 1) == 0);
+
+    // The assault caller ignores a failed placement. Return only its newly
+    // selected engineer crew to the native attack-engineer group, and leave
+    // successful construction and explicit native policy untouched.
+    siegePaymentFallback = 0;
+    siegePaymentPolicy[1] = 2;
+    safePlacementFallback = 0;
+    configurations[1].safeSiegePlacement = 1;
+    setInt(tribes, 0x334 + 0x2C, 1);
+    setInt(tribes, 2 * 0x334 + 0x2C, 1);
+    setInt(tribes, 2 * 0x334 + 0x34, 77);
+    setShort(players, 0x39F4 + 0x3130, 2);
+    setInt(players, 0x39F4 + 0x32E4, 77);
+    setShort(units, 2 * 0x490 + 0x8E, 30);
+    setShort(units, 2 * 0x490 + 0x96, 1);
+    setShort(units, 2 * 0x490 + 0x42A, 10);
+    setShort(units, 3 * 0x490 + 0x8E, 30);
+    setShort(units, 3 * 0x490 + 0x96, 1);
+    setShort(units, 3 * 0x490 + 0x42A, 10);
+    crewMembers[0] = 2;
+    crewMembers[1] = 3;
+    setShort(tribes, 0x334 + 0x5C, 2);
+    setShort(tribes, 2 * 0x334 + 0x5C, 0);
+    placeResult = 0;
+    assert(placeSiegeTentAndRecoverEngineers(0, 0, 1, 190, 60, 15) == 0);
+    assert(placeCalls == 1 && popCalls == 2 && addCalls == 2);
+    assert(*reinterpret_cast<short*>(tribes + 0x334 + 0x5C) == 0);
+    assert(*reinterpret_cast<short*>(tribes + 2 * 0x334 + 0x5C) == 2);
+    setShort(tribes, 0x334 + 0x5C, 2);
+    placeResult = 1;
+    assert(placeSiegeTentAndRecoverEngineers(0, 0, 1, 190, 60, 15) == 1);
+    assert(placeCalls == 2 && popCalls == 2 && addCalls == 2);
+    placeResult = 0;
+    configurations[1].safeSiegePlacement = 2;
+    assert(placeSiegeTentAndRecoverEngineers(0, 0, 1, 190, 60, 15) == 0);
+    assert(placeCalls == 3 && popCalls == 2 && addCalls == 2);
     return 0;
 }
