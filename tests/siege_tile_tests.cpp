@@ -346,5 +346,10 @@ int main()
     batchCalls = 0;
     buildLargerSiegeForce(0, 0, 1);
     assert(batchCalls == 0);
+    // A single free native tribe can still hold a partial authored batch.
+    setShort(tribes, 1 * 0x334 + 0x40, 0);
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls > 0);
     return 0;
 }

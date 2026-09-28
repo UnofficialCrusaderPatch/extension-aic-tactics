@@ -19,7 +19,7 @@ options:
   contents:
     type: boolean
     value: true
-- category: [AIC Tactics]
+- category: ['{{ai}}', '{{improvements}}']
   name: actualSiegeResourcePayment
   header: '{{actualSiegeResourcePayment}}'
   text: '{{actualSiegeResourcePayment_descr}}'

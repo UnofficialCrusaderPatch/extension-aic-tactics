@@ -22,7 +22,7 @@ fallback, `actualSiegeResourcePayment`, is OFF. Both AIC fields are independent.
 catapults and fire ballistas before sending them to separate reachable firing
 positions. Its module fallback is OFF. `SiegeHarassMinEngines` is an optional
 integer from 0 to 20; it defaults to the module fallback of 3. The AI waits for
-that many ready engines, then sends those available after one game month (800
+that many ready engines, then sends those with a route after one game month (800
 ticks). Zero sends the first ready engine. The existing
 `HarassingSiegeEnginesMax` remains the total limit; it can already exceed eight
 without enlarging the eight-entry AIC composition array. These two fields are
@@ -30,7 +30,8 @@ independent of placement and payment.
 
 `LargerSiegeForces` is an optional boolean, OFF by default. When true, the AI
 repeats its authored main-assault `SiegeEngine1..8` mix while engineers, native
-tribe slots and safe construction sites remain available. `SiegeForceMax` is an
+tribe slots and safe construction sites remain available. A partly free native
+tribe pool can still produce a partial batch. `SiegeForceMax` is an
 optional integer from 0 to 20, with module fallback 10. It limits equipment
 already active or under construction in the current wave plus new construction;
 0 keeps the native single batch. This policy is separate from harassment and

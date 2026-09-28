@@ -210,7 +210,9 @@ void __cdecl updateSiegeHarassment(void* aic, int player)
             reachable[count++] = index;
         }
     }
-    if (count < (census.count < desired ? 1 : desired)) {
+    // A blocked member must not hold the entire force after the rally timeout.
+    const int required = now - plan.firstSeenTick < 800 ? desired : 1;
+    if (count < required) {
         plan.nextDecisionTick = now + 100;
         return;
     }

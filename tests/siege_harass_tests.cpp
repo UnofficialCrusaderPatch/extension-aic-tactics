@@ -20,6 +20,7 @@ int rows[400 * 3];
 int teams[9];
 unsigned int tick;
 int pathCalls, moveCalls;
+int blockedTribe;
 int moveX[4], moveY[4];
 
 template<class T> void put(unsigned char* base, unsigned int offset, T value)
@@ -31,7 +32,7 @@ int __fastcall path(void*, void*, int tribe, int tile)
 {
     assert(tribe > 0 && tribe < 4 && tile > 0 && tile < 160000);
     ++pathCalls;
-    return 1;
+    return tribe != blockedTribe;
 }
 
 int __fastcall move(void*, void*, int tribe, unsigned int x, unsigned int y,
@@ -129,5 +130,20 @@ int main()
     combatCensus[2].lord = 0;
     updateSiegeHarassment(aic, 1);
     assert(siegeHarassPlans[1].target == 0);
+    // With a complete census but one blocked route, wait for a useful group
+    // initially and move the reachable members after the one-month timeout.
+    combatCensus[2].lord = 1;
+    siegeHarassMinimum[1] = 4;
+    blockedTribe = 3;
+    std::memset(&siegeHarassPlans[1], 0, sizeof(SiegeHarassPlan));
+    tick = combatCensusTick = 2000;
+    resetSiegeHarassCensus();
+    for (int id = 1; id <= 3; ++id) countSiegeHarassUnit(id);
+    const int beforeBlocked = moveCalls;
+    updateSiegeHarassment(aic, 1);
+    assert(moveCalls == beforeBlocked && pathCalls >= 3);
+    tick = combatCensusTick = 2800;
+    updateSiegeHarassment(aic, 1);
+    assert(moveCalls == beforeBlocked + 2);
     return 0;
 }

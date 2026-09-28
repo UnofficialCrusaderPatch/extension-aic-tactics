@@ -375,3 +375,14 @@ Their authored raid quotas (48/8 and 22/5) matched the two installed personality
 files, confirming the effective AICs were loaded. This snapshot did not inspect
 the separate siege-policy arrays or capture an active siege; it verifies startup
 and native save/load continuity only.
+
+A later 0.0.14 Extreme save at tick 27,299 cold-loaded in a fresh process with
+Saladin still in attack state 2, targeting the opposing Wolf. Wolf subsequently
+reached attack state 2, wave 5, with its configured eight-entry siege mix and
+engineer-role census visible in paused native memory. No sampled snapshot yet
+shows the additional engines being built. This is active-attack save/load
+continuity, not proof of siege construction or replay behavior. The 0.0.15
+source additionally allows a partial native siege batch when only some tribe
+slots remain and lets reachable harassment engines depart after the one-month
+rally timeout even if another member has no route. Both cases have focused x86
+component tests; game acceptance and simulation timing remain open.

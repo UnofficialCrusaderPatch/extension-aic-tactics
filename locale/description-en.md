@@ -46,11 +46,13 @@ The five raid settings require a new `RaidTargetPolicy`. Existing `RaidUnitsBase
 
 ### Siege placement
 
-- `SafeSiegePlacement`: `true` protects the AI’s units at siege sites; `false` uses native placement. If absent, the module fallback applies (ON).
-- `ActualSiegeResourcePayment`: `true` requires materials and gold before building; shortages enter normal AI trade. `false` keeps native admission. If absent, the module fallback applies (OFF).
-- `CoordinatedSiegeHarassment`: `true` gathers siege engines and sends them to reachable firing positions. `SiegeHarassMinEngines` (0–20, default 3) sets how many to await; after one game month, available engines depart. Omitted fields use module fallbacks (OFF, 3). `HarassingSiegeEnginesMax` still limits the total.
-- `LargerSiegeForces`: `true` repeats the authored siege mix for a main assault up to `SiegeForceMax` (0–20, default 10). **0** keeps one native batch. Omitted fields use module fallbacks (OFF, 10); `AttMaxEngineers` still limits available crews.
+An AIC value takes precedence; an omitted field uses its module value (default in parentheses).
+
+- `SafeSiegePlacement` (**ON**): Avoid occupied sites and protect friendly units. `false` uses native placement.
+- `ActualSiegeResourcePayment` (**OFF**): Require materials and gold before building; shortages enter normal AI trade.
+- `CoordinatedSiegeHarassment` (**OFF**): Gather engines and move them together to reachable firing positions. `SiegeHarassMinEngines` (0–20, default 3) sets the wait count; reachable engines leave after one game month. `HarassingSiegeEnginesMax` remains the total limit.
+- `LargerSiegeForces` (**OFF**): Repeat the authored assault mix up to `SiegeForceMax` (0–20, default 10). **0** keeps one native batch; `AttMaxEngineers` limits crews.
 
 ### Engineer quotas
 
-- `CorrectEngineerRoleCounting`: Counts assigned engineers toward their troop quotas. Siege and oil duties stay separate.
+- `CorrectEngineerRoleCounting` (**ON**): Count assigned engineers toward their troop quotas. Siege and oil duties stay separate.

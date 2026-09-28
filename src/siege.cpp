@@ -228,16 +228,16 @@ void __fastcall buildLargerSiegeForce(void* aic, void*, int player)
     if (wave <= 0) { original(aic, player); return; }
     const int existing = existingWaveEquipment(aic, player, wave);
     if (existing >= maximum) return;
-    if (activeForcePlayer || freePlayerTribes(player) < composition) return;
-    SourceCrew initialCrew;
-    if (!captureSourceCrew(player, initialCrew)) { original(aic, player); return; }
+    if (activeForcePlayer || freePlayerTribes(player) == 0) return;
+    SourceCrew crew;
+    if (!captureSourceCrew(player, crew)) { original(aic, player); return; }
     activeForcePlayer = player;
     activeForceMaximum = maximum;
     activeForceCount = existing;
     for (int batch = 0; batch < maximum && activeForceCount < maximum; ++batch) {
-        if (freePlayerTribes(player) < composition) break;
-        SourceCrew crew;
-        if (!captureSourceCrew(player, crew)) break;
+        // Native placement can use the remaining slots for a partial batch.
+        if (freePlayerTribes(player) == 0) break;
+        if (batch > 0 && !captureSourceCrew(player, crew)) break;
         const int before = activeForceCount;
         original(aic, player);
         restoreUnselectedCrew(player, crew);
