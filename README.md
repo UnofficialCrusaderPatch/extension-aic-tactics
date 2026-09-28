@@ -1,7 +1,7 @@
 # extension-aic-tactics
 Opt-in recruitment, attack and raid policies for AI personalities in UCP3; under development
 
-Source 0.0.12 declares Crusader and Extreme 1.41 and uses verified UCP native
+Source 0.0.13 declares Crusader and Extreme 1.41 and uses verified UCP native
 bindings. [Component evidence and remaining acceptance](docs/shared-native-bindings.md)
 are recorded separately. Installed-runtime acceptance remains in progress.
 
