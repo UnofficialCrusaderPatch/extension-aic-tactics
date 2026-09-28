@@ -62,6 +62,8 @@ extern int engineerRoleFallback;
 int __cdecl countableEngineerRole(int player, int unit);
 int __fastcall checkedSiegeTile(void* tileMap, void*, int tile, int player, int command, int flags);
 int __cdecl siegePlacementPolicyEnabled(int player);
+int __cdecl siegeTentCandidateAllowed(int tribe, int point);
+int __cdecl failedSiegeTent(int tribe, int point);
 extern unsigned int integrityDigest[2];
 void __cdecl captureIntegrity(int legacyInterval);
 void __cdecl observeIntegrityBoundary(int legacyInterval);

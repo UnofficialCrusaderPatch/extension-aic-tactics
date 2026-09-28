@@ -13,6 +13,8 @@ function M.new(game)
   local compositionHooks
   local safePlacementHook
   local safePlacementBackoffHook
+  local safePlacementCandidateHook
+  local safePlacementFailureHook
   local engineerRoleHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
   function native.preflightSafePlacement()
@@ -26,6 +28,21 @@ function M.new(game)
       local destination = site+6+core.readInteger(site+2)
       assert(destination == (safePlacementBackoffHook or game.siegeFailureExit),
         'AIC Tactics: siege retry branch was replaced')
+    end
+    local candidate = game.siegeAngleCandidateBranch
+    assert(core.readByte(candidate)==0x0F and core.readByte(candidate+1)==0x84,
+      'AIC Tactics: siege candidate branch was replaced')
+    assert(candidate+6+core.readInteger(candidate+2)
+        == (safePlacementCandidateHook or game.siegeAngleCandidateAccept),
+      'AIC Tactics: siege candidate branch was replaced')
+    local post = game.siegeAnglePostPlace
+    if safePlacementFailureHook then
+      assert(core.readByte(post)==0xE9 and post+5+core.readInteger(post+1)==safePlacementFailureHook,
+        'AIC Tactics: siege placement result was replaced')
+    else
+      assert(core.readByte(post)==0x8B and core.readByte(post+1)==0x0D
+          and core.readInteger(post+2)==game.siegeAnglePlacedBuilding,
+        'AIC Tactics: siege placement result was replaced')
     end
   end
   function native.activateSafePlacement()
@@ -49,13 +66,60 @@ done:
       jmp finished
     ]], {policyEnabled=native.siegePlacementPolicyEnabled,
       timeout=game.players+0x3918, finished=game.siegeFailureExit})
+    local candidate = core.allocateAssembly([[
+      pushfd
+      pushad
+      mov ecx, dword [esp + 0x44]
+      push eax
+      push ecx
+      call allowed
+      add esp, 8
+      test eax, eax
+      jz rejected
+      popad
+      popfd
+      jmp accepted
+rejected:
+      popad
+      popfd
+      jmp continueSearch
+    ]], {allowed=native.siegeTentCandidateAllowed,
+      accepted=game.siegeAngleCandidateAccept,
+      continueSearch=game.siegeAngleCandidateContinue})
+    local failure = core.allocateAssembly([[
+      pushfd
+      pushad
+      push edi
+      push ebx
+      call failedTent
+      add esp, 8
+      test eax, eax
+      jnz failed
+      popad
+      popfd
+      mov ecx, dword [placedBuilding]
+      jmp resume
+failed:
+      popad
+      popfd
+      jmp failedReturn
+    ]], {failedTent=native.failedSiegeTent,
+      placedBuilding=game.siegeAnglePlacedBuilding,
+      resume=game.siegeAnglePostPlace+6,
+      failedReturn=game.siegeAngleFailureReturn})
     core.writeCode(game.siegePlacementCall,
       {0xE8, native.checkedSiegeTile - game.siegePlacementCall - 5})
     core.writeCode(game.siegeNoSpotBranch,
       {0x0F,0x84,backoff-game.siegeNoSpotBranch-6})
     core.writeCode(game.siegeFailedBranch,
       {0x0F,0x85,backoff-game.siegeFailedBranch-6})
+    core.writeCode(game.siegeAngleCandidateBranch,
+      {0x0F,0x84,candidate-game.siegeAngleCandidateBranch-6})
+    core.writeCode(game.siegeAnglePostPlace,
+      {0xE9,failure-game.siegeAnglePostPlace-5,0x90})
     safePlacementBackoffHook = backoff
+    safePlacementCandidateHook = candidate
+    safePlacementFailureHook = failure
     safePlacementHook = true
   end
   function native.configureSafePlacement(fallback)

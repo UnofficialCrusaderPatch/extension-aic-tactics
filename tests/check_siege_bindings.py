@@ -40,10 +40,13 @@ def check(identity):
     lua.globals().read_byte = read_byte
     lua.globals().read_integer = read_integer
     lua.globals().players = 0x11EEA38 if 'Extreme' in path.name else 0x115BDF8
+    lua.globals().tribe_stride = 0x688 if 'Extreme' in path.name else 0x334
+    lua.globals().tribes = 0x1F9AFC0 if 'Extreme' in path.name else 0x1667F78
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       core={AOBScan=aob,readByte=read_byte,readInteger=read_integer}
-      sites=require('native-siege-bindings').resolve({unitCapacity=2500,players=players})
+      sites=require('native-siege-bindings').resolve({unitCapacity=2500,players=players,
+        tribes=tribes,tribeStride=tribe_stride,mapRows=1})
       assert(sites.siegeTileOccupancyOffset==0x23D7E0)
       assert(core.readByte(sites.siegePlacementCall)==0xE8)
     ''')
@@ -51,7 +54,11 @@ def check(identity):
             'placementCall': hex(lua.globals().sites['siegePlacementCall']),
             'tileCheck': hex(lua.globals().sites['originalSiegeTileCheck']),
             'noSiteBranch': hex(lua.globals().sites['siegeNoSpotBranch']),
-            'failedBranch': hex(lua.globals().sites['siegeFailedBranch'])}
+            'failedBranch': hex(lua.globals().sites['siegeFailedBranch']),
+            'angleCandidateBranch': hex(lua.globals().sites['siegeAngleCandidateBranch']),
+            'anglePostPlace': hex(lua.globals().sites['siegeAnglePostPlace']),
+            'placementFail': hex(lua.globals().sites['siegePlacementFail']),
+            'tentPointX': hex(lua.globals().sites['siegeTentPointX'])}
 
 
 if __name__ == '__main__':

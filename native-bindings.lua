@@ -8,7 +8,8 @@ local names = {'gameTick','rngState','rngValue','rngNext','initialDefenseTicks',
     'recruitEuropean','recruitNonEuropean','scenarioMode','scenarioCustom','scenarioMission','moat','moatVacancies','findRecruitmentBuilding','attackRecruitType','raidMaximum',
     'defenseTypes','specialDefenders','defenseSlots','raidTypes','equipmentRecipes',
     'selectAttackTarget','computeNervousness','updateAIPlayerState','returnAttack','hasNoTroopsOrAllDiggers','updateRaids','combatValue','troopValues','marketPrice','gameState',
-    'originalSiegeTileCheck','siegeTileOccupancyOffset'}
+    'originalSiegeTileCheck','siegeTileOccupancyOffset','siegeTileMap','siegeTentPointX',
+    'siegeTribeIndexOffset','siegePlacementFail'}
 -- Framework loads every module before enabling Legacy's native patches.
 -- Resolve identifying contexts here; hook preflights still check current bytes
 -- when a feature is activated after all dependencies have enabled.
