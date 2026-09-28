@@ -57,8 +57,8 @@ function M.new(game)
     assert(type(fallback) == 'boolean',
       'AIC Tactics: largerSiegeForces must be boolean')
     assert(type(maximum) == 'number' and maximum == math.floor(maximum)
-        and maximum >= 0 and maximum <= 20,
-      'AIC Tactics: siegeForceMax must be 0 to 20')
+        and maximum >= 0 and maximum <= 64,
+      'AIC Tactics: siegeForceMax must be 0 to 64')
     core.writeInteger(native.largeSiegeFallback, fallback and 1 or 0)
     core.writeInteger(native.siegeForceMaximumFallback, maximum)
     if fallback then native.activateLargerSiegeForce() end
@@ -402,7 +402,8 @@ coordinated:
     engineerRoleHook = hook
   end
   function native.configureEngineerRoles(fallback)
-    assert(type(fallback) == 'boolean', 'AIC Tactics: correctEngineerRoleCounting must be boolean')
+    assert(type(fallback) == 'boolean',
+      'AIC Tactics: correctEngineerRoleCounting must be boolean')
     core.writeInteger(native.engineerRoleFallback, fallback and 1 or 0)
     if fallback then native.activateEngineerRoles() end
   end

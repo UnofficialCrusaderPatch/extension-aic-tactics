@@ -1,55 +1,38 @@
-Configura el reclutamiento, la preparación de oleadas, los objetivos y las incursiones mediante el AIC de tu IA. Los campos AIC omitidos usan sus valores predeterminados.
+AIC Tactics permite ajustar el reclutamiento, los ataques, las incursiones y las máquinas de asedio de cada IA instalada. Pon estos campos en su AIC. Las políticas nuevas de reclutamiento, ataque e incursión son opcionales; los campos de asedio omitidos usan los ajustes del módulo. Siguen vigentes las listas y límites de tropas.
 
 ### Reclutamiento
 
-- `RecruitPolicy`: `Native` (predeterminado) conserva el reclutamiento existente. `WeightedRoles` lo distribuye entre defensa, incursiones, ejército principal y salidas.
-- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: pesos de las salidas para una IA normal, débil o fuerte. Enteros de **0–100**, valor predeterminado **0**. Junto con los pesos existentes de defensa, incursión y ataque, cada nivel debe sumar **100**. Requiere `WeightedRoles`; se mantienen listas de tropas, intervalos y cupos.
-- `RecruitConditions`: hasta **8** reglas ordenadas, ninguna por defecto. La primera coincidente sustituye los pesos del nivel. Cada regla contiene `When` y cuatro pesos que suman 100: `Defense`, `Raid`, `Attack`, `Sortie`. Requiere `WeightedRoles`.
-- `DefRecruitComposition`: `Native` (por defecto) conserva el comportamiento actual. `PreserveSlots` reserva la parte de cada entrada de `DefUnit1..8`; repetir un tipo aumenta su parte. Si falta equipo, sus plazas quedan libres. Requiere `WeightedRoles`.
-- `RecruitInitialDefenseMonths`: **0–30** meses, **6** por defecto. Durante este periodo, pospone el reclutamiento para incursiones y ejército principal mientras falten defensores. Las salidas siguen permitidas; un peso de 0 sigue siendo 0. **0** desactiva la espera. Requiere `WeightedRoles`.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: proporción de salidas por nivel de fuerza. Definir una activa las cuatro proporciones para esa IA. Defensa, incursión, ataque y salida deben sumar 100 en cada nivel.
+- `RecruitConditions`: proporciones distintas según la situación. Ejemplo: si el castillo está amenazado, 70 % defensa, 20 % ataque y 10 % salidas. Se aplica la primera regla que coincida.
+- `RecruitPolicy`: opción de compatibilidad. `Native` conserva la selección original; `WeightedRoles` activa expresamente las cuatro proporciones.
+- `DefRecruitComposition`: `PreserveSlots` respeta las proporciones de `DefUnit1..8`; `Native` conserva la elección habitual.
+- `RecruitInitialDefenseMonths`: tiempo durante el que incursiones y ejército principal esperan a completar la defensa. 0 elimina la espera; valor predeterminado: 6 meses.
 
-`When` puede comprobar `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` (base amenazada), `AttackActive` (ataque en curso), `DefenseIncomplete` (defensa incompleta) y `EquipmentSurplus` (equipo sobrante). Todas las condiciones indicadas deben cumplirse; `true` exige la condición, `false` su ausencia. Un `When` vacío coincide siempre.
+Una proporción de salidas activa `WeightedRoles` automáticamente. Las reglas de situación, la composición defensiva y `RecruitInitialDefenseMonths` requieren activarlo expresamente. Los intervalos y cupos siguen vigentes.
 
-### Objetivos de ataque
+### Ataques y represalias
 
-`AttackTargetPolicy`:
-
-- `Inherit` (predeterminado): Según el `TargetChoice` existente.
-- `LowestPopulation`: Menos civiles.
-- `FewestTroops`: Menos unidades militares.
-- `LowestCombatPower`: Menor fuerza militar estimada, sin tener en cuenta la distancia.
-- `Random`: Un oponente válido al azar, con la misma probabilidad para todos.
-- `LastAggressor`: El último agresor que cumpla los criterios de represalia.
-
-`AttackTargetCommitment`:
-
-- `Default`: `PerAttack` con políticas nuevas o `DuringAttack`; en los demás casos, el comportamiento existente.
-- `PerAttack`: mantener el objetivo durante todo el ataque.
-- `UntilDefeated`: mantenerlo entre ataques mientras siga siendo un oponente válido.
-
-### Preparación y represalias
-
-- `AttackPreparation`: `Native` (predeterminado), o `DuringAttack` para preparar la siguiente oleada en casa durante un ataque. Se mantienen los límites de tropas y el crecimiento de las oleadas.
-- `AttackActivation`: `Immediate` (predeterminado), o `AfterProvocation` para esperar un ataque suficiente antes de lanzar ejércitos o incursiones. Las salidas defensivas siguen disponibles.
-- `ProvocationRules`: umbrales de represalia; valores predeterminados: `ThreatPower` **100**, `CombatTicks` **200**, `LossPower` **100**, `WindowTicks` **800**. Los combates prolongados cerca del torreón o suficientes bajas militares activan la respuesta; el daño al señor cuenta inmediatamente. Indica los cuatro valores. **800 ticks = un mes de juego**.
+- `AttackTargetPolicy`: `Inherit` usa `TargetChoice`. `LowestPopulation`, `FewestTroops`, `LowestCombatPower`, `Random` y `LastAggressor` eligen un objetivo por ataque. Para conservarlo entre ataques: `{ "Choice": "LastAggressor", "UntilDefeated": true }`. Se puede añadir `"Provocation": { "LossPower": 200 }` para ajustar la represalia.
+- `AttackTargetCommitment`: sigue disponible para AIC antiguos. En los nuevos, elige objetivo y duración juntos con `AttackTargetPolicy`.
+- `AttackPreparation`: `DuringAttack` prepara la siguiente oleada en casa mientras el ejército ataca; `Native` mantiene los tiempos habituales.
+- `AttackActivation`: `AfterProvocation` espera un ataque enemigo suficiente antes de lanzar ejércitos o incursiones; `Immediate` no espera. Las salidas defensivas siguen disponibles.
+- `ProvocationRules`: sigue disponible para AIC antiguos, `AfterProvocation` y la amenaza usada al reclutar. Para `LastAggressor`, un AIC nuevo puede poner los valores en `AttackTargetPolicy.Provocation`.
 
 ### Incursiones
 
-- `RaidTargetPolicy`: `Native` (predeterminado), `NearestReachable` para edificios cercanos accesibles, u `Opportunistic` según distancia, prioridad y peligro.
-- `RaidGroupCount`: **1–4**, predeterminado **1**. Divide las tropas de incursión existentes sin reclutar más.
-- `RaidMinGroupSize`: **1–256**, predeterminado **4**. Los grupos menores esperan o se reúnen.
-- `RaidFocus`: `Any` (predeterminado), `Food` (alimentos), `Industry` (producción) o `HighValue` (coste de reconstrucción). Requiere `Opportunistic`.
-- `RaidRiskTolerance`: `Low`, `Medium` (predeterminado) o `High`. Tolerancia a tropas y defensas enemigas cercanas.
-- `RaidEnemyScope`: `PrimeTarget` (predeterminado) o `AnyEnemy`. No cambia el objetivo del ejército principal.
+- `RaidTargetPolicy`: `Native` conserva las incursiones; `NearestReachable` elige edificios cercanos accesibles; `Opportunistic` considera preferencias y peligro; `RandomNearby` elige uno accesible al azar y después ataca los edificios cercanos.
+- `RaidGroupCount` (1–4) divide la fuerza existente; `RaidMinGroupSize` (1–256) hace esperar o reunirse a los grupos pequeños.
+- `RaidFocus` acepta `Any`, `Food`, `Industry`, `HighValue` o porcentajes como `{ "Food": 60, "Industry": 20 }`; el resto permite cualquier edificio. Funciona con `Opportunistic` y `RandomNearby`. `RaidRiskTolerance` fija el riesgo; `RaidEnemyScope` elige al rival principal o a cualquier enemigo.
 
-Estas cinco opciones requieren una nueva `RaidTargetPolicy`. Se mantienen `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` y `RaidRetargetDelay`. Para restaurar los valores predeterminados: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
-### Máquinas de asedio
+Los cinco campos posteriores a `RaidTargetPolicy` requieren una política nueva. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` y `RaidRetargetDelay` siguen vigentes.
 
-- `SafeSiegePlacement`: `true` protege unidades propias en obras de asedio; `false` usa la colocación original. Sin valor, se aplica el ajuste del módulo (activado).
-- `ActualSiegeResourcePayment`: `true` exige materiales y oro antes de construir; los faltantes pasan al comercio habitual de la IA. `false` conserva la comprobación original. Si se omite, rige el ajuste del módulo (desactivado).
-- `CoordinatedSiegeHarassment`: `true` reúne máquinas y las envía a posiciones de tiro accesibles. `SiegeHarassMinEngines` (0–20; 3 por defecto) indica cuántas esperar; tras un mes de juego bastan dos con ruta. Con 0 o 1 puede partir una sola. Sin valor AIC rigen los ajustes del módulo (desactivado, 3). `HarassingSiegeEnginesMax` sigue limitando el total.
-- `LargerSiegeForces`: `true` repite la composición de asedio en el ataque principal hasta `SiegeForceMax` (0–20; 10 por defecto). **0** conserva una sola tanda original. Sin valor AIC rigen los ajustes del módulo (desactivado, 10); `AttMaxEngineers` sigue limitando los ingenieros disponibles.
+### Asedio e ingenieros
 
-### Cupos de ingenieros
+- `SafeSiegePlacement` evita lugares de construcción ocupados (módulo: ACTIVADO).
+- `ActualSiegeResourcePayment` exige materiales y oro; la IA compra lo que falte mediante su comercio normal (DESACTIVADO).
+- `CoordinatedSiegeHarassment` envía un grupo de máquinas a posiciones de tiro accesibles (DESACTIVADO). `SiegeHarassMinEngines` fija el mínimo deseado (0–20, valor 3); `HarassingSiegeEnginesMax` sigue limitando el total.
+- `LargerSiegeForces` repite la composición mientras queden ingenieros de ataque vivos y libres y sitios válidos (DESACTIVADO). `SiegeForceMax` es un límite opcional (0–64); con 0 decide la cantidad de ingenieros. `AttMaxEngineers` limita las dotaciones.
 
-- `CorrectEngineerRoleCounting`: Cuenta los ingenieros asignados en sus cupos de tropas; excluye el asedio y el aceite.
+El emplazamiento seguro se activa con las opciones avanzadas de asedio. El recuento de funciones de ingeniero viene activado; Fixed Engineers gestiona la vida de las dotaciones.
+
+Los valores de asedio del AIC prevalecen sobre los del módulo.

@@ -36,6 +36,7 @@ function M.new(native, legacyInterval, fingerprint)
     return string.format('aic-tactics-word-digest-v1-%08x%08x', first, second)
   end
   local function active()
+    -- The module-level engineer switch participates in match identity.
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
@@ -51,8 +52,7 @@ function M.new(native, legacyInterval, fingerprint)
       if core.readInteger(address) ~= 0 or core.readInteger(address + 288) ~= 0
           or core.readInteger(address + 292) ~= 0 or core.readInteger(address + 296) ~= 0
           or core.readInteger(address + 316) ~= 0 or core.readInteger(address + 320) ~= 0
-          or core.readInteger(address + 344) ~= 0
-          or core.readInteger(address + 348) ~= 0 then return true end
+          or core.readInteger(address + 344) ~= 0 then return true end
     end
     return false
   end

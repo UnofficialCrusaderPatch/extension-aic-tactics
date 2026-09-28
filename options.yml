@@ -65,9 +65,9 @@ options:
   url: aic-tactics.siegeForceMax
   contents:
     type: integer
-    value: 10
+    value: 0
     min: 0
-    max: 20
+    max: 64
 - category: [AIC Tactics]
   name: nativeTargetPolicy
   header: '{{nativeTargetPolicy}}'

@@ -1,55 +1,38 @@
-Réglez le recrutement, la préparation des vagues, les cibles et les raids dans l’AIC de votre IA. Les champs AIC absents prennent leur valeur par défaut.
+AIC Tactics règle le recrutement, les attaques, les raids et les engins de siège de chaque IA installée. Ajoutez ces champs à son AIC. Les nouvelles politiques de recrutement, d’attaque et de raid sont facultatives ; les champs de siège omis suivent les options du module. Les listes et limites de troupes restent valables.
 
 ### Recrutement
 
-- `RecruitPolicy` : `Native` (par défaut) conserve le recrutement existant. `WeightedRoles` le répartit entre défense, raids, armée principale et sorties.
-- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong` : poids des sorties pour une IA normale, faible ou forte. Entiers de **0 à 100**, défaut **0**. Avec les poids existants de défense, raid et attaque, chaque niveau doit totaliser **100**. Exige `WeightedRoles` ; listes de troupes, intervalles et quotas restent applicables.
-- `RecruitConditions` : jusqu'à **8** règles ordonnées, aucune par défaut. La première règle correspondante remplace les poids du niveau. Chaque règle contient `When` et quatre poids totalisant 100 : `Defense`, `Raid`, `Attack`, `Sortie`. Exige `WeightedRoles`.
-- `DefRecruitComposition` : `Native` (par défaut) conserve le comportement existant. `PreserveSlots` réserve la part de chaque entrée de `DefUnit1..8` ; les doublons augmentent cette part. Les places restent libres si l’équipement manque. Exige `WeightedRoles`.
-- `RecruitInitialDefenseMonths` : **0–30** mois, **6** par défaut. Durant cette période, reporte les recrues de raid et d’armée principale tant que la défense est incomplète. Les sorties restent possibles ; un poids nul reste nul. **0** désactive ce délai. Exige `WeightedRoles`.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong` : part des sorties par niveau de force. Définir une de ces valeurs active les quatre parts pour cette IA. Défense, raid, attaque et sortie doivent totaliser 100 à chaque niveau.
+- `RecruitConditions` : autres parts selon la situation. Exemple : si le château est menacé, 70 % de défense, 20 % d’attaque et 10 % de sorties. La première règle applicable vaut pour ce recrutement.
+- `RecruitPolicy` : choix de compatibilité facultatif. `Native` conserve la sélection d’origine ; `WeightedRoles` active explicitement les quatre parts.
+- `DefRecruitComposition` : `PreserveSlots` respecte les proportions de `DefUnit1..8` ; `Native` garde la sélection habituelle.
+- `RecruitInitialDefenseMonths` : durée pendant laquelle raids et armée principale attendent que la défense atteigne son quota. 0 supprime l’attente ; valeur par défaut : 6 mois.
 
-`When` peut vérifier `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` (base menacée), `AttackActive` (attaque en cours), `DefenseIncomplete` (défense incomplète) et `EquipmentSurplus` (équipement excédentaire). Toutes les conditions indiquées doivent correspondre ; `true` exige la condition, `false` son absence. Un `When` vide correspond toujours.
+Une part de sortie active `WeightedRoles` automatiquement. Les règles de situation, la composition défensive et `RecruitInitialDefenseMonths` exigent de le définir explicitement. Intervalles et quotas de recrutement restent applicables.
 
-### Cibles d'attaque
+### Attaques et riposte
 
-`AttackTargetPolicy`:
-
-- `Inherit` (par défaut): Selon le `TargetChoice` existant.
-- `LowestPopulation`: Le moins de civils.
-- `FewestTroops`: Le moins d'unités militaires.
-- `LowestCombatPower`: La puissance militaire estimée la plus faible, sans tenir compte de la distance.
-- `Random`: Un adversaire admissible au hasard, à chances égales.
-- `LastAggressor`: Le dernier agresseur remplissant les critères de représailles.
-
-`AttackTargetCommitment` :
-
-- `Default` : `PerAttack` avec une nouvelle politique ou `DuringAttack` ; comportement existant sinon.
-- `PerAttack` : conserver la cible pendant toute l'attaque.
-- `UntilDefeated` : conserver la cible entre les attaques tant qu'elle reste un adversaire valide.
-
-### Préparation et riposte
-
-- `AttackPreparation` : `Native` (défaut), ou `DuringAttack` pour préparer la prochaine vague au château pendant l’attaque. Les limites de troupes et la progression des vagues restent applicables.
-- `AttackActivation` : `Immediate` (défaut), ou `AfterProvocation` pour attendre une attaque suffisante avant de lancer armées et raids. Les sorties défensives restent possibles.
-- `ProvocationRules` : seuils de riposte, par défaut `ThreatPower` **100**, `CombatTicks` **200**, `LossPower` **100**, `WindowTicks` **800**. Des combats prolongés près du donjon ou des pertes militaires suffisantes déclenchent la riposte ; des dégâts au seigneur suffisent immédiatement. Indiquer les quatre valeurs. **800 ticks = un mois de jeu**.
+- `AttackTargetPolicy` : `Inherit` utilise `TargetChoice`. `LowestPopulation`, `FewestTroops`, `LowestCombatPower`, `Random` et `LastAggressor` choisissent une cible par attaque. Pour la garder entre les attaques : `{ "Choice": "LastAggressor", "UntilDefeated": true }`. Vous pouvez ajouter `"Provocation": { "LossPower": 200 }` pour régler les représailles.
+- `AttackTargetCommitment` : reste accepté pour les anciens AIC. Dans un nouvel AIC, choisissez la cible et sa durée dans `AttackTargetPolicy`.
+- `AttackPreparation` : `DuringAttack` prépare la prochaine vague au château pendant l’attaque ; `Native` garde le calendrier habituel.
+- `AttackActivation` : `AfterProvocation` attend une attaque ennemie suffisante avant de lancer armées et raids ; `Immediate` n’attend pas. Les sorties défensives restent possibles.
+- `ProvocationRules` : reste accepté pour les anciens AIC, `AfterProvocation` et la menace utilisée au recrutement. Pour `LastAggressor`, un nouvel AIC peut placer les valeurs dans `AttackTargetPolicy.Provocation`.
 
 ### Raids
 
-- `RaidTargetPolicy` : `Native` (défaut), `NearestReachable` pour les bâtiments proches accessibles, ou `Opportunistic` selon la distance, la priorité et le danger.
-- `RaidGroupCount` : **1–4**, défaut **1**. Répartit les troupes de raid existantes sans en recruter davantage.
-- `RaidMinGroupSize` : **1–256**, défaut **4**. Les groupes plus petits attendent ou se regroupent.
-- `RaidFocus` : `Any` (défaut), `Food` (nourriture), `Industry` (production) ou `HighValue` (coût de reconstruction). Nécessite `Opportunistic`.
-- `RaidRiskTolerance` : `Low`, `Medium` (défaut) ou `High`. Tolérance aux troupes et défenses ennemies proches.
-- `RaidEnemyScope` : `PrimeTarget` (défaut) ou `AnyEnemy`. Ne change pas la cible de l’armée principale.
+- `RaidTargetPolicy` : `Native` garde les raids habituels ; `NearestReachable` vise des bâtiments proches accessibles ; `Opportunistic` tient compte des préférences et du danger ; `RandomNearby` choisit une cible accessible au hasard, puis nettoie les bâtiments proches.
+- `RaidGroupCount` (1–4) partage la force de raid existante ; `RaidMinGroupSize` (1–256) fait attendre ou réunir les petits groupes.
+- `RaidFocus` accepte `Any`, `Food`, `Industry`, `HighValue` ou des pourcentages comme `{ "Food": 60, "Industry": 20 }` ; le reste vise tout bâtiment. Fonctionne avec `Opportunistic` et `RandomNearby`. `RaidRiskTolerance` règle le risque ; `RaidEnemyScope` choisit l’ennemi principal ou tout ennemi.
 
-Ces cinq options nécessitent une nouvelle `RaidTargetPolicy`. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` et `RaidRetargetDelay` restent applicables. Pour rétablir les valeurs par défaut : `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
-### Engins de siège
+Les cinq champs après `RaidTargetPolicy` exigent une nouvelle politique de raid. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` et `RaidRetargetDelay` restent valables.
 
-- `SafeSiegePlacement`: `true` protège ses unités sur les sites de siège ; `false` conserve le placement d’origine. Si absent, le réglage du module s’applique (activé).
-- `ActualSiegeResourcePayment` : `true` exige matériaux et or avant la construction ; les manques passent par le commerce normal de l’IA. `false` conserve l’admission d’origine. Si absent, le réglage du module s’applique (désactivé).
-- `CoordinatedSiegeHarassment` : `true` rassemble les engins puis les envoie vers des positions de tir accessibles. `SiegeHarassMinEngines` (0–20, 3 par défaut) fixe le nombre attendu ; après un mois de jeu, deux engins accessibles suffisent. Choisissez 0 ou 1 pour autoriser un engin seul. Sans valeur AIC, les réglages du module s’appliquent (désactivé, 3). `HarassingSiegeEnginesMax` limite toujours le total.
-- `LargerSiegeForces` : `true` répète la composition de siège pendant l’assaut principal jusqu’à `SiegeForceMax` (0–20, 10 par défaut). **0** conserve une seule série native. Sans valeur AIC, le module fournit les valeurs (désactivé, 10) ; `AttMaxEngineers` limite toujours les ingénieurs disponibles.
+### Siège et ingénieurs
 
-### Quotas d’ingénieurs
+- `SafeSiegePlacement` évite les emplacements occupés (module : ACTIVÉ).
+- `ActualSiegeResourcePayment` exige matériaux et or ; l’IA achète les manques par son commerce normal (DÉSACTIVÉ).
+- `CoordinatedSiegeHarassment` envoie des engins rassemblés vers des positions de tir accessibles (DÉSACTIVÉ). `SiegeHarassMinEngines` fixe le minimum souhaité (0–20, défaut 3) ; `HarassingSiegeEnginesMax` reste la limite totale.
+- `LargerSiegeForces` répète la composition tant que des ingénieurs d’attaque vivants et libres et des sites valides restent disponibles (DÉSACTIVÉ). `SiegeForceMax` est un plafond facultatif (0–64) ; 0 laisse décider le nombre d’ingénieurs. `AttMaxEngineers` limite les équipages.
 
-- `CorrectEngineerRoleCounting`: Compte les ingénieurs affectés dans leurs quotas de troupes, séparément du siège et de l’huile.
+Le placement sûr s’active avec les options de siège avancées. Le décompte des rôles d’ingénieur est activé par défaut ; Fixed Engineers gère le cycle de vie des équipages.
+
+Les valeurs de siège définies dans l’AIC priment sur celles du module.

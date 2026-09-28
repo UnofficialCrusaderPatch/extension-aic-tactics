@@ -1,10 +1,10 @@
 {
   "AttackPreparation": "DuringAttack",
-  "AttackTargetPolicy": "Random",
-  "AttackTargetCommitment": "UntilDefeated",
-  "RaidTargetPolicy": "NearestReachable",
+  "AttackTargetPolicy": {"Choice": "Random", "UntilDefeated": true},
+  "RaidTargetPolicy": "RandomNearby",
   "RaidGroupCount": 2,
   "RaidMinGroupSize": 4,
+  "RaidFocus": {"Food": 60, "Industry": 20},
   "RaidRiskTolerance": "Medium",
   "RaidEnemyScope": "PrimeTarget"
 }

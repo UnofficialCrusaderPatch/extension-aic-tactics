@@ -44,13 +44,9 @@ int main()
 
     engineerRoleFallback = 1;
     assert(countableEngineerRole(1, 1) == 1);
-    configurations[1].correctEngineerRoleCounting = 2;
-    assert(countableEngineerRole(1, 1) == 0);
-    configurations[1].correctEngineerRoleCounting = 0;
     engineerRoleFallback = 0;
     assert(countableEngineerRole(1, 1) == 0);
-    configurations[1].correctEngineerRoleCounting = 1;
-    assert(countableEngineerRole(1, 1) == 1);
+    engineerRoleFallback = 1;
     assert(countableEngineerRole(2, 1) == 0);
     put<short>(units, 1 * 0x490 + 0x2D8, 0);
     assert(countableEngineerRole(1, 1) == 0);

@@ -1,55 +1,38 @@
-通过 AIC 设置 AI 的招募、下一波备战、进攻目标和袭扰。未填写的 AIC 字段使用默认值。
+AIC Tactics 可分别调整每个已安装 AI 的招兵、进攻、袭扰和攻城器械。在该 AI 的 AIC 中填写下列字段。新的招兵、进攻和袭扰策略可按需启用；攻城字段省略时采用模块设置。原有兵种列表和数量上限仍然生效。
 
-### 招募
+### 招兵
 
-- `RecruitPolicy`：`Native`（默认）沿用原有招募方式。`WeightedRoles` 在防御、袭扰、主力军队和出城迎敌之间分配招募。
-- `RecruitProbSortieDefault`、`RecruitProbSortieWeak`、`RecruitProbSortieStrong`：AI 处于普通、较弱和较强状态时的出击权重。取 **0–100** 的整数，默认 **0**。与现有防御、袭扰和进攻权重相加，每档必须为 **100**。需要 `WeightedRoles`；兵种列表、招募间隔和配额继续生效。
-- `RecruitConditions`：最多 **8** 条按顺序匹配的规则，默认为空。第一条匹配规则替代当前实力档位的权重。每条规则包含 `When` 和总和为 100 的四个权重：`Defense`、`Raid`、`Attack`、`Sortie`。需要 `WeightedRoles`。
-- `DefRecruitComposition`：`Native`（默认）沿用原有行为。`PreserveSlots` 按 `DefUnit1..8` 的条目保留兵种份额；重复条目会增加该兵种的份额。缺少装备时，相应名额保持空缺。需要 `WeightedRoles`。
-- `RecruitInitialDefenseMonths`：**0–30** 个月，默认 **6**。在此期间，若防御兵力未满配额，暂停招募袭扰部队和主力军。仍可招募出击部队；权重为 0 的角色仍不招募。**0** 关闭等待期。需要 `WeightedRoles`。
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`：各实力状态下的出击比例。设置任一项后，该 AI 使用四项招兵比例；每档的防御、袭扰、进攻和出击比例合计必须为 100。
+- `RecruitConditions`：按情况调整比例。例如城堡受威胁时，70% 防御、20% 进攻、10% 出击。每次招兵采用第一条符合条件的规则。
+- `RecruitPolicy`：可选的兼容设置。`Native` 沿用原有选择方式；`WeightedRoles` 明确启用四项比例。
+- `DefRecruitComposition`：`PreserveSlots` 保留 `DefUnit1..8` 中各兵种的比例；`Native` 沿用原有选择。
+- `RecruitInitialDefenseMonths`：防守人数未达配额时，袭扰和主力军等待的时间。设为 0 则不等待；默认 6 个月。
 
-`When` 可检查 `Strength`（`Default`、`Weak`、`Strong`）、`HomeUnderThreat`（基地受威胁）、`AttackActive`（进攻进行中）、`DefenseIncomplete`（防御兵力未补齐）和 `EquipmentSurplus`（有多余装备）。所有已填写条件必须匹配；`true` 要求条件成立，`false` 要求不成立。空的 `When` 始终匹配。
+设置出击比例会自动启用 `WeightedRoles`。情境规则、防守兵种比例和 `RecruitInitialDefenseMonths` 仍需明确设置此模式。原有招兵间隔和配额继续生效。
 
-### 进攻目标
+### 进攻与反击
 
-`AttackTargetPolicy`:
-
-- `Inherit`（默认）: 沿用现有 `TargetChoice`。
-- `LowestPopulation`: 平民最少的对手。
-- `FewestTroops`: 军事单位最少的对手。
-- `LowestCombatPower`: 估计军事实力最低的对手，不考虑距离。
-- `Random`: 从符合条件的对手中等概率随机选择。
-- `LastAggressor`: 最近一名符合反击条件的进攻者。
-
-`AttackTargetCommitment`：
-
-- `Default`：新目标策略或 `DuringAttack` 使用 `PerAttack`；其他情况保留原有行为。
-- `PerAttack`：整个进攻期间保持同一目标。
-- `UntilDefeated`：只要对手仍是有效目标，多次进攻都针对该对手。
-
-### 备战与反击
-
-- `AttackPreparation`：默认 `Native`；`DuringAttack` 允许当前军队进攻时在城内招募下一波兵力。原有兵力上限和波次增长仍然有效。
-- `AttackActivation`：默认 `Immediate`；`AfterProvocation` 在遭受达到反击条件的攻击后才发动主力进攻或袭扰。防御性出击仍然可用。
-- `ProvocationRules`：反击阈值，默认 `ThreatPower` **100**、`CombatTicks` **200**、`LossPower` **100**、`WindowTicks` **800**。主堡附近持续交战或足够的军队损失可触发反击；领主受到伤害立即满足条件。修改时须同时提供四个值。**800 tick = 一个游戏月**。
+- `AttackTargetPolicy`：`Inherit` 使用 `TargetChoice`；`LowestPopulation`、`FewestTroops`、`LowestCombatPower`、`Random` 和 `LastAggressor` 各为一次进攻选定一个目标。
+- `AttackTargetCommitment`：旧 AIC 仍可使用。新 AIC 可在 `AttackTargetPolicy` 中同时设置选敌方式和持续时间，例如 `{ "Choice": "LastAggressor", "UntilDefeated": true }`。
+- `AttackPreparation`：`DuringAttack` 让军队进攻时在城内准备下一波；`Native` 沿用原有节奏。
+- `AttackActivation`：`AfterProvocation` 等待达到反击条件的敌方进攻后再派出主力军或袭扰部队；`Immediate` 不等待。防御性出击仍可进行。
+- `ProvocationRules`：旧 AIC、`AfterProvocation` 和招兵威胁规则仍可使用。新 AIC 可在 `AttackTargetPolicy.Provocation` 中设置 `LastAggressor` 的门槛。
 
 ### 袭扰
 
-- `RaidTargetPolicy`：默认 `Native`；`NearestReachable` 选择附近可到达的建筑；`Opportunistic` 综合距离、偏好和危险程度。
-- `RaidGroupCount`：**1–4**，默认 **1**。拆分现有袭扰部队，不额外招兵。
-- `RaidMinGroupSize`：**1–256**，默认 **4**。人数不足的小队等待或合并。
-- `RaidFocus`：`Any`（默认）、`Food`（食物）、`Industry`（生产）或 `HighValue`（重建成本）。需要 `Opportunistic`。
-- `RaidRiskTolerance`：`Low`、`Medium`（默认）或 `High`，控制对附近敌军和防御设施的风险容忍度。
-- `RaidEnemyScope`：`PrimeTarget`（默认）或 `AnyEnemy`，不改变主力军队的目标。
+- `RaidTargetPolicy`：`Native` 沿用原有袭扰；`NearestReachable` 选择附近可到达的建筑；`Opportunistic` 考虑偏好和危险；`RandomNearby` 随机选一个可到达的建筑，再清理周边建筑。
+- `RaidGroupCount`（1–4）拆分现有袭扰兵力；`RaidMinGroupSize`（1–256）让人数不足的小队等待或合并。
+- `RaidFocus` 可选 `Any`、`Food`、`Industry`、`HighValue`，也可设比例，如 `{ "Food": 60, "Industry": 20 }`；剩余比例不限类别。适用于 `Opportunistic` 和 `RandomNearby`。`RaidRiskTolerance` 设置危险程度；`RaidEnemyScope` 设置敌方范围。
 
-以上五项设置需要新的 `RaidTargetPolicy`。`RaidUnitsBase`、`RaidUnitsRandom`、`RaidUnit1..8` 和 `RaidRetargetDelay` 仍然有效。恢复默认：`AttackPreparation: Native`、`AttackActivation: Immediate`、`RaidTargetPolicy: Native`。
-### 攻城器械
+`RaidTargetPolicy` 后的五个字段需要新袭扰策略。原有 `RaidUnitsBase`, `RaidUnitsRandom`、`RaidUnit1..8` 和 `RaidRetargetDelay` 继续生效。
 
-- `SafeSiegePlacement`: `true` 保护攻城建造地点的己方单位；`false` 使用原版放置规则。省略时采用模块开关（默认开启）。
-- `ActualSiegeResourcePayment`：`true` 要求建造前备足材料和金币；缺少的材料交由 AI 常规贸易购买。`false` 保留原版检查。省略时采用模块开关（默认关闭）。
-- `CoordinatedSiegeHarassment`：`true` 集结攻城器械，并派往可达的射击位置。`SiegeHarassMinEngines`（0–20，默认 3）为等待数量；一个游戏月后，两台可达器械即可出发。设为 0 或 1 可让一台单独出发。两项省略时使用模块设置（默认关闭、3）；原有 `HarassingSiegeEnginesMax` 仍限制总数。
-- `LargerSiegeForces`：`true` 在主攻时重复现有的攻城器械配置，最多建造 `SiegeForceMax` 台（0–20，默认 10）。**0** 保留原版的一轮建造。未填写时使用模块设置（关闭、10）；`AttMaxEngineers` 仍限制可用工程师。
+### 攻城与工程兵
 
-### 工程兵配额
+- `SafeSiegePlacement` 避开已被占用的建造位置（模块默认开启）。
+- `ActualSiegeResourcePayment` 要求材料和金币；AI 通过正常贸易购买缺少的资源（默认关闭）。
+- `CoordinatedSiegeHarassment` 集结攻城器械，再前往可到达的射击位置（默认关闭）。`SiegeHarassMinEngines` 设置期望的最少数量（0–20，默认 3）；`HarassingSiegeEnginesMax` 仍限制总数。
+- `LargerSiegeForces` 在仍有存活且未分配的进攻工程兵和有效建造地点时循环使用器械配置（默认关闭）。`SiegeForceMax` 可选数量上限（0–64）；0 由可用工程兵决定。`AttMaxEngineers` 仍限制操作人员。
 
-- `CorrectEngineerRoleCounting`: 按实际部队职责统计工程兵；攻城和油锅任务单独计算。
+启用高级攻城功能时，安全选址自动生效。工程兵角色计数默认开启；Fixed Engineers 负责器械和操作人员的生命周期。
+
+攻城 AIC 设置优先于模块默认值。

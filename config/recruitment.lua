@@ -77,6 +77,16 @@ function M.prepare(previous, spec, readNative, resetting)
   end
   local mode = candidate.RecruitPolicy
   assert(mode == 'Native' or mode == 'WeightedRoles', 'RecruitPolicy must be Native or WeightedRoles')
+  -- A sortie share is an explicit request for four-role recruitment. The
+  -- original AIC's three-role rows are still read as authored and must total
+  -- 100 with that share; never scale them silently. Other extension settings
+  -- cannot implicitly replace the native role chooser.
+  if not resetting and spec.RecruitPolicy == nil
+      and (spec.RecruitProbSortieDefault ~= nil or spec.RecruitProbSortieWeak ~= nil
+        or spec.RecruitProbSortieStrong ~= nil) then
+    mode = 'WeightedRoles'
+    candidate.RecruitPolicy = mode
+  end
   if mode == 'Native' and not resetting then
     for index = 2, #M.fields do
       assert(spec[M.fields[index]] == nil, M.fields[index] .. ' requires RecruitPolicy=WeightedRoles')

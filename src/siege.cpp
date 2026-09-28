@@ -7,7 +7,7 @@ int safePlacementFallback = 1;
 int siegePaymentFallback = 0;
 int siegePaymentPolicy[17];
 int largeSiegeFallback = 0;
-int siegeForceMaximumFallback = 10;
+int siegeForceMaximumFallback = 0;
 int largeSiegePolicy[17];
 int siegeForceMaximum[17];
 
@@ -83,6 +83,7 @@ struct SourceCrew {
     int source;
     unsigned int uid;
     int count;
+    int available;
     int units[64];
 };
 
@@ -97,12 +98,23 @@ bool captureSourceCrew(int player, SourceCrew& crew)
         || *reinterpret_cast<const int*>(group + 0x2C) != player) return false;
     crew.count = *reinterpret_cast<const short*>(group + 0x5C);
     if (crew.count <= 0 || crew.count > 64) return false;
+    crew.available = 0;
     typedef int (__thiscall *IndexedUnit)(void*, int, int);
     for (int index = 0; index < crew.count; ++index) {
         const int unit = reinterpret_cast<IndexedUnit>(nativeBindings.siegeGetUnitForIndex)(
             reinterpret_cast<void*>(nativeBindings.tribes), crew.source, index);
         if (unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity)) return false;
         crew.units[index] = unit;
+        const unsigned int record = nativeBindings.unitRecords + unit * 0x490;
+        if (*reinterpret_cast<const short*>(record + 0x8C) == 2
+            && *reinterpret_cast<const short*>(record + 0x8E) == 30
+            && *reinterpret_cast<const short*>(record + 0x96) == player
+            && *reinterpret_cast<const short*>(record + 0x42A) == 10
+            && *reinterpret_cast<const short*>(record + 0x2A0) == 0
+            && *reinterpret_cast<const int*>(record + 0x3C8) > 0
+            && *reinterpret_cast<const short*>(record + 0x2D8) == crew.source
+            && *reinterpret_cast<const unsigned int*>(record + 0x2E4) == crew.uid)
+            ++crew.available;
     }
     return true;
 }
@@ -219,22 +231,27 @@ void __fastcall buildLargerSiegeForce(void* aic, void*, int player)
 {
     const AssaultBatch original = reinterpret_cast<AssaultBatch>(nativeBindings.siegeAssaultBatch);
     if (!largerForceEnabled(player)) { original(aic, player); return; }
-    const int maximum = configuredForceMaximum(player);
+    const int configuredMaximum = configuredForceMaximum(player);
     const int character = siegeCharacter(player);
     const int composition = siegeCompositionSize(character);
-    if (!maximum || !composition) { original(aic, player); return; }
+    if (!composition) { original(aic, player); return; }
     const unsigned int owner = nativeBindings.players + player * 0x39F4;
     const int wave = *reinterpret_cast<const int*>(owner + 0x3924);
     if (wave <= 0) { original(aic, player); return; }
     const int existing = existingWaveEquipment(aic, player, wave);
-    if (existing >= maximum) return;
     if (activeForcePlayer || freePlayerTribes(player) == 0) return;
     SourceCrew crew;
-    if (!captureSourceCrew(player, crew)) { original(aic, player); return; }
+    if (!captureSourceCrew(player, crew)) return;
+    const int availableEngineers = crew.available;
+    // One engine needs at least one of the currently unassigned attack
+    // engineers. The native batch and crew owner decide the actual mix.
+    int maximum = existing + availableEngineers;
+    if (configuredMaximum > 0 && maximum > configuredMaximum) maximum = configuredMaximum;
+    if (existing >= maximum) return;
     activeForcePlayer = player;
     activeForceMaximum = maximum;
     activeForceCount = existing;
-    for (int batch = 0; batch < maximum && activeForceCount < maximum; ++batch) {
+    for (int batch = 0; batch < availableEngineers && activeForceCount < maximum; ++batch) {
         // Native placement can use the remaining slots for a partial batch.
         if (freePlayerTribes(player) == 0) break;
         if (batch > 0 && !captureSourceCrew(player, crew)) break;
@@ -254,6 +271,12 @@ int __cdecl siegePlacementPolicyEnabled(int player)
     const unsigned int playerAddress = nativeBindings.players + player * 0x39F4;
     const int character = *reinterpret_cast<const int*>(playerAddress + 0x2300);
     if (character < 2 || character > 17) return false;
+    const int index = character - 1;
+    if (largerForceEnabled(player)
+        || siegePaymentPolicy[index] == 1
+        || (siegePaymentPolicy[index] == 0 && siegePaymentFallback)
+        || siegeHarassPolicy[index] == 1
+        || (siegeHarassPolicy[index] == 0 && siegeHarassFallback)) return true;
     const int choice = configurations[character - 1].safeSiegePlacement;
     return choice == 1 || (choice == 0 && safePlacementFallback != 0);
 }

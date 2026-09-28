@@ -1,4 +1,5 @@
 import hashlib
+import json
 from pathlib import Path
 
 from lupa.lua54 import LuaRuntime
@@ -12,6 +13,7 @@ def test_packaged_identity_reads_exact_payload_including_locales_and_dll(tmp_pat
     dll.write_bytes(b'MZ\0binary\xff')
     module, files = module_payload(root, dll)
     assert len([name for name in files if name.startswith('locale/description-')]) == 9
+    assert len(json.loads(files['schema/aic-tactics.schema.json'])['properties']) == 24
     assert files['aicTactics.dll'] == dll.read_bytes()
     lua = LuaRuntime(encoding=None)
     lua.globals()[b'payload'] = lua.table_from({name.encode(): data for name, data in files.items()})

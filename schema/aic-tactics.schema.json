@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/blob/main/schema/aic-tactics.schema.json",
+  "title": "AIC Tactics fields in an AI's aic object",
+  "description": "Authoring aid for extension fields. Ordinary AIC fields remain valid. The Lua provider is the runtime validator; it also checks cross-field dependencies and that each recruitment row totals 100.",
+  "type": "object",
+  "additionalProperties": true,
+  "$defs": {
+    "share": {"type": "integer", "minimum": 0, "maximum": 100},
+    "booleanFact": {"type": "boolean"},
+    "provocation": {
+      "type": "object",
+      "description": "How much pressure qualifies as an attack on this AI.",
+      "properties": {
+        "ThreatPower": {"type": "integer", "minimum": 1, "maximum": 100000, "description": "Enemy troop power near home."},
+        "CombatTicks": {"type": "integer", "minimum": 1, "maximum": 9600, "description": "Sustained nearby fighting."},
+        "LossPower": {"type": "integer", "minimum": 1, "maximum": 100000, "description": "Military losses caused by an opponent."},
+        "WindowTicks": {"type": "integer", "minimum": 32, "maximum": 9600, "multipleOf": 32, "description": "How long an incident remains relevant."}
+      },
+      "additionalProperties": false
+    },
+    "when": {
+      "type": "object",
+      "properties": {
+        "Strength": {"enum": ["Default", "Weak", "Strong"], "description": "Native strength state for this recruitment opportunity."},
+        "HomeUnderThreat": {"$ref": "#/$defs/booleanFact"},
+        "AttackActive": {"$ref": "#/$defs/booleanFact"},
+        "DefenseIncomplete": {"$ref": "#/$defs/booleanFact"},
+        "EquipmentSurplus": {"$ref": "#/$defs/booleanFact"}
+      },
+      "additionalProperties": false
+    },
+    "recruitRow": {
+      "type": "object",
+      "description": "First matching row replaces this recruitment choice's four shares. All four must total 100.",
+      "properties": {
+        "When": {"$ref": "#/$defs/when"},
+        "Defense": {"$ref": "#/$defs/share"},
+        "Raid": {"$ref": "#/$defs/share"},
+        "Attack": {"$ref": "#/$defs/share"},
+        "Sortie": {"$ref": "#/$defs/share"}
+      },
+      "required": ["When", "Defense", "Raid", "Attack", "Sortie"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "RecruitPolicy": {"enum": ["Native", "WeightedRoles"], "description": "Optional compatibility switch. Native uses the game's recruiter; WeightedRoles uses four shares. Authoring a sortie share activates WeightedRoles without this field."},
+    "RecruitProbSortieDefault": {"$ref": "#/$defs/share", "description": "Sortie share at normal strength. Combine with the existing Defense, Raid and Attack shares to total 100."},
+    "RecruitProbSortieWeak": {"$ref": "#/$defs/share", "description": "Sortie share when weak; the four weak shares must total 100."},
+    "RecruitProbSortieStrong": {"$ref": "#/$defs/share", "description": "Sortie share when strong; the four strong shares must total 100."},
+    "RecruitConditions": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/recruitRow"}, "description": "Optional situation-specific shares; first matching row wins. Requires WeightedRoles."},
+    "DefRecruitComposition": {"enum": ["Native", "PreserveSlots"], "description": "Preserve the proportions of DefUnit1..8 while recruiting defenders. Requires WeightedRoles."},
+    "RecruitInitialDefenseMonths": {"type": "integer", "minimum": 0, "maximum": 30, "description": "Months to prefer filling defense before raids and the main army; 0 removes the wait. Requires WeightedRoles. Default 6."},
+    "AttackTargetPolicy": {
+      "oneOf": [
+        {"enum": ["Inherit", "InheritPerAttack", "LowestPopulation", "FewestTroops", "LowestCombatPower", "Random", "LastAggressor"]},
+        {"type": "object", "properties": {
+          "Choice": {"enum": ["Inherit", "LowestPopulation", "FewestTroops", "LowestCombatPower", "Random", "LastAggressor"]},
+          "UntilDefeated": {"type": "boolean", "description": "Keep the selected opponent across attacks while valid."},
+          "Provocation": {"$ref": "#/$defs/provocation", "description": "Threshold overrides for LastAggressor only."}
+        }, "required": ["Choice"], "additionalProperties": false}
+      ],
+      "description": "Choose an opponent. New choices hold one target for the current attack by default; an object can keep it until defeated. Inherit uses TargetChoice."
+    },
+    "AttackTargetCommitment": {"enum": ["Default", "PerAttack", "UntilDefeated"], "description": "Older AIC field retained for compatibility. New AICs set target duration inside AttackTargetPolicy."},
+    "AttackActivation": {"enum": ["Immediate", "AfterProvocation"], "description": "Optionally wait for a qualifying attack before starting offensive armies or raids."},
+    "ProvocationRules": {"$ref": "#/$defs/provocation", "description": "Shared retaliation thresholds for older AICs, threat-based recruitment or AfterProvocation. Direct use requires all four values."},
+    "AttackPreparation": {"enum": ["Native", "DuringAttack"], "description": "Optionally prepare one next wave at home while the current army attacks."},
+    "RaidTargetPolicy": {"enum": ["Native", "NearestReachable", "Opportunistic", "RandomNearby"], "description": "Building choice for raids. RandomNearby draws a reachable building, then clears nearby buildings before drawing again."},
+    "RaidGroupCount": {"type": "integer", "minimum": 1, "maximum": 4, "description": "Split the existing total raid force into up to four groups; does not recruit extra troops."},
+    "RaidMinGroupSize": {"type": "integer", "minimum": 1, "maximum": 256, "description": "Minimum troops before a raid group leaves."},
+    "RaidFocus": {"oneOf": [
+      {"enum": ["Any", "Food", "Industry", "HighValue"]},
+      {"type": "object", "properties": {
+        "Food": {"$ref": "#/$defs/share"},
+        "Industry": {"$ref": "#/$defs/share"},
+        "HighValue": {"$ref": "#/$defs/share"}
+      }, "additionalProperties": false}
+    ], "description": "Building category or category percentages. Percentages may total at most 100; the remainder targets any building. Requires Opportunistic or RandomNearby."},
+    "RaidRiskTolerance": {"enum": ["Low", "Medium", "High"], "description": "How much nearby defense a raid accepts."},
+    "RaidEnemyScope": {"enum": ["PrimeTarget", "AnyEnemy"], "description": "Raid the main opponent or any enemy; does not change the main army's target."},
+    "SafeSiegePlacement": {"type": "boolean", "description": "Protect friendly units at siege construction sites. Module default ON; advanced siege policies require it."},
+    "ActualSiegeResourcePayment": {"type": "boolean", "description": "Require configured materials and gold before construction; module default OFF."},
+    "CoordinatedSiegeHarassment": {"type": "boolean", "description": "Gather siege engines and approach reachable targets together; module default OFF."},
+    "SiegeHarassMinEngines": {"type": "integer", "minimum": 0, "maximum": 20, "description": "Preferred number of ready harassment engines before departure; module default 3."},
+    "LargerSiegeForces": {"type": "boolean", "description": "Repeat the existing assault equipment mix while unassigned attack engineers and native capacity remain; module default OFF."},
+    "SiegeForceMax": {"type": "integer", "minimum": 0, "maximum": 64, "description": "Optional cap on active and pending assault equipment. 0 lets available engineers determine size; module default 0."}
+  }
+}
