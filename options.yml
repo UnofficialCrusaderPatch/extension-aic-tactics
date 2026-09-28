@@ -48,6 +48,26 @@ options:
     value: 3
     min: 0
     max: 20
+- category: ['{{ai}}', '{{improvements}}']
+  name: largerSiegeForces
+  header: '{{largerSiegeForces}}'
+  text: '{{largerSiegeForces_descr}}'
+  display: UCP2Switch
+  url: aic-tactics.largerSiegeForces
+  contents:
+    type: boolean
+    value: false
+- category: ['{{ai}}', '{{improvements}}']
+  name: siegeForceMax
+  header: '{{siegeForceMax}}'
+  text: '{{siegeForceMax_descr}}'
+  display: Number
+  url: aic-tactics.siegeForceMax
+  contents:
+    type: integer
+    value: 10
+    min: 0
+    max: 20
 - category: [AIC Tactics]
   name: nativeTargetPolicy
   header: '{{nativeTargetPolicy}}'

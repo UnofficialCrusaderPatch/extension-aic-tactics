@@ -1,6 +1,6 @@
 # Engineer quota integration record
 
-This is an AI counting correction in AIC Tactics 0.0.13, dependent on the
+This is an AI counting correction in AIC Tactics 0.0.14, dependent on the
 safe-placement PR. It does not replace Fixed Engineers 0.2.0's general
 crew, death or dismount handlers.
 

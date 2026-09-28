@@ -81,6 +81,9 @@ struct NativeBindings {
     unsigned int siegeGroupMove;
     unsigned int siegePlaceTent;
     unsigned int popUnitFromTribe;
+    unsigned int siegeAssaultBatch;
+    unsigned int siegeUnitCount;
+    unsigned int siegeGetUnitForIndex;
 };
 extern NativeBindings nativeBindings;
 int nativeRandom(void*);

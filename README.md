@@ -1,7 +1,7 @@
 # extension-aic-tactics
 Opt-in recruitment, attack and raid policies for AI personalities in UCP3; under development
 
-Source 0.0.13 declares Crusader and Extreme 1.41 and uses verified UCP native
+Source 0.0.14 declares Crusader and Extreme 1.41 and uses verified UCP native
 bindings. [Component evidence and remaining acceptance](docs/shared-native-bindings.md)
 are recorded separately. Installed-runtime acceptance remains in progress.
 
@@ -27,7 +27,8 @@ gathers catapults and fire ballistas before issuing bounded native path and
 group-move commands. Its minimum is per AI (module fallback 3), with a one-month
 timeout. The native `HarassingSiegeEnginesMax` can request ten engines without
 changing the eight composition slots. An independent larger **main-assault**
-force policy is not implemented yet. Binding and component checks cover six local
+force policy repeats that authored mix within engineer, equipment and native
+tribe limits. Binding and component checks cover six local
 Crusader/Extreme executables; installed-game recruitment, placement, stock/gold,
 harassment, save/load, replay and performance acceptance are still pending.
 

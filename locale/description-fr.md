@@ -48,6 +48,7 @@ Ces cinq options nécessitent une nouvelle `RaidTargetPolicy`. `RaidUnitsBase`, 
 - `SafeSiegePlacement`: `true` protège ses unités sur les sites de siège ; `false` conserve le placement d’origine. Si absent, le réglage du module s’applique (activé).
 - `ActualSiegeResourcePayment` : `true` exige matériaux et or avant la construction ; les manques passent par le commerce normal de l’IA. `false` conserve l’admission d’origine. Si absent, le réglage du module s’applique (désactivé).
 - `CoordinatedSiegeHarassment` : `true` rassemble les engins puis les envoie vers des positions de tir accessibles. `SiegeHarassMinEngines` (0–20, 3 par défaut) fixe le nombre attendu ; après un mois de jeu, les engins disponibles partent. Sans valeur AIC, les réglages du module s’appliquent (désactivé, 3). `HarassingSiegeEnginesMax` limite toujours le total.
+- `LargerSiegeForces` : `true` répète la composition de siège pendant l’assaut principal jusqu’à `SiegeForceMax` (0–20, 10 par défaut). **0** conserve une seule série native. Sans valeur AIC, le module fournit les valeurs (désactivé, 10) ; `AttMaxEngineers` limite toujours les ingénieurs disponibles.
 
 ### Quotas d’ingénieurs
 

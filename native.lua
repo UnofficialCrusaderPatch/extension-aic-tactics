@@ -20,6 +20,7 @@ function M.new(game)
   local siegeDirectHook
   local siegeHarassHooks
   local siegeRecoveryInstalled = false
+  local largerSiegeInstalled = false
   local engineerRoleHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
   function native.preflightAssaultCrewRecovery()
@@ -35,6 +36,32 @@ function M.new(game)
     local site = game.siegeAssaultPlacementCall
     core.writeCode(site, {0xE8, native.placeSiegeTentAndRecoverEngineers-site-5})
     siegeRecoveryInstalled = true
+  end
+  function native.preflightLargerSiegeForce()
+    native.preflightAssaultCrewRecovery()
+    local target = require('native-context').call(game.siegeAssaultBatchCall,
+      'AI assault siege batch')
+    assert(target == (largerSiegeInstalled and native.buildLargerSiegeForce
+        or game.siegeAssaultBatch),
+      'AIC Tactics: AI assault siege batch was replaced')
+  end
+  function native.activateLargerSiegeForce()
+    if largerSiegeInstalled then return end
+    native.preflightLargerSiegeForce()
+    native.activateAssaultCrewRecovery()
+    local site = game.siegeAssaultBatchCall
+    core.writeCode(site, {0xE8, native.buildLargerSiegeForce-site-5})
+    largerSiegeInstalled = true
+  end
+  function native.configureLargerSiegeForce(fallback, maximum)
+    assert(type(fallback) == 'boolean',
+      'AIC Tactics: largerSiegeForces must be boolean')
+    assert(type(maximum) == 'number' and maximum == math.floor(maximum)
+        and maximum >= 0 and maximum <= 20,
+      'AIC Tactics: siegeForceMax must be 0 to 20')
+    core.writeInteger(native.largeSiegeFallback, fallback and 1 or 0)
+    core.writeInteger(native.siegeForceMaximumFallback, maximum)
+    if fallback then native.activateLargerSiegeForce() end
   end
   function native.preflightSafePlacement()
     native.preflightAssaultCrewRecovery()
@@ -157,7 +184,9 @@ failed:
         'AIC Tactics: native siege resource admission was replaced')
     else
       require('native-context').verify(owner, 'native building placement admission',
-        '53 B9 ? ? ? ? 89 96 30 49 55 00')
+        '53 B9 ? ? ? ? 89 96 ? ? ? ?')
+      assert(core.readInteger(owner+8) == game.siegeResourceBypassAddress,
+        'AIC Tactics: native siege resource bypass changed')
     end
     local gold = game.siegeGoldSub
     if siegeGoldHook then
@@ -213,7 +242,7 @@ allowed:
       mov ecx, buildings
       jmp resume
     ]], {checkResources=native.siegeResourceAdmission,
-      bypassCheck=0x554930, buildings=game.buildings,
+      bypassCheck=game.siegeResourceBypassAddress, buildings=game.buildings,
       placementFail=game.siegePlacementFail,
       placedBuilding=game.siegeAnglePlacedBuilding,
       failedExit=game.siegeBuildingFailureExit,

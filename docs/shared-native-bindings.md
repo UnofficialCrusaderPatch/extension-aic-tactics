@@ -23,7 +23,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 288-byte
+`native-bindings.lua` passes the resolved values into the DLL's 300-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -348,6 +348,19 @@ instead consumes the eight **main-assault** composition entries once as attack
 state 2 advances to 3. Those entries are not a live-engine capacity. A larger
 main-assault policy therefore needs an additional engineer supply and native
 placement batch; merely increasing the loop bound would read outside the AIC.
-That independent policy remains unimplemented. The harassment draft's x86 build,
-component tests and six executable binding fixtures do not establish live
-movement, full crews, save/replay integrity or simulation overhead.
+Source 0.0.14 hooks only that state-2-to-3 batch call for AIs opting into
+`LargerSiegeForces`. It invokes the same native batch repeatedly, retaining the
+eight authored composition entries and native placement/resource owners. The
+native `countSiegeEngineUnits` census plus pending current-wave equipment bounds
+construction; the native tribe allocator partition bounds free crew slots. A
+source-group snapshot returns surviving engineers left detached by a partial
+batch through native membership calls. The policy stops after no successful
+construction, depleted crew or tribe capacity. Its building scan happens once
+per attack transition; subsequent work is bounded by the configured 0–20 cap.
+No new frame, map or complete unit census was introduced. Existing movement,
+harassment, payment and role-counting owners remain separate.
+
+The x86 build, component tests and six executable binding fixtures verify the
+adapter and layouts. They do not establish live construction, simultaneous
+crews, save/replay integrity or whole-game simulation overhead. Those are
+required before promotion from a test candidate.

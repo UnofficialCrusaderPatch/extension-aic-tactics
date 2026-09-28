@@ -61,6 +61,10 @@ extern int safePlacementFallback;
 extern int engineerRoleFallback;
 extern int siegePaymentFallback;
 extern int siegePaymentPolicy[17];
+extern int largeSiegeFallback;
+extern int siegeForceMaximumFallback;
+extern int largeSiegePolicy[17];
+extern int siegeForceMaximum[17];
 extern int siegeHarassFallback;
 extern int siegeHarassMinimumFallback;
 extern int siegeHarassPolicy[17];
@@ -100,6 +104,7 @@ int __cdecl siegeTentCandidateAllowed(int tribe, int point);
 int __cdecl failedSiegeTent(int tribe, int point);
 int __fastcall placeSiegeTentAndRecoverEngineers(void* troopValue, void*, int tribe,
     int command, unsigned int distance, int instruction);
+void __fastcall buildLargerSiegeForce(void* aic, void*, int player);
 int __cdecl siegeResourceAdmission(int player, int command);
 int __cdecl siegePaymentEnabledForGoldOffset(int playerStrideOffset);
 extern unsigned int integrityDigest[2];

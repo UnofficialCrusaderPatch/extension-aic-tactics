@@ -31,6 +31,7 @@ function M.active(candidate)
     or candidate.ActualSiegeResourcePayment ~= nil
     or candidate.CoordinatedSiegeHarassment ~= nil
     or candidate.SiegeHarassMinEngines ~= nil
+    or candidate.LargerSiegeForces ~= nil or candidate.SiegeForceMax ~= nil
 end
 
 function M.prepare(previous, spec, readNative, resetting)
@@ -49,6 +50,8 @@ function M.prepare(previous, spec, readNative, resetting)
   authored.ActualSiegeResourcePayment = siegeAuthored.ActualSiegeResourcePayment
   authored.CoordinatedSiegeHarassment = siegeAuthored.CoordinatedSiegeHarassment
   authored.SiegeHarassMinEngines = siegeAuthored.SiegeHarassMinEngines
+  authored.LargerSiegeForces = siegeAuthored.LargerSiegeForces
+  authored.SiegeForceMax = siegeAuthored.SiegeForceMax
   authored.CorrectEngineerRoleCounting = roleAuthored.CorrectEngineerRoleCounting
   if spec.ProvocationRules ~= nil and not resetting then
     local used = targetAuthored.AttackActivation == 'AfterProvocation' or targetAuthored.AttackTargetPolicy == 'LastAggressor'
@@ -60,7 +63,7 @@ function M.prepare(previous, spec, readNative, resetting)
     assert(used, 'ProvocationRules requires AfterProvocation, LastAggressor or a HomeUnderThreat condition')
   end
   return combine(authored, targetAuthored),
-    {schemaVersion = 8, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
+    {schemaVersion = 9, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
       raids = raidCompiled, siege = siegeCompiled, roles = roleCompiled}
 end
 
@@ -72,6 +75,8 @@ function M.copy(candidate)
   result.ActualSiegeResourcePayment = candidate.ActualSiegeResourcePayment
   result.CoordinatedSiegeHarassment = candidate.CoordinatedSiegeHarassment
   result.SiegeHarassMinEngines = candidate.SiegeHarassMinEngines
+  result.LargerSiegeForces = candidate.LargerSiegeForces
+  result.SiegeForceMax = candidate.SiegeForceMax
   result.CorrectEngineerRoleCounting = candidate.CorrectEngineerRoleCounting
   return result
 end

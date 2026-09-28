@@ -13,7 +13,9 @@ namespace {
 unsigned char players[9 * 0x39F4 + 0x2304];
 unsigned char units[4 * 0x490];
 unsigned char tiles[0x23D7E0 + 80400 * 2];
-unsigned char tribes[3 * 0x334];
+unsigned char tribes[1250 * 0x334];
+unsigned char buildings[5 * 0x32C + 0x14];
+unsigned char aicRecords[16 * 676];
 unsigned char points[216 * 32];
 unsigned char rows[400 * 12];
 int placementFail;
@@ -27,6 +29,9 @@ int placeCalls;
 int popCalls;
 int addCalls;
 int crewMembers[4];
+int batchCalls;
+int nativeEngineCount;
+bool orphanMode;
 void setShort(unsigned char* memory, unsigned int offset, short value);
 
 int __fastcall originalTile(void*, void*, int, int, int, int)
@@ -59,7 +64,7 @@ int __fastcall popCrew(void*, void*, int tribe)
     short& size = *reinterpret_cast<short*>(tribes + 0x334 + 0x5C);
     if (size <= 0) return 0;
     const int unit = crewMembers[--size];
-    setShort(units, unit * 0x490 + 0x2A0, 0);
+    setShort(units, unit * 0x490 + 0x2D8, 0);
     return unit;
 }
 
@@ -69,8 +74,34 @@ int __fastcall addCrew(void*, void*, unsigned int unit, int tribe)
     ++addCalls;
     short& size = *reinterpret_cast<short*>(tribes + tribe * 0x334 + 0x5C);
     ++size;
-    setShort(units, unit * 0x490 + 0x2A0, static_cast<short>(tribe));
+    setShort(units, unit * 0x490 + 0x2D8, static_cast<short>(tribe));
     return 1;
+}
+
+void __fastcall originalBatch(void*, void*, int player)
+{
+    ++batchCalls;
+    if (player != 1) return;
+    if (orphanMode) {
+        setShort(units, 2 * 0x490 + 0x2D8, 0);
+        setShort(tribes, 2 * 0x334 + 0x5C, 1);
+        return;
+    }
+    setShort(tribes, 0x334 + 0x5C, 2);
+    for (int index = 0; index < 2; ++index)
+        placeSiegeTentAndRecoverEngineers(0, 0, 1, 190, 60, 15);
+}
+
+int __fastcall countEngines(void*, void*, int player)
+{
+    assert(player == 1 || player == 2);
+    return nativeEngineCount;
+}
+
+int __fastcall indexedCrew(void*, void*, int tribe, int index)
+{
+    assert(tribe == 2 && index >= 0 && index < 64);
+    return index % 2 ? 3 : 2;
 }
 
 void setShort(unsigned char* memory, unsigned int offset, short value)
@@ -102,6 +133,13 @@ int main()
     nativeBindings.siegePlacementFail = reinterpret_cast<unsigned int>(&placementFail);
     nativeBindings.siegeResourceCheck = reinterpret_cast<unsigned int>(&checkResources);
     nativeBindings.gameState = 1;
+    nativeBindings.buildings = reinterpret_cast<unsigned int>(buildings);
+    nativeBindings.buildingCapacity = 5;
+    nativeBindings.aicRecords = reinterpret_cast<unsigned int>(aicRecords);
+    nativeBindings.siegeAssaultBatch = reinterpret_cast<unsigned int>(&originalBatch);
+    nativeBindings.siegeUnitCount = reinterpret_cast<unsigned int>(&countEngines);
+    nativeBindings.siegeGetUnitForIndex = reinterpret_cast<unsigned int>(&indexedCrew);
+    setInt(buildings, 8, 5);
     nativeBindings.siegePlaceTent = reinterpret_cast<unsigned int>(&originalPlace);
     nativeBindings.popUnitFromTribe = reinterpret_cast<unsigned int>(&popCrew);
     nativeBindings.addUnitToTribe = reinterpret_cast<unsigned int>(&addCrew);
@@ -219,11 +257,15 @@ int main()
     setShort(players, 0x39F4 + 0x3130, 2);
     setInt(players, 0x39F4 + 0x32E4, 77);
     setShort(units, 2 * 0x490 + 0x8E, 30);
+    setShort(units, 2 * 0x490 + 0x8C, 2);
     setShort(units, 2 * 0x490 + 0x96, 1);
     setShort(units, 2 * 0x490 + 0x42A, 10);
+    setShort(units, 2 * 0x490 + 0x2D8, 2);
     setShort(units, 3 * 0x490 + 0x8E, 30);
+    setShort(units, 3 * 0x490 + 0x8C, 2);
     setShort(units, 3 * 0x490 + 0x96, 1);
     setShort(units, 3 * 0x490 + 0x42A, 10);
+    setShort(units, 3 * 0x490 + 0x2D8, 2);
     crewMembers[0] = 2;
     crewMembers[1] = 3;
     setShort(tribes, 0x334 + 0x5C, 2);
@@ -241,5 +283,68 @@ int main()
     configurations[1].safeSiegePlacement = 2;
     assert(placeSiegeTentAndRecoverEngineers(0, 0, 1, 190, 60, 15) == 0);
     assert(placeCalls == 3 && popCalls == 2 && addCalls == 2);
+
+    // A two-entry native composition can be reused up to the per-AI cap.
+    // A complete batch with no successful construction stops immediately.
+    setInt(players, 0x39F4 + 0x3924, 1);
+    setInt(aicRecords, 0x214, 39);
+    setInt(aicRecords, 0x218, 39);
+    setInt(aicRecords, 0x21C, 0);
+    largeSiegeFallback = 0;
+    largeSiegePolicy[1] = 1;
+    siegeForceMaximum[1] = 6; // Explicit cap of five.
+    placeResult = 1;
+    batchCalls = 0;
+    const int before = placeCalls;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 3 && placeCalls - before == 5);
+    largeSiegePolicy[1] = 2;
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 1);
+    largeSiegePolicy[2] = 1;
+    siegeForceMaximum[2] = 11;
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 2);
+    assert(batchCalls == 1); // Player two has no authored siege composition.
+    largeSiegePolicy[1] = 1;
+    siegeForceMaximum[1] = 1; // Explicit zero means one native batch.
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 1);
+    siegeForceMaximum[1] = 6;
+    placeResult = 0;
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 1);
+    placeResult = 1;
+    setShort(buildings, 0x14 + 0x32C + 0xD0, 2);
+    setShort(buildings, 0x14 + 0x32C + 0xD2, 29);
+    setShort(buildings, 0x14 + 0x32C + 0xD6, 1);
+    setInt(buildings, 0x14 + 0x32C + 0x2AC, 1);
+    batchCalls = 0;
+    const int withPending = placeCalls;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 2 && placeCalls - withPending == 4);
+    nativeEngineCount = 1;
+    batchCalls = 0;
+    const int withActive = placeCalls;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 2 && placeCalls - withActive == 3);
+    nativeEngineCount = 0;
+    setShort(tribes, 2 * 0x334 + 0x5C, 2);
+    setShort(units, 2 * 0x490 + 0x2D8, 2);
+    orphanMode = true;
+    batchCalls = 0;
+    const int beforeRestore = addCalls;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 1 && addCalls == beforeRestore + 1);
+    assert(*reinterpret_cast<short*>(units + 2 * 0x490 + 0x2D8) == 2);
+    orphanMode = false;
+    for (int id = 1249; id > 0; id -= 8)
+        setShort(tribes, id * 0x334 + 0x40, 2);
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 0);
     return 0;
 }

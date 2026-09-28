@@ -48,6 +48,7 @@ Estas cinco opciones requieren una nueva `RaidTargetPolicy`. Se mantienen `RaidU
 - `SafeSiegePlacement`: `true` protege unidades propias en obras de asedio; `false` usa la colocación original. Sin valor, se aplica el ajuste del módulo (activado).
 - `ActualSiegeResourcePayment`: `true` exige materiales y oro antes de construir; los faltantes pasan al comercio habitual de la IA. `false` conserva la comprobación original. Si se omite, rige el ajuste del módulo (desactivado).
 - `CoordinatedSiegeHarassment`: `true` reúne máquinas y las envía a posiciones de tiro accesibles. `SiegeHarassMinEngines` (0–20; 3 por defecto) indica cuántas esperar; tras un mes de juego parten las disponibles. Sin valor AIC rigen los ajustes del módulo (desactivado, 3). `HarassingSiegeEnginesMax` sigue limitando el total.
+- `LargerSiegeForces`: `true` repite la composición de asedio en el ataque principal hasta `SiegeForceMax` (0–20; 10 por defecto). **0** conserva una sola tanda original. Sin valor AIC rigen los ajustes del módulo (desactivado, 10); `AttMaxEngineers` sigue limitando los ingenieros disponibles.
 
 ### Cupos de ingenieros
 

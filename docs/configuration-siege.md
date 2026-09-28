@@ -28,12 +28,22 @@ ticks). Zero sends the first ready engine. The existing
 without enlarging the eight-entry AIC composition array. These two fields are
 independent of placement and payment.
 
+`LargerSiegeForces` is an optional boolean, OFF by default. When true, the AI
+repeats its authored main-assault `SiegeEngine1..8` mix while engineers, native
+tribe slots and safe construction sites remain available. `SiegeForceMax` is an
+optional integer from 0 to 20, with module fallback 10. It limits equipment
+already active or under construction in the current wave plus new construction;
+0 keeps the native single batch. This policy is separate from harassment and
+resource payment. The existing `AttMaxEngineers` still limits available crews.
+
 ```json
 {
   "SafeSiegePlacement": false,
   "ActualSiegeResourcePayment": true,
   "CoordinatedSiegeHarassment": true,
   "SiegeHarassMinEngines": 4,
+  "LargerSiegeForces": true,
+  "SiegeForceMax": 10,
   "HarassingSiegeEnginesMax": 10
 }
 ```

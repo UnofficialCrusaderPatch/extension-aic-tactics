@@ -45,10 +45,13 @@ def check(identity):
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       core={AOBScan=aob,readByte=read_byte,readInteger=read_integer}
-      sites=require('native-siege-bindings').resolve({unitCapacity=2500,players=players,
-        tribes=tribes,tribeStride=tribe_stride,mapRows=1,gameState=1})
+      local game=require('native-layout').resolve()
+      game.mapRows=1;game.gameState=1
+      sites=require('native-siege-bindings').resolve(game)
       assert(sites.siegeTileOccupancyOffset==0x23D7E0)
       assert(core.readByte(sites.siegePlacementCall)==0xE8)
+      assert(core.readByte(sites.siegeAssaultBatchCall)==0xE8)
+      assert(sites.siegeAssaultBatch>0)
     ''')
     return {'variant': path.name, 'sha256': identity['sha256'][:8],
             'placementCall': hex(lua.globals().sites['siegePlacementCall']),

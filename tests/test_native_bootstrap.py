@@ -55,6 +55,7 @@ def test_siege_payment_hooks_use_verified_owner_sites():
       game.siegeBuildingOwner=0x500000
       game.siegeGoldSub=0x500100
       game.siegeBuildingAdmission=0x500080
+      game.siegeResourceBypassAddress=0x554930
       game.siegeBuildingFailureExit=0x500090
       game.buildings=0x110700
       game.siegeGoldAddress=0x110500
@@ -69,6 +70,7 @@ def test_siege_payment_hooks_use_verified_owner_sites():
       for i,byte in ipairs({0x53,0xB9,0,0,0,0,0x89,0x96,0x30,0x49,0x55,0}) do
         memory[game.siegeBuildingAdmission+i-1]=byte
       end
+      memory[game.siegeBuildingAdmission+8]=game.siegeResourceBypassAddress
       memory[game.siegeGoldSub]=0x29
       memory[game.siegeGoldSub+1]=0x82
       memory[game.siegeGoldSub+2]=game.siegeGoldAddress
@@ -87,6 +89,29 @@ def test_siege_payment_hooks_use_verified_owner_sites():
       memory[game.siegeAssaultPlacementCall+1]=0x500600-game.siegeAssaultPlacementCall-5
       assert(not pcall(native.preflightSiegePayment))
       assert(#writes==4)
+    ''')
+
+
+def test_larger_assault_uses_verified_native_batch_and_recovery_calls():
+    runtime().execute('''
+      local game=native.game
+      game.siegeAssaultPlacementCall=0x500400
+      game.siegePlaceTent=0x500500
+      game.siegeAssaultBatchCall=0x500600
+      game.siegeAssaultBatch=0x500700
+      memory[game.siegeAssaultPlacementCall]=0xE8
+      memory[game.siegeAssaultPlacementCall+1]=game.siegePlaceTent-game.siegeAssaultPlacementCall-5
+      memory[game.siegeAssaultBatchCall]=0xE8
+      memory[game.siegeAssaultBatchCall+1]=game.siegeAssaultBatch-game.siegeAssaultBatchCall-5
+      native.placeSiegeTentAndRecoverEngineers=0x3103000
+      native.buildLargerSiegeForce=0x3104000
+      native.preflightLargerSiegeForce()
+      native.activateLargerSiegeForce()
+      native.preflightLargerSiegeForce()
+      native.activateLargerSiegeForce()
+      assert(#writes==2 and #allocations==0)
+      memory[game.siegeAssaultBatchCall+1]=0x500800-game.siegeAssaultBatchCall-5
+      assert(not pcall(native.preflightLargerSiegeForce))
     ''')
 
 

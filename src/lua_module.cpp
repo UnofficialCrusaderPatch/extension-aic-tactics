@@ -45,7 +45,9 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "siegePaymentPolicy", "siegeResourceAdmission", "siegePaymentEnabledForGoldOffset",
         "siegeHarassFallback", "siegeHarassMinimumFallback", "siegeHarassPolicy",
         "siegeHarassMinimum", "siegeHarassPlans", "siegeHarassPlanSize",
-        "suppressNativeSiegeHarassMove"};
+        "suppressNativeSiegeHarassMove", "largeSiegeFallback",
+        "siegeForceMaximumFallback", "largeSiegePolicy", "siegeForceMaximum",
+        "buildLargerSiegeForce"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
@@ -95,7 +97,12 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(siegeHarassPolicy),
         reinterpret_cast<unsigned int>(siegeHarassMinimum),
         reinterpret_cast<unsigned int>(siegeHarassPlans), sizeof(SiegeHarassPlan),
-        reinterpret_cast<unsigned int>(&suppressNativeSiegeHarassMove)};
+        reinterpret_cast<unsigned int>(&suppressNativeSiegeHarassMove),
+        reinterpret_cast<unsigned int>(&largeSiegeFallback),
+        reinterpret_cast<unsigned int>(&siegeForceMaximumFallback),
+        reinterpret_cast<unsigned int>(largeSiegePolicy),
+        reinterpret_cast<unsigned int>(siegeForceMaximum),
+        reinterpret_cast<unsigned int>(&buildLargerSiegeForce)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);
