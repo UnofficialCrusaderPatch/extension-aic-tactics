@@ -20,7 +20,7 @@ struct CharacterConfiguration {
     int preparation;
     RaidConfiguration raids;
     int safeSiegePlacement; // 0=module fallback, 1=on, 2=off
-    int correctEngineerRoleCounting; // 0=module fallback, 1=on, 2=off
+    int reserved; // Keep the existing save/network record size.
 };
 
 // Diagnostic counters are observation only; policy never reads them.

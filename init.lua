@@ -17,7 +17,6 @@ return {
     local native = require('native').new(nativeGame)
     local safePlacement = config and config.safeSiegePlacement
     if safePlacement == nil then safePlacement = true end
-    native.configureSafePlacement(safePlacement)
     local siegePayment = config and config.actualSiegeResourcePayment
     if siegePayment == nil then siegePayment = false end
     native.configureSiegePayment(siegePayment)
@@ -29,8 +28,10 @@ return {
     local largerSiege = config and config.largerSiegeForces
     if largerSiege == nil then largerSiege = false end
     local siegeForceMaximum = config and config.siegeForceMax
-    if siegeForceMaximum == nil then siegeForceMaximum = 10 end
+    if siegeForceMaximum == nil then siegeForceMaximum = 0 end
     native.configureLargerSiegeForce(largerSiege, siegeForceMaximum)
+    if siegePayment or siegeHarassment or largerSiege then safePlacement = true end
+    native.configureSafePlacement(safePlacement)
     local roleCounting = config and config.correctEngineerRoleCounting
     if roleCounting == nil then roleCounting = true end
     native.configureEngineerRoles(roleCounting)

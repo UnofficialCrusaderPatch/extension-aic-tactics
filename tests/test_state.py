@@ -169,22 +169,18 @@ def test_default_on_siege_fallback_requires_state_but_map_starts_fresh():
     ''')
 
 
-def test_engineer_role_fallback_and_per_ai_override_enter_save_identity():
+def test_engineer_role_module_switch_enters_save_identity():
     state().execute('''
       native.engineerRoleFallback=190100
       memory[native.configuration+4*352]=0
       memory[native.engineerRoleFallback]=1
       assert(state.callbacks.isRequired())
-      local inherited=state.identity()
+      local enabled=state.identity()
       memory[native.engineerRoleFallback]=0
       assert(not state.callbacks.isRequired())
-      assert(state.identity()~=inherited)
-      memory[native.configuration+4*352+348]=1
-      assert(state.callbacks.isRequired())
-      local explicit=state.identity()
-      memory[native.configuration+4*352+348]=2
-      assert(state.identity()~=explicit)
+      assert(state.identity()~=enabled)
       state.callbacks:initialize({kind='map'})
+      assert(not state.callbacks.isRequired())
     ''')
 
 
@@ -207,6 +203,7 @@ def test_saved_combat_reserve_and_raid_state_survives_exactly():
       memory[native.reserves+196+16]=155
       memory[native.raidStates+96]=3
       memory[native.raidStates+96+12]=15
+      memory[native.raidStates+96+32]=1 -- RandomNearby local-clear phase
       memory[native.raidUnitPower+(1024+19)*4]=500
       memory[native.raidStaticDefenses+(2048+20)*4]=4
       memory[native.raidBuildingCensusTick]=1234
@@ -215,7 +212,8 @@ def test_saved_combat_reserve_and_raid_state_survives_exactly():
       state.callbacks:initialize({kind='map'})
       state.restore(bytes)
       assert(state.capture()==bytes)
-      assert(memory[native.raidStates+96+12]==15 and memory[native.reserves+196+16]==155)
+      assert(memory[native.raidStates+96+12]==15 and memory[native.raidStates+96+32]==1
+        and memory[native.reserves+196+16]==155)
       assert(memory[native.raidUnitPower+(1024+19)*4]==500)
     ''')
 

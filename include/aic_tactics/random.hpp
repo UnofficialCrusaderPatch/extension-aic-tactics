@@ -16,7 +16,8 @@ struct BoundedDraw {
 typedef int (*TakeNativeRandomSample)(void* context);
 
 // takeSample must return the current synchronized 15-bit sample and advance its
-// existing owner once. Bounds 1..100 cover recruitment weights and player rosters.
+// existing owner once. Bounds 1..800 cover recruitment weights, player rosters
+// and the native raid building lists (at most seven hostile players x 100).
 // Native/disabled callers must bypass this function. A bound of 1 consumes none.
 BoundedDrawStatus drawBounded(int bound, TakeNativeRandomSample takeSample,
     void* context, BoundedDraw& result);

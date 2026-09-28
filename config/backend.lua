@@ -19,6 +19,7 @@ function M.new(native)
       'AIC Tactics: personality changes require a fresh game process')
   end
   local function anyPolicyActive()
+    -- Engineer counting has a module switch, but no per-AIC field.
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
@@ -31,7 +32,7 @@ function M.new(native)
       if core.readInteger(native.largeSiegePolicy + ai * 4) ~= 0
           or core.readInteger(native.siegeForceMaximum + ai * 4) ~= 0 then return true end
       local address = native.configuration + ai * native.configurationSize
-      for _, offset in ipairs({0,288,292,296,316,320,344,348}) do
+      for _, offset in ipairs({0,288,292,296,316,320,344}) do
         if core.readInteger(address + offset) ~= 0 then return true end
       end
     end
@@ -58,7 +59,6 @@ function M.new(native)
       or envelope.preparation ~= 0 or previous[80] ~= 0
       or envelope.raids[1] ~= 0 or previous[81] ~= 0
       or envelope.siege[1] ~= 0 or previous[87] ~= 0
-      or envelope.roles ~= 0 or previous[88] ~= 0
       or envelope.siege[2] ~= 0 or previousPayment ~= 0
       or envelope.siege[3] ~= 0 or previousHarass ~= 0
       or envelope.siege[4] ~= 0 or previousMinimum ~= 0
@@ -82,7 +82,6 @@ function M.new(native)
     if envelope.siege[2] == 1 then native.preflightSiegePayment() end
     if envelope.siege[3] == 1 then native.preflightSiegeHarassment() end
     if envelope.siege[5] == 1 then native.preflightLargerSiegeForce() end
-    if envelope.roles == 1 then native.preflightEngineerRoles() end
     local words = {compiled.mode, #compiled.conditions}
     for index = 1, 8 do
       local row = compiled.conditions[index]
@@ -105,7 +104,7 @@ function M.new(native)
     words[#words + 1] = envelope.preparation
     for _, value in ipairs(envelope.raids) do words[#words + 1] = value end
     words[#words + 1] = envelope.siege[1]
-    words[#words + 1] = envelope.roles
+    words[#words + 1] = 0 -- reserved; retain the 352-byte configuration ABI
     -- Native neighbours may be visited before or after the first opt-in, when
     -- provider admission starts covering every update. Keep their unused
     -- storage identical to an unvisited record for save/MP/replay identity.
@@ -123,7 +122,6 @@ function M.new(native)
       if envelope.siege[2] == 1 then native.activateSiegePayment() end
       if envelope.siege[3] == 1 then native.activateSiegeHarassment() end
       if envelope.siege[5] == 1 then native.activateLargerSiegeForce() end
-      if envelope.roles == 1 then native.activateEngineerRoles() end
       writeRecord(ai, words)
       core.writeInteger(native.siegePaymentPolicy + ai * 4, envelope.siege[2])
       core.writeInteger(native.siegeHarassPolicy + ai * 4, envelope.siege[3])

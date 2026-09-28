@@ -77,6 +77,36 @@ def test_safe_siege_setting_is_per_ai_and_preserves_false(lua):
       assert(loader:getAICValue(1,'SafeSiegePlacement')==nil)
     ''')
 
+def test_sortie_share_opts_in_without_policy_switch(lua):
+    lua.execute('''
+      assert(loader:overwriteAIC(1,{RecruitProbDefDefault=30,RecruitProbSortieDefault=10}))
+      assert(loader:getAICValue(1,'RecruitPolicy')=='WeightedRoles')
+      assert(backendStates[1].mode==1 and backendStates[1].baseRows[1][4]==10)
+      assert(loader:getAICValue(2,'RecruitPolicy')=='Native')
+      assert(loader:overwriteAIC(2,{RecruitProbSortieDefault=0}))
+      assert(backendStates[2].mode==1)
+      assert(loader:overwriteAIC(3,{RecruitProbSortieDefault=10})==false)
+      assert(loader:getAICValue(3,'RecruitPolicy')=='Native')
+      assert(loader:overwriteAIC(4,{RecruitInitialDefenseMonths=0})==false)
+      assert(loader:getAICValue(4,'RecruitPolicy')=='Native')
+    ''')
+
+def test_combined_target_policy_and_legacy_commitment_updates(lua):
+    lua.execute('''
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy={Choice='FewestTroops',UntilDefeated=true}}))
+      assert(loader:getAICValue(1,'AttackTargetPolicy').UntilDefeated==true)
+      assert(loader:getAICValue(1,'AttackTargetCommitment')=='Default')
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy='Random'}))
+      assert(loader:getAICValue(1,'AttackTargetCommitment')=='Default')
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy='InheritPerAttack'}))
+      assert(loader:overwriteAIC(1,{AttackTargetCommitment='UntilDefeated'}))
+      assert(loader:getAICValue(1,'AttackTargetPolicy')=='Inherit')
+      assert(loader:getAICValue(1,'AttackTargetCommitment')=='UntilDefeated')
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy={Choice='LastAggressor',UntilDefeated=true},
+        AttackTargetCommitment='PerAttack'})==false)
+      assert(loader:getAICValue(1,'AttackTargetPolicy')=='Inherit')
+    ''')
+
 
 def test_siege_payment_setting_is_per_ai_and_preserves_false(lua):
     lua.execute('''
@@ -110,19 +140,12 @@ def test_siege_harassment_setting_is_per_ai_and_preserves_zero(lua):
     ''')
 
 
-def test_engineer_role_setting_is_per_ai_and_preserves_false(lua):
+def test_engineer_role_fix_is_not_exposed_as_an_aic_setting(lua):
     lua.execute('''
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
-      assert(loader:overwriteAIC(1,{CorrectEngineerRoleCounting=false}))
-      assert(loader:overwriteAIC(2,{CorrectEngineerRoleCounting=true}))
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==false)
-      assert(loader:getAICValue(2,'CorrectEngineerRoleCounting')==true)
-      assert(loader:getAICValue(3,'CorrectEngineerRoleCounting')==nil)
-      assert(loader:overwriteAIC(1,{TargetChoice='Balanced'}))
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==false)
-      assert(loader:overwriteAIC(1,{CorrectEngineerRoleCounting='yes'})==false)
-      loader:resetAIC(1)
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
+      assert(not pcall(loader.getAICValue,loader,1,'CorrectEngineerRoleCounting'))
+      assert(not loader:overwriteAIC(1,{CorrectEngineerRoleCounting=false}))
+      loader:overwriteAIC(1,{TargetChoice='Balanced'})
+      assert(not pcall(loader.getAICValue,loader,1,'CorrectEngineerRoleCounting'))
     ''')
 
 @pytest.mark.parametrize('spec', [

@@ -1,5 +1,6 @@
 #include "aic_tactics/raids.hpp"
 #include "aic_tactics/runtime.hpp"
+#include "aic_tactics/random.hpp"
 #include "aic_tactics/shc141_groups.hpp"
 #include <cstring>
 
@@ -144,7 +145,37 @@ bool exposure(const bool enemies[9], int x, int y, int ownPower, int risk, int& 
     return true;
 }
 
-struct Candidate { int id; unsigned int uid; int tile; int score; };
+struct Candidate { int id; unsigned int uid; int tile; int x; int y; int type; int penalty; int value; };
+
+int selectedFocus(int setting)
+{
+    if ((setting & 0x1000000) == 0) return setting;
+    const int food = setting & 127;
+    const int industry = (setting >> 7) & 127;
+    const int highValue = (setting >> 14) & 127;
+    if (food + industry + highValue > 100) return AnyRaidFocus;
+    BoundedDraw draw;
+    if (drawBounded(100, nativeRandom, 0, draw) != DrawSucceeded) return AnyRaidFocus;
+    if (draw.ticket < food) return FoodRaidFocus;
+    if (draw.ticket < food + industry) return IndustryRaidFocus;
+    if (draw.ticket < food + industry + highValue) return HighValueRaidFocus;
+    return AnyRaidFocus;
+}
+
+int candidateScore(const Candidate& candidate, int fromX, int fromY,
+    int focus, bool considerRisk)
+{
+    int dx = candidate.x - fromX, dy = candidate.y - fromY;
+    if (dx < 0) dx = -dx;
+    if (dy < 0) dy = -dy;
+    int score = (dx > dy ? dx : dy) * 16 + (considerRisk ? candidate.penalty : 0);
+    if (focus == FoodRaidFocus || focus == IndustryRaidFocus) {
+        if (category(candidate.type) == focus) score -= 128;
+    } else if (focus == HighValueRaidFocus) {
+        score -= candidate.value / 4;
+    }
+    return score;
+}
 
 bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& config, int probeBudget)
 {
@@ -156,13 +187,15 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
     const unsigned int unit = Units + leader * 0x490;
     if (at<short>(unit + 0x2D8) != group.tribe.id || at<unsigned int>(unit + 0x2E4) != group.tribe.uid) return false;
     const int fromX = at<short>(unit + 0xC4), fromY = at<short>(unit + 0xC6);
-    Candidate candidates[8];
+    Candidate candidates[800];
     bool enemies[9] = {false};
     for (int enemy = 1; enemy <= 8; ++enemy) enemies[enemy] = hostile(player, enemy);
-    int cellPenalty[1024], values[110], prices[4] = {0};
+    int cellPenalty[1024], prices[4] = {0};
+    unsigned char seen[2000] = {0};
     for (int cell = 0; cell < 1024; ++cell) cellPenalty[cell] = -2;
-    for (int type = 0; type < 110; ++type) values[type] = -1;
-    if (config.policy == OpportunisticRaid && config.focus == HighValueRaidFocus) {
+    if ((config.policy == OpportunisticRaid || config.policy == RandomNearbyRaid)
+        && (config.focus == HighValueRaidFocus || ((config.focus & 0x1000000) != 0
+            && ((config.focus >> 14) & 127) != 0))) {
         const int resources[4] = {2,4,6,7};
         typedef int (__thiscall *Price)(void*, int);
         for (int resource = 0; resource < 4; ++resource)
@@ -179,10 +212,8 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
             const unsigned int address = Buildings + 0x14 + building * 0x32C;
             const unsigned int uid = at<unsigned int>(address + 0xD8);
             if (!validBuilding(player, config, building, uid)) continue;
-            bool duplicate = false;
-            for (int existing = 0; existing < count; ++existing)
-                if (candidates[existing].id == building) duplicate = true;
-            if (duplicate) continue;
+            if (seen[building]) continue;
+            seen[building] = 1;
             bool reserved = false;
             for (int other = 0; other < 4; ++other)
                 if (other != index && raidStates[player].groups[other].building == building
@@ -193,34 +224,123 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
             int& penalty = cellPenalty[(y / 16) * 32 + x / 16];
             if (penalty == -2 && !exposure(enemies, x, y, raidGroupCensus[player][index].power, config.risk, penalty)) penalty = -1;
             if (penalty < 0) continue;
-            int dx = x - fromX, dy = y - fromY;
-            if (dx < 0) dx = -dx;
-            if (dy < 0) dy = -dy;
-            int score = (dx > dy ? dx : dy) * 16;
-            if (config.policy == OpportunisticRaid) {
-                const int type = at<short>(address + 0xD2);
-                if (config.focus == HighValueRaidFocus) {
-                    if (values[type] < 0) values[type] = replacementValue(type, prices);
-                    score -= values[type] / 4;
-                }
-                else if (config.focus != AnyRaidFocus && config.focus == category(type)) score -= 128;
-                score += penalty;
-            }
             const int tile = at<int>(nativeBindings.mapRows + y * 12) + x;
             if (tile <= 0 || tile >= 160000) continue;
-            Candidate candidate = {building, uid, tile, score};
-            int position = 0;
-            while (position < count && (candidates[position].score < score
-                || (candidates[position].score == score && candidates[position].id <= building))) ++position;
-            if (position >= 8) continue;
-            if (count < 8) ++count;
-            for (int move = count - 1; move > position; --move) candidates[move] = candidates[move - 1];
-            candidates[position] = candidate;
+            if (count >= 800) continue;
+            const int type = at<short>(address + 0xD2);
+            Candidate candidate = {building, uid, tile, x, y, type, penalty,
+                (config.focus == HighValueRaidFocus || ((config.focus & 0x1000000) != 0
+                    && ((config.focus >> 14) & 127) != 0)) ? replacementValue(type, prices) : 0};
+            candidates[count++] = candidate;
         }
     }
-    for (int probe = 0; probe < probeBudget && probe < count; ++probe) {
-        const int selected = (group.pathCursor + probe) % count;
-        const Candidate& candidate = candidates[selected];
+    if (count == 0) {
+        group.pathCursor = 0;
+        returnHome(aic, player, group);
+        return true;
+    }
+    const int focus = config.policy == NearestReachableRaid ? AnyRaidFocus : selectedFocus(config.focus);
+    if (config.policy == RandomNearbyRaid) {
+        // pathCursor is the saved phase for this policy: zero draws a new
+        // destination, one clears reachable buildings near the group.
+        int local[8], localCount = 0;
+        if (group.pathCursor == 1) {
+            for (int entry = 0; entry < count; ++entry) {
+                int dx = candidates[entry].x - fromX, dy = candidates[entry].y - fromY;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx > 20 || dy > 20) continue;
+                const int score = candidateScore(candidates[entry], fromX, fromY, focus, true);
+                int position = 0;
+                while (position < localCount) {
+                    const Candidate& prior = candidates[local[position]];
+                    const int priorScore = candidateScore(prior, fromX, fromY, focus, true);
+                    if (score < priorScore || (score == priorScore && candidates[entry].id < prior.id)) break;
+                    ++position;
+                }
+                if (position >= 8) continue;
+                if (localCount < 8) ++localCount;
+                for (int move = localCount - 1; move > position; --move) local[move] = local[move - 1];
+                local[position] = entry;
+            }
+        }
+        if (localCount != 0) {
+            for (int probe = 0; probe < probeBudget && probe < localCount; ++probe) {
+                const Candidate& candidate = candidates[local[probe]];
+                if (!reinterpret_cast<TwoQuery>(nativeBindings.tribePath)(aic, group.tribe.id, candidate.tile)) continue;
+                group.building = candidate.id;
+                group.buildingUID = candidate.uid;
+                attack(group);
+                return true;
+            }
+            group.pathCursor = 0;
+            returnHome(aic, player, group);
+            return true;
+        }
+        group.pathCursor = 0;
+        int maximumValue = 0;
+        if (focus == HighValueRaidFocus) {
+            for (int entry = 0; entry < count; ++entry) {
+                const int value = candidates[entry].value;
+                if (value > maximumValue) maximumValue = value;
+            }
+        }
+        int pool = 0;
+        for (int entry = 0; entry < count; ++entry) {
+            const bool preferred = focus == FoodRaidFocus || focus == IndustryRaidFocus
+                ? category(candidates[entry].type) == focus
+                : focus == HighValueRaidFocus && maximumValue > 0
+                    ? candidates[entry].value * 4 >= maximumValue * 3
+                    : true;
+            if (preferred) ++pool;
+        }
+        const bool filtered = pool != 0;
+        if (!filtered) pool = count;
+        BoundedDraw draw;
+        if (drawBounded(pool, nativeRandom, 0, draw) != DrawSucceeded) return false;
+        int selected = -1;
+        for (int entry = 0, ordinal = 0; entry < count; ++entry) {
+            const bool preferred = focus == FoodRaidFocus || focus == IndustryRaidFocus
+                ? category(candidates[entry].type) == focus
+                : focus == HighValueRaidFocus && maximumValue > 0
+                    ? candidates[entry].value * 4 >= maximumValue * 3
+                    : true;
+            if (!filtered || preferred) {
+                if (ordinal++ == draw.ticket) { selected = entry; break; }
+            }
+        }
+        if (selected < 0) return false;
+        for (int probe = 0; probe < probeBudget && probe < count; ++probe) {
+            const Candidate& candidate = candidates[(selected + probe) % count];
+            if (!reinterpret_cast<TwoQuery>(nativeBindings.tribePath)(aic, group.tribe.id, candidate.tile)) continue;
+            group.building = candidate.id;
+            group.buildingUID = candidate.uid;
+            group.pathCursor = 1;
+            attack(group);
+            return true;
+        }
+        returnHome(aic, player, group);
+        return true;
+    }
+    int ranked[8], rankedCount = 0;
+    for (int entry = 0; entry < count; ++entry) {
+        const int score = candidateScore(candidates[entry], fromX, fromY, focus,
+            config.policy == OpportunisticRaid);
+        int position = 0;
+        while (position < rankedCount) {
+            const Candidate& prior = candidates[ranked[position]];
+            const int priorScore = candidateScore(prior, fromX, fromY, focus,
+                config.policy == OpportunisticRaid);
+            if (score < priorScore || (score == priorScore && candidates[entry].id < prior.id)) break;
+            ++position;
+        }
+        if (position >= 8) continue;
+        if (rankedCount < 8) ++rankedCount;
+        for (int move = rankedCount - 1; move > position; --move) ranked[move] = ranked[move - 1];
+        ranked[position] = entry;
+    }
+    for (int probe = 0; probe < probeBudget && probe < rankedCount; ++probe) {
+        const Candidate& candidate = candidates[ranked[(group.pathCursor + probe) % rankedCount]];
         if (!reinterpret_cast<TwoQuery>(nativeBindings.tribePath)(aic, group.tribe.id, candidate.tile)) continue;
         group.building = candidate.id;
         group.buildingUID = candidate.uid;
@@ -228,7 +348,7 @@ bool chooseTarget(void* aic, int player, int index, const RaidConfiguration& con
         attack(group);
         return true;
     }
-    group.pathCursor = count ? (group.pathCursor + probeBudget) % count : 0;
+    group.pathCursor = rankedCount ? (group.pathCursor + probeBudget) % rankedCount : 0;
     returnHome(aic, player, group);
     return true;
 }
@@ -299,6 +419,7 @@ void fillGroups(void* aic, int player, int desired, const RaidConfiguration& con
         if (index >= desired || size(group.tribe, player) < config.minimumSize
             || raidGroupCensus[player][index].combatants == 0) {
             if (group.building || changed[index]) returnHome(aic, player, group);
+            if (config.policy == RandomNearbyRaid) group.pathCursor = 0;
         } else if (changed[index]) {
             if (validBuilding(player, config, group.building, group.buildingUID)) attack(group);
             else returnHome(aic, player, group);
@@ -390,7 +511,7 @@ bool updateSplitRaids(void* aic, int player)
             std::memset(&raidGroupCensus[player][index], 0, sizeof(RaidGroupCensus));
         } else if (group.building && !validBuilding(player, *config, group.building, group.buildingUID)) {
             returnHome(aic, player, group);
-            group.pathCursor = 0;
+            if (config->policy != RandomNearbyRaid) group.pathCursor = 0;
         }
     }
     int desired = field(player, (nativeBindings.players + 0x30EC)) / config->minimumSize;
@@ -410,7 +531,7 @@ bool updateSplitRaids(void* aic, int player)
     if (index >= desired || !validGroup(group.tribe, player) || size(group.tribe, player) < config->minimumSize
         || raidGroupCensus[player][index].combatants == 0) return true;
     if (!validBuilding(player, *config, group.building, group.buildingUID)
-        || (state.retargetPending & (1U << index))) {
+        || (config->policy != RandomNearbyRaid && (state.retargetPending & (1U << index)))) {
         if (chooseTarget(aic, player, index, *config, 2)) state.retargetPending &= ~(1U << index);
     } else {
         // Detect lost area connectivity at this group's native decision phase.

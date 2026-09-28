@@ -63,9 +63,12 @@ int main()
     BoundedDraw result;
     Samples samples = {32767, 32767, 0};
     assert(drawBounded(0, take, &samples, result) == InvalidRandomBound);
-    assert(drawBounded(101, take, &samples, result) == InvalidRandomBound);
+    assert(drawBounded(801, take, &samples, result) == InvalidRandomBound);
     assert(samples.calls == 0 && result.ticket == -1);
     assert(drawBounded(1, 0, 0, result) == DrawSucceeded);
+    samples.first = 799; samples.calls = 0;
+    assert(drawBounded(800, take, &samples, result) == DrawSucceeded);
+    assert(result.ticket == 799 && samples.calls == 1);
     assert(result.ticket == 0 && result.samplesConsumed == 0);
     assert(drawBounded(2, 0, 0, result) == InvalidRandomSource);
     assert(result.ticket == -1 && result.samplesConsumed == 0);

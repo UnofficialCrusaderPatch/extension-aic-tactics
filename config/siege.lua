@@ -38,12 +38,16 @@ function M.prepare(previous, spec, resetting)
     'LargerSiegeForces must be boolean')
   assert(forceMaximum == nil or (type(forceMaximum) == 'number'
       and forceMaximum == math.floor(forceMaximum)
-      and forceMaximum >= 0 and forceMaximum <= 20),
-    'SiegeForceMax must be an integer from 0 to 20')
+      and forceMaximum >= 0 and forceMaximum <= 64),
+    'SiegeForceMax must be an integer from 0 to 64')
+  local advanced = payment == true or coordination == true or larger == true
+  assert(not advanced or value ~= false,
+    'SafeSiegePlacement=false conflicts with enabled advanced siege behavior')
+  local effectiveSafe = advanced and 1 or value == nil and 0 or value and 1 or 2
   return {SafeSiegePlacement = value, ActualSiegeResourcePayment = payment,
       CoordinatedSiegeHarassment = coordination, SiegeHarassMinEngines = minimum,
       LargerSiegeForces = larger, SiegeForceMax = forceMaximum},
-    {value == nil and 0 or value and 1 or 2,
+    {effectiveSafe,
       payment == nil and 0 or payment and 1 or 2,
       coordination == nil and 0 or coordination and 1 or 2,
       minimum == nil and 0 or minimum + 1,
