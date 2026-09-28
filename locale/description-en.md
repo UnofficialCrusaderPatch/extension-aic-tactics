@@ -1,28 +1,28 @@
-AIC Tactics lets each installed AI choose how it recruits, attacks, raids and uses siege engines. Set these fields in that AI's AIC. Recruitment, attack and raid policies are opt-in; siege and engineer fields inherit the module settings when omitted. Existing troop lists and limits still apply.
+AIC Tactics lets each installed AI choose how it recruits, attacks, raids and uses siege engines. Set these fields in that AI's AIC. Recruitment, attack and raid policies are opt-in; siege fields inherit the module settings when omitted. Existing troop lists and limits still apply.
 
 ### Recruitment
 
-- `RecruitPolicy`: `Native` keeps existing recruitment. `WeightedRoles` divides recruits between defense, raids, the main army and sorties.
-- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: sortie share in each native strength state. Each row's defense, raid, attack and sortie shares must total 100.
-- `RecruitConditions`: up to 8 ordered rules that replace those shares for one recruitment choice. `When` can check `Strength`, `HomeUnderThreat`, `AttackActive`, `DefenseIncomplete` and `EquipmentSurplus`; the first matching rule wins.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: sortie share in each strength state. Setting one enables four-way recruitment for this AI. Defense, raid, attack and sortie shares must total 100 in every state.
+- `RecruitConditions`: optional situation-specific shares. For example, when home is threatened, recruit 70% defense, 20% attack and 10% sorties. The first matching rule applies to that recruitment choice.
+- `RecruitPolicy`: optional compatibility switch. `Native` keeps the original selection; `WeightedRoles` explicitly enables four-way selection.
 - `DefRecruitComposition`: `PreserveSlots` respects the proportions in `DefUnit1..8`; `Native` keeps existing selection.
 - `RecruitInitialDefenseMonths`: how long raid and main-army recruitment waits for the defense quota. 0 disables the wait; default 6 months.
 
-Sortie shares, situation rules, defense composition and the initial defense period require `WeightedRoles`. Existing recruitment intervals and quotas still apply.
+Sortie shares enable `WeightedRoles` automatically. Situation rules, defense composition and `RecruitInitialDefenseMonths` require it explicitly. Existing recruitment intervals and quotas still apply.
 
 ### Attacks and retaliation
 
-- `AttackTargetPolicy`: `Inherit` uses `TargetChoice`. The other choices favor fewer civilians (`LowestPopulation`), fewer troops (`FewestTroops`), weaker military power (`LowestCombatPower`), a random opponent (`Random`) or the latest qualifying attacker (`LastAggressor`).
-- `AttackTargetCommitment`: `PerAttack` keeps one target during an attack; `UntilDefeated` keeps it across attacks. `Default` uses `PerAttack` with a new target policy or next-wave preparation, and existing behavior otherwise.
+- `AttackTargetPolicy`: `Inherit` uses `TargetChoice`. Choose `LowestPopulation`, `FewestTroops`, `LowestCombatPower`, `Random` or `LastAggressor` to keep one chosen target per attack. To keep it across attacks, use `{ "Choice": "LastAggressor", "UntilDefeated": true }`. That choice can also contain `"Provocation": { "LossPower": 200 }`; omitted thresholds keep their defaults. `InheritPerAttack` locks the original choice for one attack.
+- `AttackTargetCommitment`: older AICs can keep using this field. For new AICs, choose the target and its duration together with `AttackTargetPolicy`.
 - `AttackPreparation`: `DuringAttack` prepares the next wave at home while an army attacks; `Native` keeps existing timing.
 - `AttackActivation`: `AfterProvocation` waits for a qualifying attack before launching armies or raids; `Immediate` does not wait. Defensive sorties remain available.
-- `ProvocationRules`: `ThreatPower` and `CombatTicks` set the threat near the keep; `LossPower` and `WindowTicks` set the losses and time window. Lord damage qualifies immediately. Supply all four values together.
+- `ProvocationRules`: older AICs, `AfterProvocation` and recruitment threat rules can use this shared threshold field. For `LastAggressor`, new AICs can place overrides inside `AttackTargetPolicy.Provocation`.
 
 ### Raids
 
-- `RaidTargetPolicy`: `Native` keeps existing raids; `NearestReachable` chooses accessible nearby buildings; `Opportunistic` also weighs focus and danger.
+- `RaidTargetPolicy`: `Native` keeps existing raids; `NearestReachable` picks nearby accessible buildings; `Opportunistic` weighs focus and danger; `RandomNearby` picks a reachable building at random, then clears nearby buildings before drawing again.
 - `RaidGroupCount` (1–4) splits the existing raid force; `RaidMinGroupSize` (1–256) makes undersized groups wait or combine.
-- `RaidFocus` chooses `Any`, `Food`, `Industry` or `HighValue` buildings; it requires `Opportunistic`. `RaidRiskTolerance` sets `Low`, `Medium` or `High` danger tolerance. `RaidEnemyScope` chooses the main target or any enemy.
+- `RaidFocus` can be `Any`, `Food`, `Industry` or `HighValue`, or percentages such as `{ "Food": 60, "Industry": 20 }`; the remainder uses any building. It works with `Opportunistic` and `RandomNearby`. `RaidRiskTolerance` sets `Low`, `Medium` or `High` danger tolerance. `RaidEnemyScope` chooses the main target or any enemy.
 
 The five raid controls after `RaidTargetPolicy` require a new raid policy. Existing `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` and `RaidRetargetDelay` still apply.
 
@@ -31,7 +31,8 @@ The five raid controls after `RaidTargetPolicy` require a new raid policy. Exist
 - `SafeSiegePlacement` avoids occupied building sites (module default ON).
 - `ActualSiegeResourcePayment` requires construction materials and gold, buying shortages through normal AI trade (OFF).
 - `CoordinatedSiegeHarassment` sends a gathered group of engines to reachable firing positions (OFF). `SiegeHarassMinEngines` sets its preferred minimum (0–20, default 3); `HarassingSiegeEnginesMax` remains the total limit.
-- `LargerSiegeForces` repeats the configured assault equipment mix (OFF). `SiegeForceMax` caps active and pending engines (0–20, default 10); 0 keeps one native batch. `AttMaxEngineers` still limits crews.
-- `CorrectEngineerRoleCounting` counts assigned engineers toward their troop quotas; siege and oil duties remain separate (ON).
+- `LargerSiegeForces` cycles the configured assault equipment mix while living, unassigned attack engineers and valid sites remain (OFF). `SiegeForceMax` is an optional cap (0–64); 0 lets available engineers decide. `AttMaxEngineers` still limits crews.
 
-For siege and engineer options, an explicit AIC value—including `false` or 0—overrides the module setting. Omit it to inherit that setting.
+Safe placement is enabled automatically with advanced siege behavior. Engineer role-quota counting is ON by default; Fixed Engineers owns general crew and equipment lifecycle.
+
+Explicit AIC siege settings override module fallbacks.

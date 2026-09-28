@@ -20,11 +20,11 @@ meaning or disabling an opted-in policy.
 
 | Control | Default | Effective behavior / precedence |
 | --- | --- | --- |
-| `AttackTargetPolicy` | `Inherit` | Reuse `TargetChoice`; explicit policies replace opponent selection only. `LastAggressor` falls back to `TargetChoice` without a valid incident. |
-| `AttackTargetCommitment` | `Default` | Resolve to `PerAttack` for a new target policy **or `DuringAttack` preparation**. Otherwise retain Native/Legacy commitment. Explicit `UntilDefeated` takes precedence over later incidents and changing rankings. |
+| `AttackTargetPolicy` | `Inherit` | Reuse `TargetChoice`; explicit policies choose one opponent per attack. `{Choice: ..., UntilDefeated: true}` keeps it across attacks. `LastAggressor` falls back to `TargetChoice` without a valid incident. |
+| `AttackTargetCommitment` | `Default` | Compatibility field for earlier packs. `DuringAttack` still keeps the deployed target fixed. New packs put duration in `AttackTargetPolicy`. |
 | `AttackPreparation` | `Native` | `DuringAttack` permits one reserve using the existing next-wave requirement; it also keeps the deployed target fixed. It does not change opponent ranking, raid policy or recruitment weights. |
 | `AttackActivation` | `Immediate` | `AfterProvocation` blocks offensive armies and raids until a qualifying incident; awakening lasts for the match. Defense and protective sorties continue. |
-| `RaidTargetPolicy` | `Native` | New policies use the existing total raid budget, roster and retarget interval. Auxiliary raid settings require a new policy; `RaidFocus` needs `Opportunistic`. |
+| `RaidTargetPolicy` | `Native` | New policies use the existing total raid budget, roster and retarget interval. `RandomNearby` draws a reachable building, then clears nearby buildings. `RaidFocus` works with `Opportunistic` or `RandomNearby`. |
 
 `Default` remains the authored commitment when preparation resolves it to
 `PerAttack`. Switching preparation back to `Native` therefore restores the old

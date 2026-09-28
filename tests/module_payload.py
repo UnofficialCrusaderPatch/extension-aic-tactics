@@ -11,7 +11,8 @@ def module_payload(root: Path, dll: Path):
     module_id = 'aic-tactics-' + version
     paths = [root / name for name in ('definition.yml', 'options.yml', 'LICENSE')]
     for pattern in ('*.lua', 'config/*.lua', 'locale/*.yml',
-                    'locale/description-*.md', 'docs/configuration-*.md'):
+                    'locale/description-*.md', 'docs/configuration-*.md',
+                    'schema/*.json'):
         paths.extend(root.glob(pattern))
     files = {path.relative_to(root).as_posix(): path.read_bytes() for path in paths}
     files['aicTactics.dll'] = dll.read_bytes()
