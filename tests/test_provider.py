@@ -277,6 +277,8 @@ def test_native_identity_is_independent_of_character_update_order(lua, native_fi
         siegePaymentPolicy=500000,siegePaymentFallback=500080,
         siegeHarassPolicy=500100,siegeHarassMinimum=500200,
         siegeHarassFallback=500300,
+        largeSiegePolicy=500400,siegeForceMaximum=500500,
+        largeSiegeFallback=500600,
         game={gameTick=300000},preflightTargets=function()end,
         preflightCombat=function()end,activateCombat=function()end}
       backend.prepare=require('config.backend').new(native).prepare

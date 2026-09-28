@@ -18,6 +18,8 @@ def backend():
         siegePaymentPolicy=22000,siegePaymentFallback=22080,
         siegeHarassPolicy=22100,siegeHarassMinimum=22200,
         siegeHarassFallback=22300,
+        largeSiegePolicy=22400,siegeForceMaximum=22500,
+        largeSiegeFallback=22600,
         game={gameTick=0x1FE7DA8},
         preflight=function()end,activate=function()end,preflightComposition=function()end,activateComposition=function()end,
         preflightCombat=function()end,activateCombat=function()end,
@@ -25,6 +27,7 @@ def backend():
         preflightSafePlacement=function()end,activateSafePlacement=function()end,
         preflightSiegePayment=function()end,activateSiegePayment=function()end,
         preflightSiegeHarassment=function()end,activateSiegeHarassment=function()end,
+        preflightLargerSiegeForce=function()end,activateLargerSiegeForce=function()end,
         preflightEngineerRoles=function()rolePreflights=rolePreflights+1 end,
         activateEngineerRoles=function()roleActivations=roleActivations+1 end}
       backend=require('config.backend').new(native)
@@ -126,6 +129,27 @@ def test_siege_harassment_preserves_absent_off_and_zero_per_ai():
       assert(memory[native.siegeHarassMinimum+16]==1)
       for _,value in ipairs({-1,21,1.5,'3',false}) do
         assert(not pcall(prepare,4,{SiegeHarassMinEngines=value}))
+      end
+    ''')
+
+
+def test_larger_siege_force_preserves_absent_off_and_zero_per_ai():
+    backend().execute('''
+      prepare(4,{}).commit()
+      assert(memory[native.largeSiegePolicy+16]==0)
+      assert(memory[native.siegeForceMaximum+16]==0)
+      prepare(4,{LargerSiegeForces=false,SiegeForceMax=0}).commit()
+      prepare(5,{LargerSiegeForces=true,SiegeForceMax=10}).commit()
+      assert(memory[native.largeSiegePolicy+16]==2)
+      assert(memory[native.siegeForceMaximum+16]==1)
+      assert(memory[native.largeSiegePolicy+20]==1)
+      assert(memory[native.siegeForceMaximum+20]==11)
+      local op=prepare(4,{LargerSiegeForces=true})
+      op.commit();op.rollback()
+      assert(memory[native.largeSiegePolicy+16]==2)
+      assert(memory[native.siegeForceMaximum+16]==1)
+      for _,value in ipairs({-1,21,1.5,'10',false}) do
+        assert(not pcall(prepare,4,{SiegeForceMax=value}))
       end
     ''')
 

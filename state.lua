@@ -1,6 +1,6 @@
 local M = {}
 local path = 'recruitment-state.bin'
-local header = 'AICTACT\011'
+local header = 'AICTACT\012'
 local configurationBytes, aicBytes, censusWords, harassWords = 16 * 352, 16 * 676, 9 * 80, 9 * 9
 
 local function word(value)
@@ -40,10 +40,13 @@ function M.new(native, legacyInterval, fingerprint)
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
     if core.readInteger(native.siegeHarassFallback) ~= 0 then return true end
+    if core.readInteger(native.largeSiegeFallback) ~= 0 then return true end
     for ai = 1, 16 do
       if core.readInteger(native.siegePaymentPolicy + ai * 4) ~= 0 then return true end
       if core.readInteger(native.siegeHarassPolicy + ai * 4) ~= 0
           or core.readInteger(native.siegeHarassMinimum + ai * 4) ~= 0 then return true end
+      if core.readInteger(native.largeSiegePolicy + ai * 4) ~= 0
+          or core.readInteger(native.siegeForceMaximum + ai * 4) ~= 0 then return true end
       local address = native.configuration + ai * 352
       if core.readInteger(address) ~= 0 or core.readInteger(address + 288) ~= 0
           or core.readInteger(address + 292) ~= 0 or core.readInteger(address + 296) ~= 0
@@ -64,6 +67,10 @@ function M.new(native, legacyInterval, fingerprint)
       .. word(core.readInteger(native.siegeHarassMinimumFallback))
       .. core.readString(native.siegeHarassPolicy + 4, 16 * 4)
       .. core.readString(native.siegeHarassMinimum + 4, 16 * 4)
+      .. word(core.readInteger(native.largeSiegeFallback))
+      .. word(core.readInteger(native.siegeForceMaximumFallback))
+      .. core.readString(native.largeSiegePolicy + 4, 16 * 4)
+      .. core.readString(native.siegeForceMaximum + 4, 16 * 4)
       .. core.readString(native.configuration + 352, configurationBytes)
       .. core.readString(native.game.aicRecords, aicBytes)
   end

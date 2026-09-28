@@ -1,39 +1,9 @@
-# extension-aic-tactics
-Opt-in recruitment, attack and raid policies for AI personalities in UCP3; under development
+# AIC Tactics
 
-Source 0.0.13 declares Crusader and Extreme 1.41 and uses verified UCP native
-bindings. [Component evidence and remaining acceptance](docs/shared-native-bindings.md)
-are recorded separately. Installed-runtime acceptance remains in progress.
+AIC Tactics adds optional per-personality recruitment, opponent, raid and siege policies to UCP 3. Existing AIC behavior remains the default. An explicit setting in a personality's effective AIC takes precedence over a module fallback, including `false` and valid zero.
 
-Native contexts resolve during the framework's module-load phase, before Legacy
-patches them. Activation checks the current hook bytes and retains Legacy's
-target stability. Discovery uses UCP 3.0.7's existing cached `core.AOBScan`, as
-established modules do. It requires no newer scanner or private address table.
-The extra full-process duplicate scan that stalled earlier previews is removed.
-The signed 0.0.7 bundle passes combined AIC/Recorder startup on stock secure
-UCP 3.0.7 in Crusader and Extreme. An Extreme spectator match also verifies custom
-recruitment and short offline replay with backward seeking. Its later active-combat
-cold-load check failed: an untouched Native record's defaults depended on AIC
-update order, so configuration validation rejected the save before restoring state.
-Source 0.0.8 canonicalizes Native records and requires Map Extensions 1.1.2, whose
-native error boundary stops rejected loads. Corrected-package native acceptance,
-full combat, multiplayer and simulation-performance acceptance remain open.
+For the test bundle and installation steps, see [the testing guide](docs/runtime-testing.md). The [AIC parameter reference](locale/description-en.md) lists recruitment, attack and raid settings; [siege configuration](docs/configuration-siege.md) gives siege defaults and a per-AI example. Legacy replacement settings and migration are in [the compatibility matrix](docs/compatibility-matrix.md).
 
-The dependent siege drafts provide per-AI safe placement (fallback ON), correct
-engineer role counting (ON), actual resource admission (OFF), and coordinated
-mobile siege harassment (OFF). Placement uses native footprint checks and attack
-angle search; payment uses native construction debit and AI trade. Harassment
-gathers catapults and fire ballistas before issuing bounded native path and
-group-move commands. Its minimum is per AI (module fallback 3), with a one-month
-timeout. The native `HarassingSiegeEnginesMax` can request ten engines without
-changing the eight composition slots. An independent larger **main-assault**
-force policy is not implemented yet. Binding and component checks cover six local
-Crusader/Extreme executables; installed-game recruitment, placement, stock/gold,
-harassment, save/load, replay and performance acceptance are still pending.
+The native module uses the cached AOB scanner shipped with UCP 3.0.7 and verified Crusader/Extreme 1.41 bindings. The x86 build, policy tests and six executable binding fixtures pass. The signed 0.0.15 bundle started to the Extreme menu; an earlier 0.0.14 bundle cold-loaded a native save during an attack. Siege construction, harassment, replay and simulation overhead still need live gameplay acceptance. [Binding and acceptance evidence](docs/shared-native-bindings.md) separates those checks from component tests.
 
-The store uses `build.ps1` and `files.xml` to compile the x86 runtime and stage the same payload as local previews. Both paths share `tests/module_payload.py`, including all nine GUI descriptions and the multiplayer package identity.
-
-AIC Tactics is licensed under the GNU General Public License, version 3
-([GPL-3.0-only](LICENSE)). The license is included in the module ZIP starting
-with 0.0.10. Dependencies retain their own licenses. Files' owner added its
-GPL-3.0 license upstream; the dependent Files 1.4.2 package includes it.
+The module is licensed under [GPL-3.0-only](LICENSE). Required module dependencies keep their own licenses.

@@ -23,7 +23,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 288-byte
+`native-bindings.lua` passes the resolved values into the DLL's 300-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -348,6 +348,54 @@ instead consumes the eight **main-assault** composition entries once as attack
 state 2 advances to 3. Those entries are not a live-engine capacity. A larger
 main-assault policy therefore needs an additional engineer supply and native
 placement batch; merely increasing the loop bound would read outside the AIC.
-That independent policy remains unimplemented. The harassment draft's x86 build,
-component tests and six executable binding fixtures do not establish live
-movement, full crews, save/replay integrity or simulation overhead.
+Source 0.0.14 hooks only that state-2-to-3 batch call for AIs opting into
+`LargerSiegeForces`. It invokes the same native batch repeatedly, retaining the
+eight authored composition entries and native placement/resource owners. The
+native `countSiegeEngineUnits` census plus pending current-wave equipment bounds
+construction; the native tribe allocator partition bounds free crew slots. A
+source-group snapshot returns surviving engineers left detached by a partial
+batch through native membership calls. The policy stops after no successful
+construction, depleted crew or tribe capacity. Its building scan happens once
+per attack transition; subsequent work is bounded by the configured 0–20 cap.
+No new frame, map or complete unit census was introduced. Existing movement,
+harassment, payment and role-counting owners remain separate.
+
+The x86 build, component tests and six executable binding fixtures verify the
+adapter and layouts. They do not establish live construction, simultaneous
+crews, save/replay integrity or whole-game simulation overhead. Those are
+required before promotion from a test candidate.
+
+The signed 0.0.14 Store-preview bundle also started a two-AI Extreme 1.41.1-E
+skirmish in an isolated UCP 3.0.7 install on GamerGrill. Wolf used
+`LargerSiegeForces=true, SiegeForceMax=10`; Saladin used explicit `false, 0`.
+The game saved `aic014.sav` and a fresh process loaded it without an extension
+error. A read-only, paused-game snapshot at tick 3365 found both distinct AI
+records, valid opposing teams and targets, and the 352-byte configuration ABI.
+Their authored raid quotas (48/8 and 22/5) matched the two installed personality
+files, confirming the effective AICs were loaded. This snapshot did not inspect
+the separate siege-policy arrays or capture an active siege; it verifies startup
+and native save/load continuity only.
+
+A later 0.0.14 Extreme save at tick 27,299 cold-loaded in a fresh process with
+Saladin still in attack state 2, targeting the opposing Wolf. Wolf subsequently
+reached attack state 2, wave 5, with its configured eight-entry siege mix and
+engineer-role census visible in paused native memory. No sampled snapshot yet
+shows the additional engines being built. This is active-attack save/load
+continuity, not proof of siege construction or replay behavior. The 0.0.15
+source additionally allows a partial native siege batch when only some tribe
+slots remain and lets reachable harassment engines depart after the one-month
+rally timeout even if another member has no route. Both cases have focused x86
+component tests; game acceptance and simulation timing remain open.
+
+Source 0.0.16 confirms that `findSpotNearEngineersGuild` marks the
+chosen heat-map cell and its finder excludes marked cells on the next search.
+The existing eight-tick retry timer stays; clearing that mark would repeatedly
+pick the blocked site. The native target search takes a map-tile distance
+(83 for catapults and 52 for fire ballistas in the unmodified reference). The
+approach planner reads those current values from the validated owner at each
+decision, stands off at three-quarters of the shorter range, and keeps
+longer-range engines up to eight tiles farther back. Once the group arrives,
+it tries another direction after a scheduled delay if no engine acquires a
+target. Its AoB contexts matched six normal/Extreme executable fixtures and
+the x86 harassment component test passed. Those checks do not demonstrate
+in-game range, crowded-site or spending behavior.

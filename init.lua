@@ -26,6 +26,11 @@ return {
     local siegeHarassMinimum = config and config.siegeHarassMinEngines
     if siegeHarassMinimum == nil then siegeHarassMinimum = 3 end
     native.configureSiegeHarassment(siegeHarassment, siegeHarassMinimum)
+    local largerSiege = config and config.largerSiegeForces
+    if largerSiege == nil then largerSiege = false end
+    local siegeForceMaximum = config and config.siegeForceMax
+    if siegeForceMaximum == nil then siegeForceMaximum = 10 end
+    native.configureLargerSiegeForce(largerSiege, siegeForceMaximum)
     local roleCounting = config and config.correctEngineerRoleCounting
     if roleCounting == nil then roleCounting = true end
     native.configureEngineerRoles(roleCounting)
@@ -56,7 +61,7 @@ return {
         or 'AIC Tactics: checking settings. Press Start again when all players have responded.',0,0)
     end)
     mapState:registerSection('aic-tactics', self.recruitmentState.callbacks,
-      {required=true, format='aic-tactics-state-11', fingerprint=identity.sha256})
+      {required=true, format='aic-tactics-state-12', fingerprint=identity.sha256})
     log(INFO, string.format('[aic-tactics] configuration=0x%X size=%d observations=0x%X size=%d',
       native.configuration, native.configurationSize, native.observations, native.observationSize))
     local addresses = {}

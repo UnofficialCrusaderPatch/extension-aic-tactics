@@ -19,7 +19,10 @@ unsigned char aic[16 * 676];
 int rows[400 * 3];
 int teams[9];
 unsigned int tick;
+unsigned char catapultRange = 0x53;
+int fireRange = 0x34;
 int pathCalls, moveCalls;
+int blockedTribe;
 int moveX[4], moveY[4];
 
 template<class T> void put(unsigned char* base, unsigned int offset, T value)
@@ -31,7 +34,7 @@ int __fastcall path(void*, void*, int tribe, int tile)
 {
     assert(tribe > 0 && tribe < 4 && tile > 0 && tile < 160000);
     ++pathCalls;
-    return 1;
+    return tribe != blockedTribe && (blockedTribe != 4 || tribe == 1);
 }
 
 int __fastcall move(void*, void*, int tribe, unsigned int x, unsigned int y,
@@ -79,6 +82,8 @@ int main()
     nativeBindings.gameTick = reinterpret_cast<unsigned int>(&tick);
     nativeBindings.tribePath = reinterpret_cast<unsigned int>(&path);
     nativeBindings.siegeGroupMove = reinterpret_cast<unsigned int>(&move);
+    nativeBindings.siegeCatapultRange = reinterpret_cast<unsigned int>(&catapultRange);
+    nativeBindings.siegeFireRange = reinterpret_cast<unsigned int>(&fireRange);
     for (int row = 0; row < 400; ++row) rows[row * 3] = row * 400;
     teams[1] = 1; teams[2] = 2;
     put<int>(players + 1 * 0x39F4, 0x2300, 2);
@@ -110,6 +115,7 @@ int main()
     for (int id = 1; id <= 3; ++id) countSiegeHarassUnit(id);
     updateSiegeHarassment(aic, 1);
     assert(pathCalls == 3 && moveCalls == 3);
+    assert(moveX[1] == 54 && moveX[2] == 61);
     assert(moveX[1] != moveX[2] || moveY[1] != moveY[2]);
     assert(moveX[2] != moveX[3] || moveY[2] != moveY[3]);
     assert(siegeHarassPlans[1].phase == 1);
@@ -129,5 +135,48 @@ int main()
     combatCensus[2].lord = 0;
     updateSiegeHarassment(aic, 1);
     assert(siegeHarassPlans[1].target == 0);
+    // With a complete census but one blocked route, wait for a useful group
+    // initially and move the reachable members after the one-month timeout.
+    combatCensus[2].lord = 1;
+    siegeHarassMinimum[1] = 4;
+    blockedTribe = 3;
+    std::memset(&siegeHarassPlans[1], 0, sizeof(SiegeHarassPlan));
+    tick = combatCensusTick = 2000;
+    resetSiegeHarassCensus();
+    for (int id = 1; id <= 3; ++id) countSiegeHarassUnit(id);
+    const int beforeBlocked = moveCalls;
+    updateSiegeHarassment(aic, 1);
+    assert(moveCalls == beforeBlocked && pathCalls >= 3);
+    tick = combatCensusTick = 2800;
+    updateSiegeHarassment(aic, 1);
+    assert(moveCalls == beforeBlocked + 2);
+    const int previousX = moveX[1];
+    catapultRange = 0x70;
+    fireRange = 0x70;
+    blockedTribe = 0;
+    std::memset(&siegeHarassPlans[1], 0, sizeof(SiegeHarassPlan));
+    tick = combatCensusTick = 3000;
+    resetSiegeHarassCensus();
+    for (int id = 1; id <= 3; ++id) countSiegeHarassUnit(id);
+    updateSiegeHarassment(aic, 1);
+    assert(moveX[1] == 30 && moveX[2] == 30 && moveX[1] < previousX);
+    const int beforeRetarget = moveCalls;
+    for (int id = 1; id <= 3; ++id) {
+        put<short>(units + id * 0x490, 0xC4, static_cast<short>(siegeHarassPlans[1].x));
+        put<short>(units + id * 0x490, 0xC6, static_cast<short>(siegeHarassPlans[1].y));
+    }
+    tick = combatCensusTick = 3400;
+    updateSiegeHarassment(aic, 1);
+    assert(moveCalls == beforeRetarget + 3); // No acquired target: choose another direction.
+    blockedTribe = 4; // Only one of three engines can reach the target.
+    std::memset(&siegeHarassPlans[1], 0, sizeof(SiegeHarassPlan));
+    tick = combatCensusTick = 4000;
+    resetSiegeHarassCensus();
+    for (int id = 1; id <= 3; ++id) countSiegeHarassUnit(id);
+    const int beforeSolo = moveCalls;
+    updateSiegeHarassment(aic, 1);
+    tick = combatCensusTick = 4800;
+    updateSiegeHarassment(aic, 1);
+    assert(moveCalls == beforeSolo); // Timeout must not launch a lone engine.
     return 0;
 }

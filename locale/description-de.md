@@ -29,7 +29,10 @@ AIC Tactics ergänzt die AIC um Rekrutierung, Angriffsziele, Überfälle und Bel
 
 ### Belagerung und Ingenieure
 
-- `SafeSiegePlacement`: `true` sucht bei belegten Bauplätzen weiter und schützt eigene Einheiten. `false` nutzt die bisherige Platzierung. Ohne AIC-Wert gilt der Modulschalter (an).
-- `ActualSiegeResourcePayment`: `true` verlangt Rohstoffe und Gold vor dem Bau; Fehlmengen gehen in den normalen KI-Handel. `false` nutzt die bisherige Bauprüfung. Ohne AIC-Wert gilt der Modulschalter (aus).
-- `CoordinatedSiegeHarassment`: `true` sammelt Belagerungsgeräte und schickt sie zu erreichbaren Schusspositionen. `SiegeHarassMinEngines` (0–20, Standard 3) legt die Wartezahl fest; nach einem Spielmonat starten die vorhandenen Geräte. Ohne AIC-Wert gelten die Modulwerte (aus, 3). `HarassingSiegeEnginesMax` begrenzt weiter die Gesamtzahl.
-- `CorrectEngineerRoleCounting`: Zählt Ingenieure in ihrem aktuellen Truppenverband. Belagerungsbesatzungen und Öldienst füllen keine Truppenkontingente. Ohne AIC-Wert gilt der Modulschalter (an).
+Ein AIC-Wert hat Vorrang; fehlt er, gilt der jeweilige Modulwert (Standard in Klammern).
+
+- `SafeSiegePlacement` (**an**): Meidet belegte Bauplätze und schützt eigene Einheiten. `false` nutzt die bisherige Platzierung.
+- `ActualSiegeResourcePayment` (**aus**): Verlangt Rohstoffe und Gold vor dem Bau; Fehlmengen kauft die KI über ihren normalen Handel.
+- `CoordinatedSiegeHarassment` (**aus**): Sammelt Belagerungsgeräte und schickt sie zu erreichbaren Schusspositionen. `SiegeHarassMinEngines` (0–20, Standard 3) legt die Wartezahl fest; nach einem Spielmonat genügt ein erreichbares Paar. Mit 0 oder 1 darf ein Gerät allein losziehen. `HarassingSiegeEnginesMax` bleibt die Gesamtgrenze.
+- `LargerSiegeForces` (**aus**): Wiederholt beim Hauptangriff den eingestellten Gerätemix bis `SiegeForceMax` (0–20, Standard 10). **0** belässt eine normale Bauserie; `AttMaxEngineers` begrenzt die Besatzungen.
+- `CorrectEngineerRoleCounting` (**an**): Zählt Ingenieure im zugewiesenen Truppenverband. Belagerungsbesatzungen und Öldienst zählen nicht für Truppenkontingente.

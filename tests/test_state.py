@@ -15,6 +15,8 @@ def state():
         siegeHarassFallback=190400,siegeHarassMinimumFallback=190404,
         siegeHarassPolicy=190500,siegeHarassMinimum=190600,
         siegeHarassPlans=190700,siegeHarassPlanSize=36,
+        largeSiegeFallback=191100,siegeForceMaximumFallback=191104,
+        largeSiegePolicy=191200,siegeForceMaximum=191300,
         game={gameTick=0x1FE7DA8,initialDefenseTicks=0x4D34B1,aicRecords=0x23FC8E8+676,unitCapacity=2500,buildingCapacity=2000,tribeMemberWords=157,players=0x115BDF8,tribes=0x1667F78,tribeStride=0x334},
         defenseCensusTick=23000,defenseCensusValid=23004, legacyTargetPolicy=23008,
         incidentSize=2632,combatCensusTick=24000,combatCensusValid=24004,
@@ -88,6 +90,20 @@ def test_siege_harassment_policy_and_plan_round_trip():
       state.restore(bytes)
       assert(memory[native.siegeHarassPlans+4*(1*9+0)]==2)
       assert(state.capture()==bytes)
+    ''')
+
+
+def test_larger_force_policy_is_part_of_saved_identity():
+    state().execute('''
+      local original=state.identity()
+      memory[native.largeSiegePolicy+4*4]=2
+      assert(state.identity()~=original)
+      memory[native.largeSiegePolicy+4*4]=0
+      memory[native.siegeForceMaximum+4*4]=1
+      assert(state.identity()~=original)
+      memory[native.siegeForceMaximum+4*4]=0
+      memory[native.siegeForceMaximumFallback]=10
+      assert(state.identity()~=original)
     ''')
 
 

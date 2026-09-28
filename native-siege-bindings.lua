@@ -81,8 +81,10 @@ function M.resolve(game)
   -- the site. A rejected point must not request goods through the AI market.
   local admission = buildingOwner + 0x69
   context.verify(admission, 'native building placement admission',
-    '53 B9 ? ? ? ? 89 96 30 49 55 00 E8 ? ? ? ?')
+    '53 B9 ? ? ? ? 89 96 ? ? ? ? E8 ? ? ? ?')
+  local resourceBypassAddress = core.readInteger(admission + 8)
   assert((not game.buildings or core.readInteger(admission + 2) == game.buildings)
+      and resourceBypassAddress > 0
       and context.call(admission + 12, 'building type conversion') > 0,
     'AIC Tactics: incompatible native building admission owner')
   local failedPlacement = buildingOwner + 0x61
@@ -130,6 +132,8 @@ function M.resolve(game)
     '83 EC 18 8B D1 8B 4C 24 1C 69 C9 F4 39 00 00 8B 81 ? ? ? ?')
   assert(core.readInteger(assault + 17) == game.players + 0x2300,
     'AIC Tactics: incompatible native assault siege player layout')
+  assert(core.readInteger(assault + 0x15d) == game.players + 0x3924,
+    'AIC Tactics: incompatible native assault wave layout')
   local assaultPlacementCall = assault + 0x18b
   context.verify(assaultPlacementCall, 'native assault siege construction call',
     'E8 ? ? ? ? 83 C6 01 83 C7 04 83 FE 08 0F 8C ? ? ? ?')
@@ -138,9 +142,39 @@ function M.resolve(game)
     '53 8B 5C 24 08 55 56 57 8B 6C 24 1C 8B FB 69 FF ? ? ? ?')
   assert(core.readInteger(placeTent + 16) == game.tribeStride,
     'AIC Tactics: incompatible native assault siege construction layout')
+  context.verify(placeTent + 0x10e, 'native pending siege wave write',
+    '69 C0 2C 03 00 00 6A 00 89 90 ? ? ? ?')
+  local tribeAttackWave = core.readInteger(placeTent + 0x108) - game.tribes
+  assert(tribeAttackWave == 0x2bc + game.tribeStride - 0x334
+      and core.readInteger(placeTent + 0x118) == game.buildings + 0x14 + 0x2ac,
+    'AIC Tactics: incompatible native siege wave storage')
   local popUnit = context.call(assault + 0xe2, 'native engineer tribe pop')
   context.verify(popUnit, 'native engineer tribe pop',
     '53 8B 5C 24 08 56 57 6A 00 53 8B F9 E8 ? ? ? ? 8B F0 85 F6')
+  local getUnit = context.call(popUnit + 0xc, 'native tribe indexed membership')
+  context.verify(getUnit, 'native tribe indexed membership',
+    '8B 44 24 04 69 C0 ? ? ? ? 03 C8 57 33 FF 33 C0 66 83 79 40 02')
+  assert(core.readInteger(getUnit + 6) == game.tribeStride,
+    'AIC Tactics: incompatible native tribe membership layout')
+  local unitCount = context.find('native assault siege equipment count',
+    '53 56 8B 74 24 0C 33 C0 57 BA ? ? ? ? B3 03 8D 78 15 '..
+    '66 83 7A FE 00 74 ? 0F BF 4A 08 3B CE 75 ? 38 9A 70 03 00 00 '..
+    '75 ? 66 39 BA 9C 03 00 00 74 ? 0F B7 0A 66 83 F9 27 74 ? '..
+    '66 83 F9 28 74 ? 66 83 F9 3A 74 ?')
+  assert(core.readInteger(unitCount + 10) == game.unitRecords + 0x490 + 0x8e,
+    'AIC Tactics: incompatible native siege equipment census')
+  local harassTargeting = context.find('native siege target acquisition',
+    '83 EC 10 53 55 56 57 8B 7C 24 24 8B C7 69 C0 90 04 00 00 '..
+    '0F BF AC 08 ? ? ? ? 8D 34 08')
+  context.verify(harassTargeting + 0x1eb, 'fire ballista target range',
+    'B9 ? ? ? ? EB ?')
+  context.verify(harassTargeting + 0x1fc, 'catapult target range',
+    '83 C1 ? 83 3D ? ? ? ? 00')
+  local fireRange = core.readInteger(harassTargeting + 0x1ec)
+  local catapultRange = core.readByte(harassTargeting + 0x1fe)
+  assert(fireRange >= 16 and fireRange <= 240
+      and catapultRange >= 16 and catapultRange <= 240,
+    'AIC Tactics: unsupported native siege target ranges')
   local catapultUpdate = context.find('native catapult update',
     '83 EC 74 53 8B 1D ? ? ? ? 55 56 8B F3 69 F6 90 04 00 00 '..
     '0F BF 86 ? ? ? ? 57 8B F8 69 FF F4 39 00 00')
@@ -170,11 +204,17 @@ function M.resolve(game)
     siegePlacementFail = placementFail, siegeAnglePostPlace = postPlace,
     siegeAnglePlacedBuilding = placedBuilding, siegeAngleFailureReturn = placer + 0xfe,
     siegeBuildingOwner = buildingOwner, siegeBuildingAdmission = admission,
+    siegeResourceBypassAddress = resourceBypassAddress,
     siegeBuildingFailureExit = failureExit, siegeResourceCheck = resourceCheck,
     siegeGoldSub = goldSub, siegeGoldAddress = goldAddress,
     siegeDirectSpawn = direct, siegeDirectExit = directExit,
     siegeGroupMove = groupMove, siegePlaceTent = placeTent,
     popUnitFromTribe = popUnit, siegeAssaultPlacementCall = assaultPlacementCall,
+    siegeAssaultBatchCall = assaultCall, siegeAssaultBatch = assault,
+    siegeUnitCount = unitCount, siegeGetUnitForIndex = getUnit,
+    siegeHarassTargeting = harassTargeting,
+    siegeCatapultRange = harassTargeting + 0x1fe,
+    siegeFireRange = harassTargeting + 0x1ec,
     siegeCatapultPathGate = catapultGate,
     siegeCatapultPathExit = catapultExit, siegeFirePathGate = fireGate,
     siegeFirePathExit = fireExit}

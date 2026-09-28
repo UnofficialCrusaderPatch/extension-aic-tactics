@@ -47,7 +47,8 @@
 
 - `SafeSiegePlacement`: `true` 保护攻城建造地点的己方单位；`false` 使用原版放置规则。省略时采用模块开关（默认开启）。
 - `ActualSiegeResourcePayment`：`true` 要求建造前备足材料和金币；缺少的材料交由 AI 常规贸易购买。`false` 保留原版检查。省略时采用模块开关（默认关闭）。
-- `CoordinatedSiegeHarassment`：`true` 集结攻城器械，并派往各自可达的射击位置。`SiegeHarassMinEngines`（0–20，默认 3）为等待数量；一个游戏月后派出已有器械。两项省略时使用模块设置（默认关闭、3）；原有 `HarassingSiegeEnginesMax` 仍限制总数。
+- `CoordinatedSiegeHarassment`：`true` 集结攻城器械，并派往可达的射击位置。`SiegeHarassMinEngines`（0–20，默认 3）为等待数量；一个游戏月后，两台可达器械即可出发。设为 0 或 1 可让一台单独出发。两项省略时使用模块设置（默认关闭、3）；原有 `HarassingSiegeEnginesMax` 仍限制总数。
+- `LargerSiegeForces`：`true` 在主攻时重复现有的攻城器械配置，最多建造 `SiegeForceMax` 台（0–20，默认 10）。**0** 保留原版的一轮建造。未填写时使用模块设置（关闭、10）；`AttMaxEngineers` 仍限制可用工程师。
 
 ### 工程兵配额
 
