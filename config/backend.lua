@@ -22,8 +22,11 @@ function M.new(native)
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
+    if core.readInteger(native.siegeHarassFallback) ~= 0 then return true end
     for ai = 1, 16 do
       if core.readInteger(native.siegePaymentPolicy + ai * 4) ~= 0 then return true end
+      if core.readInteger(native.siegeHarassPolicy + ai * 4) ~= 0
+          or core.readInteger(native.siegeHarassMinimum + ai * 4) ~= 0 then return true end
       local address = native.configuration + ai * native.configurationSize
       for _, offset in ipairs({0,288,292,296,316,320,344,348}) do
         if core.readInteger(address + offset) ~= 0 then return true end
@@ -36,12 +39,14 @@ function M.new(native)
     multiplayerLocked = function() return multiplayerLocked end,
     prepare = function(ai, authored, envelope)
     assert(ai >= 1 and ai <= 16 and ai == math.floor(ai), 'Invalid AI character')
-    assert(envelope.schemaVersion == 7, 'Unsupported personality schema')
+    assert(envelope.schemaVersion == 8, 'Unsupported personality schema')
     local compiled, targeting = envelope.recruitment, envelope.targeting
     assert(compiled.schemaVersion == 3, 'Unsupported recruitment schema')
     assert(targeting.schemaVersion == 2, 'Unsupported targeting schema')
     local previous = readRecord(ai)
     local previousPayment = core.readInteger(native.siegePaymentPolicy + ai * 4)
+    local previousHarass = core.readInteger(native.siegeHarassPolicy + ai * 4)
+    local previousMinimum = core.readInteger(native.siegeHarassMinimum + ai * 4)
     local changesPolicy = compiled.mode ~= 0 or previous[1] ~= 0
       or targeting.policy ~= 0 or targeting.commitment ~= 0 or targeting.activation ~= 0
       or previous[73] ~= 0 or previous[74] ~= 0 or previous[75] ~= 0
@@ -50,11 +55,14 @@ function M.new(native)
       or envelope.siege[1] ~= 0 or previous[87] ~= 0
       or envelope.roles ~= 0 or previous[88] ~= 0
       or envelope.siege[2] ~= 0 or previousPayment ~= 0
+      or envelope.siege[3] ~= 0 or previousHarass ~= 0
+      or envelope.siege[4] ~= 0 or previousMinimum ~= 0
     if multiplayerLocked or changesPolicy or anyPolicyActive() then admission() end
     if compiled.mode == 1 then native.preflight() end
     if compiled.mode == 1 and compiled.defenseComposition == 1 then native.preflightComposition() end
     local needsCombat = targeting.policy ~= 0 or targeting.commitment ~= 0 or targeting.activation ~= 0
       or envelope.preparation ~= 0 or envelope.raids[1] ~= 0
+      or envelope.siege[3] == 1
     if compiled.mode == 1 then
       for _, row in ipairs(compiled.conditions) do
         if row.requiredFacts % 2 == 1 or row.forbiddenFacts % 2 == 1 then needsCombat = true end
@@ -65,6 +73,7 @@ function M.new(native)
     if targeting.policy ~= 0 or targeting.commitment ~= 0 then native.preflightTargets() end
     if envelope.siege[1] == 1 then native.preflightSafePlacement() end
     if envelope.siege[2] == 1 then native.preflightSiegePayment() end
+    if envelope.siege[3] == 1 then native.preflightSiegeHarassment() end
     if envelope.roles == 1 then native.preflightEngineerRoles() end
     local words = {compiled.mode, #compiled.conditions}
     for index = 1, 8 do
@@ -104,13 +113,18 @@ function M.new(native)
       if envelope.raids[1] ~= 0 then native.activateRaids() end
       if envelope.siege[1] == 1 then native.activateSafePlacement() end
       if envelope.siege[2] == 1 then native.activateSiegePayment() end
+      if envelope.siege[3] == 1 then native.activateSiegeHarassment() end
       if envelope.roles == 1 then native.activateEngineerRoles() end
       writeRecord(ai, words)
       core.writeInteger(native.siegePaymentPolicy + ai * 4, envelope.siege[2])
+      core.writeInteger(native.siegeHarassPolicy + ai * 4, envelope.siege[3])
+      core.writeInteger(native.siegeHarassMinimum + ai * 4, envelope.siege[4])
     end,
       rollback = function()
         writeRecord(ai, previous)
         core.writeInteger(native.siegePaymentPolicy + ai * 4, previousPayment)
+        core.writeInteger(native.siegeHarassPolicy + ai * 4, previousHarass)
+        core.writeInteger(native.siegeHarassMinimum + ai * 4, previousMinimum)
       end}
   end}
 end

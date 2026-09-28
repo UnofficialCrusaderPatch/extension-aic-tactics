@@ -47,6 +47,7 @@ Bu beş akın ayarı yeni bir `RaidTargetPolicy` gerektirir. `RaidUnitsBase`, `R
 
 - `SafeSiegePlacement`: `true` kuşatma alanındaki kendi birliklerini korur; `false` oyunun yerleştirmesini kullanır. Alan yoksa modül ayarı geçerlidir (açık).
 - `ActualSiegeResourcePayment`: `true` yapımdan önce malzeme ve altın gerektirir; eksikleri normal yapay zekâ ticareti karşılar. `false` mevcut kontrolü korur. Alan yoksa modül ayarı geçerlidir (kapalı).
+- `CoordinatedSiegeHarassment`: `true` kuşatma araçlarını toplayıp erişilebilir atış noktalarına gönderir. `SiegeHarassMinEngines` (0–20, varsayılan 3) beklenecek araç sayısıdır; bir oyun ayı sonra mevcut araçlar yola çıkar. Alan yoksa modül ayarları geçerlidir (kapalı, 3). Toplam sınırı yine `HarassingSiegeEnginesMax` belirler.
 
 ### Mühendis kotaları
 

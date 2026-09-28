@@ -110,6 +110,7 @@ void __cdecl resetCombatCensus()
 {
     resetReserveCensus();
     resetRaidUnitCensus();
+    resetSiegeHarassCensus();
     combatCensusValid = 0;
     std::memset(combatCensus, 0, sizeof(combatCensus));
     bool needsPower = raidPoliciesEnabled();
@@ -131,6 +132,7 @@ void __cdecl countCombatUnit(int unit)
 {
     if (unit <= 0 || unit >= static_cast<int>(nativeBindings.unitCapacity)) return;
     countReserveUnit(unit);
+    countSiegeHarassUnit(unit);
     const unsigned int address = Units + unit * 0x490;
     if (at<short>(address + 0x8C) != 2 || at<short>(address + 0x2A0) != 0
         || at<int>(address + 0x3C8) <= 0) return;
@@ -167,6 +169,7 @@ void __cdecl completeCombatCensus()
             targetLifecycle[player] = 0;
             std::memset(&reserves[player], 0, sizeof(ReserveState));
             std::memset(&raidStates[player], 0, sizeof(RaidState));
+            std::memset(&siegeHarassPlans[player], 0, sizeof(SiegeHarassPlan));
             std::memset(raidGroupCensus[player], 0, sizeof(raidGroupCensus[player]));
             continue;
         }
@@ -384,7 +387,9 @@ void __fastcall returnFromAttack(void* aic, void*, int player)
 
 void __fastcall updateOffensiveRaids(void* aic, void*, int player)
 {
-    if (offensiveActionsAllowed(player) && !updateSplitRaids(aic, player))
+    if (!offensiveActionsAllowed(player)) return;
+    updateSiegeHarassment(aic, player);
+    if (!updateSplitRaids(aic, player))
         reinterpret_cast<PlayerAction>(nativeBindings.updateRaids)(aic, player);
 }
 

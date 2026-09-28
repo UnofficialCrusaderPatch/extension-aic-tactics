@@ -1,7 +1,7 @@
 local M = {}
 local path = 'recruitment-state.bin'
-local header = 'AICTACT\010'
-local configurationBytes, aicBytes, censusWords = 16 * 352, 16 * 676, 9 * 80
+local header = 'AICTACT\011'
+local configurationBytes, aicBytes, censusWords, harassWords = 16 * 352, 16 * 676, 9 * 80, 9 * 9
 
 local function word(value)
   if value < 0 then value = value + 4294967296 end
@@ -21,6 +21,7 @@ end
 function M.new(native, legacyInterval, fingerprint)
   assert(type(fingerprint) == 'string' and #fingerprint == 64, 'AIC Tactics: missing package fingerprint')
   assert(native.configurationSize == 352, 'AIC Tactics: incompatible save ABI')
+  assert(native.siegeHarassPlanSize == 36, 'AIC Tactics: incompatible siege plan ABI')
   local combat = require('combat-state').new(native)
   local army = require('army-state').new(native)
   local raids = require('raid-state').new(native)
@@ -38,8 +39,11 @@ function M.new(native, legacyInterval, fingerprint)
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
+    if core.readInteger(native.siegeHarassFallback) ~= 0 then return true end
     for ai = 1, 16 do
       if core.readInteger(native.siegePaymentPolicy + ai * 4) ~= 0 then return true end
+      if core.readInteger(native.siegeHarassPolicy + ai * 4) ~= 0
+          or core.readInteger(native.siegeHarassMinimum + ai * 4) ~= 0 then return true end
       local address = native.configuration + ai * 352
       if core.readInteger(address) ~= 0 or core.readInteger(address + 288) ~= 0
           or core.readInteger(address + 292) ~= 0 or core.readInteger(address + 296) ~= 0
@@ -56,6 +60,10 @@ function M.new(native, legacyInterval, fingerprint)
       .. word(core.readInteger(native.engineerRoleFallback))
       .. word(core.readInteger(native.siegePaymentFallback))
       .. core.readString(native.siegePaymentPolicy + 4, 16 * 4)
+      .. word(core.readInteger(native.siegeHarassFallback))
+      .. word(core.readInteger(native.siegeHarassMinimumFallback))
+      .. core.readString(native.siegeHarassPolicy + 4, 16 * 4)
+      .. core.readString(native.siegeHarassMinimum + 4, 16 * 4)
       .. core.readString(native.configuration + 352, configurationBytes)
       .. core.readString(native.game.aicRecords, aicBytes)
   end
@@ -68,12 +76,15 @@ function M.new(native, legacyInterval, fingerprint)
     for _, value in ipairs(combat.capture()) do result[#result + 1] = word(value) end
     for _, value in ipairs(army.capture()) do result[#result + 1] = word(value) end
     for _, value in ipairs(raids.capture()) do result[#result + 1] = word(value) end
+    for index = 0, harassWords - 1 do
+      result[#result + 1] = word(core.readInteger(native.siegeHarassPlans + index * 4))
+    end
     return table.concat(result)
   end
   local function validate(bytes)
     assert(type(bytes) == 'string', 'AIC Tactics: missing saved recruitment state')
     local expected = identity()
-    assert(#bytes == #expected + 8 + (censusWords + combat.wordCount + army.wordCount + raids.wordCount) * 4 and bytes:sub(1, #expected) == expected,
+    assert(#bytes == #expected + 8 + (censusWords + combat.wordCount + army.wordCount + raids.wordCount + harassWords) * 4 and bytes:sub(1, #expected) == expected,
       'AIC Tactics: this save requires its original AIC configuration and module version')
     local offset = #expected + 1
     local tick, valid = number(bytes, offset), number(bytes, offset + 4)
@@ -101,10 +112,22 @@ function M.new(native, legacyInterval, fingerprint)
       raidValues[index + 1] = number(bytes, offset + 8 + (censusWords + combat.wordCount + army.wordCount + index) * 4)
     end
     raids.validate(raidValues)
-    return tick, valid, counts, combatValues, armyValues, raidValues
+    local planValues = {}
+    local planOffset = offset + 8 + (censusWords + combat.wordCount + army.wordCount + raids.wordCount) * 4
+    for index = 0, harassWords - 1 do
+      planValues[index + 1] = number(bytes, planOffset + index * 4)
+    end
+    for player = 0, 8 do
+      local start = player * 9 + 1
+      assert(planValues[start] <= 8 and planValues[start + 4] <= 7
+          and planValues[start + 5] <= 1 and planValues[start + 6] <= 20
+          and planValues[start + 7] <= 399 and planValues[start + 8] <= 399,
+        'AIC Tactics: invalid saved siege harassment plan')
+    end
+    return tick, valid, counts, combatValues, armyValues, raidValues, planValues
   end
   local function restore(bytes)
-    local tick, valid, counts, combatValues, armyValues, raidValues = validate(bytes)
+    local tick, valid, counts, combatValues, armyValues, raidValues, planValues = validate(bytes)
     -- Validate the entire payload before writing any state.
     core.writeInteger(native.defenseCensusValid, 0)
     for index, count in ipairs(counts) do core.writeInteger(native.defenseTypeCounts + (index - 1) * 4, count) end
@@ -113,6 +136,10 @@ function M.new(native, legacyInterval, fingerprint)
     combat.restore(combatValues)
     army.restore(armyValues)
     raids.restore(raidValues)
+    for index, value in ipairs(planValues) do
+      core.writeInteger(native.siegeHarassPlans + (index - 1) * 4,
+        value >= 2147483648 and value - 4294967296 or value)
+    end
   end
   local function validateAbsent(kind)
     assert(not active() or kind == 'map',
@@ -126,6 +153,7 @@ function M.new(native, legacyInterval, fingerprint)
     combat.initialize()
     army.initialize()
     raids.initialize()
+    core.setMemory(native.siegeHarassPlans, 0, harassWords * 4)
   end
   return {
     capture = capture, validate = validate, restore = restore, identity = identity,

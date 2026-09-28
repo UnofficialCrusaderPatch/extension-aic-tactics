@@ -12,6 +12,9 @@ def state():
       memory,writes={},0
       native={configurationSize=352,configuration=10000,defenseTypeCounts=20000,
         siegePaymentPolicy=190200,siegePaymentFallback=190300,
+        siegeHarassFallback=190400,siegeHarassMinimumFallback=190404,
+        siegeHarassPolicy=190500,siegeHarassMinimum=190600,
+        siegeHarassPlans=190700,siegeHarassPlanSize=36,
         game={gameTick=0x1FE7DA8,initialDefenseTicks=0x4D34B1,aicRecords=0x23FC8E8+676,unitCapacity=2500,buildingCapacity=2000,tribeMemberWords=157,players=0x115BDF8,tribes=0x1667F78,tribeStride=0x334},
         defenseCensusTick=23000,defenseCensusValid=23004, legacyTargetPolicy=23008,
         incidentSize=2632,combatCensusTick=24000,combatCensusValid=24004,
@@ -67,6 +70,24 @@ def test_siege_payment_choice_is_part_of_save_identity():
       memory[native.siegePaymentPolicy+4*4]=0
       memory[native.siegePaymentFallback]=1
       assert(state.identity()~=original)
+    ''')
+
+
+def test_siege_harassment_policy_and_plan_round_trip():
+    state().execute('''
+      local original=state.identity()
+      memory[native.siegeHarassPolicy+4*4]=2
+      assert(state.identity()~=original)
+      memory[native.siegeHarassPolicy+4*4]=0
+      memory[native.siegeHarassMinimum+4*4]=1
+      assert(state.identity()~=original)
+      memory[native.siegeHarassPlans+4*(1*9+0)]=2
+      memory[native.siegeHarassPlans+4*(1*9+5)]=1
+      local bytes=state.capture()
+      memory[native.siegeHarassPlans+4*(1*9+0)]=0
+      state.restore(bytes)
+      assert(memory[native.siegeHarassPlans+4*(1*9+0)]==2)
+      assert(state.capture()==bytes)
     ''')
 
 

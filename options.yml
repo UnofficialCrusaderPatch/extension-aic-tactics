@@ -28,6 +28,26 @@ options:
   contents:
     type: boolean
     value: false
+- category: ['{{ai}}', '{{improvements}}']
+  name: coordinatedSiegeHarassment
+  header: '{{coordinatedSiegeHarassment}}'
+  text: '{{coordinatedSiegeHarassment_descr}}'
+  display: UCP2Switch
+  url: aic-tactics.coordinatedSiegeHarassment
+  contents:
+    type: boolean
+    value: false
+- category: ['{{ai}}', '{{improvements}}']
+  name: siegeHarassMinEngines
+  header: '{{siegeHarassMinEngines}}'
+  text: '{{siegeHarassMinEngines_descr}}'
+  display: Number
+  url: aic-tactics.siegeHarassMinEngines
+  contents:
+    type: integer
+    value: 3
+    min: 0
+    max: 20
 - category: [AIC Tactics]
   name: nativeTargetPolicy
   header: '{{nativeTargetPolicy}}'

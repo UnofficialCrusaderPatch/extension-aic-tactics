@@ -16,12 +16,15 @@ def backend():
       rolePreflights,roleActivations=0,0
       native={configuration=10000,configurationSize=352,configurationLocked=20000,
         siegePaymentPolicy=22000,siegePaymentFallback=22080,
+        siegeHarassPolicy=22100,siegeHarassMinimum=22200,
+        siegeHarassFallback=22300,
         game={gameTick=0x1FE7DA8},
         preflight=function()end,activate=function()end,preflightComposition=function()end,activateComposition=function()end,
         preflightCombat=function()end,activateCombat=function()end,
         preflightTargets=function()end,preflightRaids=function()end,activateRaids=function()end,
         preflightSafePlacement=function()end,activateSafePlacement=function()end,
         preflightSiegePayment=function()end,activateSiegePayment=function()end,
+        preflightSiegeHarassment=function()end,activateSiegeHarassment=function()end,
         preflightEngineerRoles=function()rolePreflights=rolePreflights+1 end,
         activateEngineerRoles=function()roleActivations=roleActivations+1 end}
       backend=require('config.backend').new(native)
@@ -103,6 +106,27 @@ def test_siege_payment_is_per_ai_and_preserves_explicit_off():
       op.rollback()
       assert(memory[native.siegePaymentPolicy+16]==2)
       assert(not pcall(prepare,4,{ActualSiegeResourcePayment=0}))
+    ''')
+
+
+def test_siege_harassment_preserves_absent_off_and_zero_per_ai():
+    backend().execute('''
+      prepare(4,{}).commit()
+      assert(memory[native.siegeHarassPolicy+16]==0)
+      assert(memory[native.siegeHarassMinimum+16]==0)
+      prepare(4,{CoordinatedSiegeHarassment=false,SiegeHarassMinEngines=0}).commit()
+      prepare(5,{CoordinatedSiegeHarassment=true,SiegeHarassMinEngines=10}).commit()
+      assert(memory[native.siegeHarassPolicy+16]==2)
+      assert(memory[native.siegeHarassMinimum+16]==1)
+      assert(memory[native.siegeHarassPolicy+20]==1)
+      assert(memory[native.siegeHarassMinimum+20]==11)
+      local op=prepare(4,{CoordinatedSiegeHarassment=true})
+      op.commit();op.rollback()
+      assert(memory[native.siegeHarassPolicy+16]==2)
+      assert(memory[native.siegeHarassMinimum+16]==1)
+      for _,value in ipairs({-1,21,1.5,'3',false}) do
+        assert(not pcall(prepare,4,{SiegeHarassMinEngines=value}))
+      end
     ''')
 
 

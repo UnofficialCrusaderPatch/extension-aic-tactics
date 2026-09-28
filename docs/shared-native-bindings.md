@@ -23,7 +23,7 @@ needed by the bounded C++ identity snapshot. This small module-only API keeps
 that ownership in Loader. Its version, 16-record count and 676-byte stride are
 validated before writing native binding memory.
 
-`native-bindings.lua` passes the resolved values into the DLL's 276-byte
+`native-bindings.lua` passes the resolved values into the DLL's 280-byte
 `NativeBindings` structure before installing any AIC callbacks. Both Lua state
 serialization and C++ integrity snapshots use these same bindings. Recruitment,
 combat, raid observation and configuration admission consume the same clock.
@@ -321,3 +321,26 @@ This short segment contained no active attacks or player commands. It does not
 prove active-combat or cached-snapshot restoration, complete-world equality,
 Native baseline equivalence, physical multiplayer or simulation performance.
 Those remain release gates in [PR17](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/pull/17).
+
+## Siege harassment owner review (current dependent draft)
+
+The existing combat-unit pass supplies the mobile-engine census; no second
+whole-unit sweep was added. AIC Loader's effective-personality provider owns the
+per-AI switches and integer. The existing Map Extensions section owns the small
+target/timeout plan and clears it when a save is opened as a new map. Native
+`tribePath` and `TribesState::giveTribeMoveInstruction` own reachability and
+movement. The catapult and fire-ballista solo-movement gates are resolved from
+their complete update contexts and patched only if a personality enables
+coordination. The engine update still owns firing and target acquisition.
+
+Read-only Ghidra investigation of the named Crusader 1.41 image shows that
+`recruitHarrassingSiegeEngines` uses the AIC's
+`HarassingSiegeEnginesMax` and a separate native limit of 20, cycling its eight
+composition entries. `useAITribe_0x12_toPlaceSiegeTentsAndAssignEngineers`
+instead consumes the eight **main-assault** composition entries once as attack
+state 2 advances to 3. Those entries are not a live-engine capacity. A larger
+main-assault policy therefore needs an additional engineer supply and native
+placement batch; merely increasing the loop bound would read outside the AIC.
+That independent policy remains unimplemented. The harassment draft's x86 build,
+component tests and six executable binding fixtures do not establish live
+movement, full crews, save/replay integrity or simulation overhead.

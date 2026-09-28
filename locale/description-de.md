@@ -31,4 +31,5 @@ AIC Tactics ergänzt die AIC um Rekrutierung, Angriffsziele, Überfälle und Bel
 
 - `SafeSiegePlacement`: `true` sucht bei belegten Bauplätzen weiter und schützt eigene Einheiten. `false` nutzt die bisherige Platzierung. Ohne AIC-Wert gilt der Modulschalter (an).
 - `ActualSiegeResourcePayment`: `true` verlangt Rohstoffe und Gold vor dem Bau; Fehlmengen gehen in den normalen KI-Handel. `false` nutzt die bisherige Bauprüfung. Ohne AIC-Wert gilt der Modulschalter (aus).
+- `CoordinatedSiegeHarassment`: `true` sammelt Belagerungsgeräte und schickt sie zu erreichbaren Schusspositionen. `SiegeHarassMinEngines` (0–20, Standard 3) legt die Wartezahl fest; nach einem Spielmonat starten die vorhandenen Geräte. Ohne AIC-Wert gelten die Modulwerte (aus, 3). `HarassingSiegeEnginesMax` begrenzt weiter die Gesamtzahl.
 - `CorrectEngineerRoleCounting`: Zählt Ingenieure in ihrem aktuellen Truppenverband. Belagerungsbesatzungen und Öldienst füllen keine Truppenkontingente. Ohne AIC-Wert gilt der Modulschalter (an).

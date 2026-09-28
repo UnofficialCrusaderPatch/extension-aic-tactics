@@ -29,6 +29,8 @@ function M.active(candidate)
     or candidate.RaidTargetPolicy ~= 'Native' or candidate.SafeSiegePlacement ~= nil
     or candidate.CorrectEngineerRoleCounting ~= nil
     or candidate.ActualSiegeResourcePayment ~= nil
+    or candidate.CoordinatedSiegeHarassment ~= nil
+    or candidate.SiegeHarassMinEngines ~= nil
 end
 
 function M.prepare(previous, spec, readNative, resetting)
@@ -45,6 +47,8 @@ function M.prepare(previous, spec, readNative, resetting)
   authored.AttackPreparation = armyAuthored.AttackPreparation
   authored.SafeSiegePlacement = siegeAuthored.SafeSiegePlacement
   authored.ActualSiegeResourcePayment = siegeAuthored.ActualSiegeResourcePayment
+  authored.CoordinatedSiegeHarassment = siegeAuthored.CoordinatedSiegeHarassment
+  authored.SiegeHarassMinEngines = siegeAuthored.SiegeHarassMinEngines
   authored.CorrectEngineerRoleCounting = roleAuthored.CorrectEngineerRoleCounting
   if spec.ProvocationRules ~= nil and not resetting then
     local used = targetAuthored.AttackActivation == 'AfterProvocation' or targetAuthored.AttackTargetPolicy == 'LastAggressor'
@@ -56,7 +60,7 @@ function M.prepare(previous, spec, readNative, resetting)
     assert(used, 'ProvocationRules requires AfterProvocation, LastAggressor or a HomeUnderThreat condition')
   end
   return combine(authored, targetAuthored),
-    {schemaVersion = 7, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
+    {schemaVersion = 8, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
       raids = raidCompiled, siege = siegeCompiled, roles = roleCompiled}
 end
 
@@ -66,6 +70,8 @@ function M.copy(candidate)
   for field, value in pairs(raids.copy(candidate)) do result[field] = value end
   result.SafeSiegePlacement = candidate.SafeSiegePlacement
   result.ActualSiegeResourcePayment = candidate.ActualSiegeResourcePayment
+  result.CoordinatedSiegeHarassment = candidate.CoordinatedSiegeHarassment
+  result.SiegeHarassMinEngines = candidate.SiegeHarassMinEngines
   result.CorrectEngineerRoleCounting = candidate.CorrectEngineerRoleCounting
   return result
 end
