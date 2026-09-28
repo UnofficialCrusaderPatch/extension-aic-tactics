@@ -28,6 +28,7 @@ function M.active(candidate)
     or candidate.AttackPreparation ~= 'Native'
     or candidate.RaidTargetPolicy ~= 'Native' or candidate.SafeSiegePlacement ~= nil
     or candidate.CorrectEngineerRoleCounting ~= nil
+    or candidate.ActualSiegeResourcePayment ~= nil
 end
 
 function M.prepare(previous, spec, readNative, resetting)
@@ -43,6 +44,7 @@ function M.prepare(previous, spec, readNative, resetting)
   for field, value in pairs(raidAuthored) do authored[field] = value end
   authored.AttackPreparation = armyAuthored.AttackPreparation
   authored.SafeSiegePlacement = siegeAuthored.SafeSiegePlacement
+  authored.ActualSiegeResourcePayment = siegeAuthored.ActualSiegeResourcePayment
   authored.CorrectEngineerRoleCounting = roleAuthored.CorrectEngineerRoleCounting
   if spec.ProvocationRules ~= nil and not resetting then
     local used = targetAuthored.AttackActivation == 'AfterProvocation' or targetAuthored.AttackTargetPolicy == 'LastAggressor'
@@ -54,7 +56,7 @@ function M.prepare(previous, spec, readNative, resetting)
     assert(used, 'ProvocationRules requires AfterProvocation, LastAggressor or a HomeUnderThreat condition')
   end
   return combine(authored, targetAuthored),
-    {schemaVersion = 6, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
+    {schemaVersion = 7, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
       raids = raidCompiled, siege = siegeCompiled, roles = roleCompiled}
 end
 
@@ -63,6 +65,7 @@ function M.copy(candidate)
   result.AttackPreparation = candidate.AttackPreparation
   for field, value in pairs(raids.copy(candidate)) do result[field] = value end
   result.SafeSiegePlacement = candidate.SafeSiegePlacement
+  result.ActualSiegeResourcePayment = candidate.ActualSiegeResourcePayment
   result.CorrectEngineerRoleCounting = candidate.CorrectEngineerRoleCounting
   return result
 end

@@ -41,7 +41,8 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "observeIntegrityBoundary", "captureBoundaryIntegrity", "nativeBindings", "nativeBindingsSize",
         "safePlacementFallback", "checkedSiegeTile", "siegePlacementPolicyEnabled",
         "siegeTentCandidateAllowed", "failedSiegeTent",
-        "engineerRoleFallback", "countableEngineerRole"};
+        "engineerRoleFallback", "countableEngineerRole", "siegePaymentFallback",
+        "siegePaymentPolicy", "siegeResourceAdmission", "siegePaymentEnabledForGoldOffset"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
@@ -80,7 +81,11 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(&siegeTentCandidateAllowed),
         reinterpret_cast<unsigned int>(&failedSiegeTent),
         reinterpret_cast<unsigned int>(&engineerRoleFallback),
-        reinterpret_cast<unsigned int>(&countableEngineerRole)};
+        reinterpret_cast<unsigned int>(&countableEngineerRole),
+        reinterpret_cast<unsigned int>(&siegePaymentFallback),
+        reinterpret_cast<unsigned int>(siegePaymentPolicy),
+        reinterpret_cast<unsigned int>(&siegeResourceAdmission),
+        reinterpret_cast<unsigned int>(&siegePaymentEnabledForGoldOffset)};
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);

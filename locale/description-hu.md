@@ -46,6 +46,7 @@ Az öt portyabeállításhoz új `RaidTargetPolicy` szükséges. A `RaidUnitsBas
 ### Ostromgépek
 
 - `SafeSiegePlacement`: `true` védi a saját egységeket az ostromépítés helyén; `false` az eredeti elhelyezést használja. Hiányzó értéknél a modul kapcsolója érvényes (be).
+- `ActualSiegeResourcePayment`: `true` építés előtt anyagot és aranyat követel; a hiányt a szokásos MI-kereskedés kezeli. `false` megtartja az eredeti ellenőrzést. Hiányzó értéknél a modul kapcsolója érvényes (ki).
 
 ### Mérnöki keretek
 

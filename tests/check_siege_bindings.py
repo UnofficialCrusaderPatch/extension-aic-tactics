@@ -46,7 +46,7 @@ def check(identity):
       package.path=root..'/?.lua;'..package.path
       core={AOBScan=aob,readByte=read_byte,readInteger=read_integer}
       sites=require('native-siege-bindings').resolve({unitCapacity=2500,players=players,
-        tribes=tribes,tribeStride=tribe_stride,mapRows=1})
+        tribes=tribes,tribeStride=tribe_stride,mapRows=1,gameState=1})
       assert(sites.siegeTileOccupancyOffset==0x23D7E0)
       assert(core.readByte(sites.siegePlacementCall)==0xE8)
     ''')
@@ -58,6 +58,7 @@ def check(identity):
             'angleCandidateBranch': hex(lua.globals().sites['siegeAngleCandidateBranch']),
             'anglePostPlace': hex(lua.globals().sites['siegeAnglePostPlace']),
             'placementFail': hex(lua.globals().sites['siegePlacementFail']),
+            'resourceCheck': hex(lua.globals().sites['siegeResourceCheck']),
             'tentPointX': hex(lua.globals().sites['siegeTentPointX'])}
 
 

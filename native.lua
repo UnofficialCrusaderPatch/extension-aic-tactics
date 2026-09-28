@@ -15,6 +15,9 @@ function M.new(game)
   local safePlacementBackoffHook
   local safePlacementCandidateHook
   local safePlacementFailureHook
+  local siegePaymentHook
+  local siegeGoldHook
+  local siegeDirectHook
   local engineerRoleHook
   local intervalBytes = {0x8B,0x84,0xAA,0x64,0x01,0x00,0x00,0x8B,0xE8,0xF7,0xDD,0x1B,0xED,0x83,0xC5,0x02}
   function native.preflightSafePlacement()
@@ -126,6 +129,133 @@ failed:
     assert(type(fallback) == 'boolean', 'AIC Tactics: safeSiegePlacement must be boolean')
     core.writeInteger(native.safePlacementFallback, fallback and 1 or 0)
     if fallback then native.activateSafePlacement() end
+  end
+  function native.preflightSiegePayment()
+    local owner = game.siegeBuildingAdmission
+    if siegePaymentHook then
+      assert(core.readByte(owner)==0xE9
+          and owner+5+core.readInteger(owner+1)==siegePaymentHook,
+        'AIC Tactics: native siege resource admission was replaced')
+    else
+      require('native-context').verify(owner, 'native building placement admission',
+        '53 B9 ? ? ? ? 89 96 30 49 55 00')
+    end
+    local gold = game.siegeGoldSub
+    if siegeGoldHook then
+      assert(core.readByte(gold)==0xE9
+          and gold+5+core.readInteger(gold+1)==siegeGoldHook,
+        'AIC Tactics: defensive siege debit was replaced')
+    else
+      assert(core.readByte(gold)==0x29 and core.readByte(gold+1)==0x82
+          and core.readInteger(gold+2)==game.siegeGoldAddress,
+        'AIC Tactics: defensive siege debit was replaced')
+    end
+    local direct = game.siegeDirectSpawn
+    if siegeDirectHook then
+      assert(core.readByte(direct)==0xE9
+          and direct+5+core.readInteger(direct+1)==siegeDirectHook,
+        'AIC Tactics: defensive siege spawn was replaced')
+    else
+      require('native-context').verify(direct, 'defensive siege spawn',
+        '8B 44 24 3C 8B 7C 24 44')
+    end
+  end
+  function native.activateSiegePayment()
+    if siegePaymentHook then return end
+    native.preflightSiegePayment()
+    local admission = core.allocateAssembly([[
+      pushfd
+      cmp dword [esi + bypassCheck], 0
+      jnz bypass
+      popfd
+      pushfd
+      pushad
+      mov eax, dword [esp + 0x4c]
+      mov edx, dword [esp + 0x40]
+      push eax
+      push edx
+      call checkResources
+      add esp, 8
+      test eax, eax
+      jnz checkedAllowed
+      popad
+      popfd
+      mov dword [placementFail], 1
+      mov dword [placedBuilding], 0
+      jmp failedExit
+checkedAllowed:
+      popad
+      popfd
+      jmp allowed
+bypass:
+      popfd
+allowed:
+      push ebx
+      mov ecx, buildings
+      jmp resume
+    ]], {checkResources=native.siegeResourceAdmission,
+      bypassCheck=0x554930, buildings=game.buildings,
+      placementFail=game.siegePlacementFail,
+      placedBuilding=game.siegeAnglePlacedBuilding,
+      failedExit=game.siegeBuildingFailureExit,
+      resume=game.siegeBuildingAdmission+6})
+    local gold = core.allocateAssembly([[
+      pushfd
+      pushad
+      push edx
+      call paymentEnabled
+      add esp, 4
+      test eax, eax
+      jnz skip
+      popad
+      popfd
+      sub dword [edx + goldAddress], eax
+      jmp resume
+skip:
+      popad
+      popfd
+      jmp resume
+    ]], {paymentEnabled=native.siegePaymentEnabledForGoldOffset,
+      goldAddress=game.siegeGoldAddress,
+      resume=game.siegeGoldSub+6})
+    local direct = core.allocateAssembly([[
+      pushfd
+      pushad
+      mov eax, esi
+      add eax, 210
+      mov edx, dword [esp + 0x68]
+      push eax
+      push edx
+      call checkResources
+      add esp, 8
+      test eax, eax
+      jz defer
+      popad
+      popfd
+      mov eax, dword [esp + 0x3c]
+      mov edi, dword [esp + 0x44]
+      jmp resume
+defer:
+      popad
+      popfd
+      jmp finished
+    ]], {checkResources=native.siegeResourceAdmission,
+      resume=game.siegeDirectSpawn+8,
+      finished=game.siegeDirectExit})
+    core.writeCode(game.siegeBuildingAdmission,
+      {0xE9,admission-game.siegeBuildingAdmission-5,0x90})
+    core.writeCode(game.siegeGoldSub,
+      {0xE9,gold-game.siegeGoldSub-5,0x90})
+    core.writeCode(game.siegeDirectSpawn,
+      {0xE9,direct-game.siegeDirectSpawn-5,0x90,0x90,0x90})
+    siegePaymentHook = admission
+    siegeGoldHook = gold
+    siegeDirectHook = direct
+  end
+  function native.configureSiegePayment(fallback)
+    assert(type(fallback) == 'boolean', 'AIC Tactics: actualSiegeResourcePayment must be boolean')
+    core.writeInteger(native.siegePaymentFallback, fallback and 1 or 0)
+    if fallback then native.activateSiegePayment() end
   end
   function native.preflightEngineerRoles()
     if engineerRoleHook then return end

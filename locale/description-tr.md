@@ -46,6 +46,7 @@ Bu beş akın ayarı yeni bir `RaidTargetPolicy` gerektirir. `RaidUnitsBase`, `R
 ### Kuşatma araçları
 
 - `SafeSiegePlacement`: `true` kuşatma alanındaki kendi birliklerini korur; `false` oyunun yerleştirmesini kullanır. Alan yoksa modül ayarı geçerlidir (açık).
+- `ActualSiegeResourcePayment`: `true` yapımdan önce malzeme ve altın gerektirir; eksikleri normal yapay zekâ ticareti karşılar. `false` mevcut kontrolü korur. Alan yoksa modül ayarı geçerlidir (kapalı).
 
 ### Mühendis kotaları
 

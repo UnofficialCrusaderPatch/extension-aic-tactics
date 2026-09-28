@@ -32,7 +32,11 @@ It lets the native AI recount include assigned engineers in troop-role quotas;
 siege crews, oil duty and unattached units remain separate. AOB and component
 checks pass on six SHC/Extreme fixtures; live recruitment, losses, save/load and
 composition with Fixed Engineers 0.2.0 remain unverified. Larger forces,
-coordinated harassment and full resource admission remain open.
+coordinated harassment remain open. The resource-policy draft adds optional
+per-AI admission through the native construction and AI trade owners and skips
+the defensive path's second gold subtraction for opted-in AIs. Its component
+checks pass; actual stock/gold deltas, shortages, cancellation, save/load and
+GamerGrill acceptance remain pending.
 
 The store uses `build.ps1` and `files.xml` to compile the x86 runtime and stage the same payload as local previews. Both paths share `tests/module_payload.py`, including all nine GUI descriptions and the multiplayer package identity.
 

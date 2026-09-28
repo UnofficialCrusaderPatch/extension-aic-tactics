@@ -18,11 +18,24 @@ unsigned char points[216 * 32];
 unsigned char rows[400 * 12];
 int placementFail;
 int originalCalls;
+int resourceCalls;
+int resourceResult;
+int checkedPlayer;
+int checkedCommand;
 
 int __fastcall originalTile(void*, void*, int, int, int, int)
 {
     ++originalCalls;
     return 0;
+}
+
+int __fastcall checkResources(void*, void*, int command, int player, int sound)
+{
+    assert(sound == 0);
+    ++resourceCalls;
+    checkedPlayer = player;
+    checkedCommand = command;
+    return resourceResult;
 }
 
 void setShort(unsigned char* memory, unsigned int offset, short value)
@@ -52,6 +65,8 @@ int main()
     nativeBindings.mapRows = reinterpret_cast<unsigned int>(rows);
     nativeBindings.siegeTribeIndexOffset = 0x2D8;
     nativeBindings.siegePlacementFail = reinterpret_cast<unsigned int>(&placementFail);
+    nativeBindings.siegeResourceCheck = reinterpret_cast<unsigned int>(&checkResources);
+    nativeBindings.gameState = 1;
     setInt(players, 1 * 0x39F4 + 0x2300, 2);
     setInt(players, 2 * 0x39F4 + 0x2300, 3);
     setShort(tiles, 0x23D7E0, 1);
@@ -132,5 +147,25 @@ int main()
     setInt(points, 32 + 0x10, 1);
     assert(failedSiegeTent(1, 1) == 0);
     assert(*reinterpret_cast<int*>(points + 32 + 0x10) == 1);
+
+    siegePaymentFallback = 0;
+    siegePaymentPolicy[1] = 1;
+    resourceResult = 0;
+    assert(siegeResourceAdmission(1, 190) == 0 && resourceCalls == 1);
+    assert(checkedPlayer == 1 && checkedCommand == 190);
+    assert(siegePaymentEnabledForGoldOffset(0x39F4) == 1);
+    assert(siegeResourceAdmission(1, 210) == 0 && resourceCalls == 2);
+    assert(checkedCommand == 210);
+    siegePaymentPolicy[1] = 2;
+    assert(siegeResourceAdmission(1, 190) == 1 && resourceCalls == 2);
+    assert(siegePaymentEnabledForGoldOffset(0x39F4) == 0);
+    siegePaymentPolicy[1] = 0;
+    siegePaymentFallback = 1;
+    resourceResult = 1;
+    assert(siegeResourceAdmission(1, 190) == 1 && resourceCalls == 3);
+    assert(siegePaymentEnabledForGoldOffset(0x39F4) == 1);
+    assert(siegeResourceAdmission(1, 189) == 1 && resourceCalls == 3);
+    assert(siegeResourceAdmission(0, 190) == 1 && resourceCalls == 3);
+    assert(siegePaymentEnabledForGoldOffset(0x39F4 + 1) == 0);
     return 0;
 }

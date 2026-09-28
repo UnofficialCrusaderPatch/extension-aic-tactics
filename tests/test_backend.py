@@ -15,11 +15,13 @@ def backend():
         writeInteger=function(a,v)memory[a]=v end}
       rolePreflights,roleActivations=0,0
       native={configuration=10000,configurationSize=352,configurationLocked=20000,
+        siegePaymentPolicy=22000,siegePaymentFallback=22080,
         game={gameTick=0x1FE7DA8},
         preflight=function()end,activate=function()end,preflightComposition=function()end,activateComposition=function()end,
         preflightCombat=function()end,activateCombat=function()end,
         preflightTargets=function()end,preflightRaids=function()end,activateRaids=function()end,
         preflightSafePlacement=function()end,activateSafePlacement=function()end,
+        preflightSiegePayment=function()end,activateSiegePayment=function()end,
         preflightEngineerRoles=function()rolePreflights=rolePreflights+1 end,
         activateEngineerRoles=function()roleActivations=roleActivations+1 end}
       backend=require('config.backend').new(native)
@@ -84,6 +86,23 @@ def test_engineer_role_record_preserves_absent_false_and_true():
       explicitOn.rollback()
       assert(memory[base+348]==2)
       assert(not pcall(prepare,4,{CorrectEngineerRoleCounting='yes'}))
+    ''')
+
+
+def test_siege_payment_is_per_ai_and_preserves_explicit_off():
+    backend().execute('''
+      prepare(4,{}).commit()
+      assert(memory[native.siegePaymentPolicy+16]==0)
+      prepare(4,{ActualSiegeResourcePayment=false}).commit()
+      prepare(5,{ActualSiegeResourcePayment=true}).commit()
+      assert(memory[native.siegePaymentPolicy+16]==2)
+      assert(memory[native.siegePaymentPolicy+20]==1)
+      local op=prepare(4,{ActualSiegeResourcePayment=true})
+      op.commit()
+      assert(memory[native.siegePaymentPolicy+16]==1)
+      op.rollback()
+      assert(memory[native.siegePaymentPolicy+16]==2)
+      assert(not pcall(prepare,4,{ActualSiegeResourcePayment=0}))
     ''')
 
 
