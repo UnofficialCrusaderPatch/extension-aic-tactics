@@ -364,3 +364,14 @@ The x86 build, component tests and six executable binding fixtures verify the
 adapter and layouts. They do not establish live construction, simultaneous
 crews, save/replay integrity or whole-game simulation overhead. Those are
 required before promotion from a test candidate.
+
+The signed 0.0.14 Store-preview bundle also started a two-AI Extreme 1.41.1-E
+skirmish in an isolated UCP 3.0.7 install on GamerGrill. Wolf used
+`LargerSiegeForces=true, SiegeForceMax=10`; Saladin used explicit `false, 0`.
+The game saved `aic014.sav` and a fresh process loaded it without an extension
+error. A read-only, paused-game snapshot at tick 3365 found both distinct AI
+records, valid opposing teams and targets, and the 352-byte configuration ABI.
+Their authored raid quotas (48/8 and 22/5) matched the two installed personality
+files, confirming the effective AICs were loaded. This snapshot did not inspect
+the separate siege-policy arrays or capture an active siege; it verifies startup
+and native save/load continuity only.
