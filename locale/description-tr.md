@@ -1,55 +1,37 @@
-Yapay zekânın asker alımını, dalga hazırlığını, saldırı hedeflerini ve akınlarını AIC üzerinden ayarlayın. Belirtilmeyen AIC alanları varsayılan değerlerini kullanır.
+AIC Tactics, kurulu her yapay zekânın asker alımını, saldırılarını, baskınlarını ve kuşatma araçlarını ayarlamanı sağlar. Alanları o yapay zekânın AIC dosyasına ekle. Yeni asker alımı, saldırı ve baskın kuralları isteğe bağlıdır; boş bırakılan kuşatma ve mühendis alanları modül ayarlarını kullanır. Mevcut birlik listeleri ve sınırlar geçerlidir.
 
 ### Asker alımı
 
-- `RecruitPolicy`: `Native` (varsayılan) mevcut asker alımını korur. `WeightedRoles` alımı savunma, akınlar, ana ordu ve kaleden çıkış birlikleri arasında dağıtır.
-- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: normal, zayıf ve güçlü yapay zekâ durumları için çıkış ağırlıkları. **0–100** arası tam sayı, varsayılan **0**. Mevcut savunma, akın ve saldırı ağırlıklarıyla birlikte her düzeyin toplamı **100** olmalıdır. `WeightedRoles` gerektirir; birlik listeleri, aralıklar ve kotalar korunur.
-- `RecruitConditions`: en fazla **8** sıralı kural; varsayılan olarak boş. İlk eşleşen kural güç düzeyinin ağırlıklarını değiştirir. Her kural `When` ve toplamı 100 olan dört ağırlık içerir: `Defense`, `Raid`, `Attack`, `Sortie`. `WeightedRoles` gerektirir.
-- `DefRecruitComposition`: `Native` (varsayılan) mevcut davranışı korur. `PreserveSlots`, `DefUnit1..8` girişlerinin paylarını ayırır; tekrarlanan girişler o birimin payını artırır. Ekipman yoksa yerler boş kalır. `WeightedRoles` gerektirir.
-- `RecruitInitialDefenseMonths`: **0–30** ay, varsayılan **6**. Bu süre boyunca savunma kotası dolmadıysa akıncı ve ana ordu askerlerinin alımını erteler. Çıkış birlikleri alınabilir; 0 ağırlıklı roller kapalı kalır. **0** beklemeyi kapatır. `WeightedRoles` gerektirir.
+- `RecruitPolicy`: `Native` mevcut asker alımını korur. `WeightedRoles` yeni askerleri savunma, baskın, ana ordu ve çıkış harekâtı arasında paylaştırır.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: üç yerel güç durumunda çıkış harekâtının payı. Savunma, baskın, saldırı ve çıkış payları her durumda toplam 100 olmalıdır.
+- `RecruitConditions`: en fazla 8 sıralı kural; ilk eşleşen kural bir asker alımı için bu payların yerini alır. `When`, `Strength`, `HomeUnderThreat`, `AttackActive`, `DefenseIncomplete` ve `EquipmentSurplus` koşullarını denetleyebilir.
+- `DefRecruitComposition`: `PreserveSlots`, `DefUnit1..8` oranlarını korur; `Native` önceki seçimi kullanır.
+- `RecruitInitialDefenseMonths`: baskın ve ana ordunun savunma kotasını beklediği süre. 0 beklemeyi kapatır; varsayılan 6 aydır.
 
-`When` koşulları: `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` (üs tehdit altında), `AttackActive` (saldırı sürüyor), `DefenseIncomplete` (savunma kadrosu eksik), `EquipmentSurplus` (fazla teçhizat var). Belirtilen tüm koşullar karşılanmalıdır; `true` koşulun varlığını, `false` yokluğunu gerektirir. Boş `When` her zaman eşleşir.
+Çıkış payları, durum kuralları, savunma dağılımı ve ilk bekleme süresi için `WeightedRoles` gerekir. Asker alım aralıkları ve kotaları geçerliliğini korur.
 
-### Saldırı hedefleri
+### Saldırılar ve karşılık verme
 
-`AttackTargetPolicy`:
+- `AttackTargetPolicy`: `Inherit`, `TargetChoice` değerini kullanır. Diğerleri en az sivili (`LowestPopulation`), en az askeri (`FewestTroops`), en zayıf orduyu (`LowestCombatPower`), rastgele bir rakibi (`Random`) veya son uygun saldırganı (`LastAggressor`) seçer.
+- `AttackTargetCommitment`: `PerAttack` hedefi tek saldırı boyunca, `UntilDefeated` saldırılar arasında korur. `Default`, yeni hedef politikası veya sonraki dalga hazırlığında `PerAttack`, diğer durumlarda önceki davranıştır.
+- `AttackPreparation`: `DuringAttack`, ordu saldırırken sonraki dalgayı kalede hazırlar; `Native` önceki zamanlamayı korur.
+- `AttackActivation`: `AfterProvocation`, ordu veya baskın başlatmadan önce yeterli düşman saldırısını bekler; `Immediate` beklemez. Savunma çıkışları kullanılabilir.
+- `ProvocationRules`: `ThreatPower` ve `CombatTicks` kale yakınındaki tehdidi; `LossPower` ve `WindowTicks` kayıpları ve süreyi belirler. Lordun hasar alması hemen yeterlidir. Dört değeri birlikte gir.
 
-- `Inherit` (varsayılan): Mevcut `TargetChoice` ayarına göre.
-- `LowestPopulation`: En az sivil.
-- `FewestTroops`: En az askerî birim.
-- `LowestCombatPower`: Mesafeden bağımsız en düşük tahminî askerî güç.
-- `Random`: Uygun rakipler arasından eşit olasılıkla rastgele seçim.
-- `LastAggressor`: Misilleme koşullarını karşılayan son saldırgan.
+### Baskınlar
 
-`AttackTargetCommitment`:
+- `RaidTargetPolicy`: `Native` önceki baskınları korur; `NearestReachable` yakındaki erişilebilir binaları seçer; `Opportunistic` önceliği ve tehlikeyi de değerlendirir.
+- `RaidGroupCount` (1–4) mevcut baskın gücünü böler; `RaidMinGroupSize` (1–256) küçük grupların beklemesini veya birleşmesini sağlar.
+- `RaidFocus`, `Any`, `Food`, `Industry` ya da `HighValue` seçer ve `Opportunistic` gerektirir. `RaidRiskTolerance` kabul edilen riski (`Low`, `Medium`, `High`) belirler. `RaidEnemyScope` baskınları ana hedefle sınırlar veya her düşmana izin verir.
 
-- `Default`: yeni hedef politikalarında veya `DuringAttack` ile `PerAttack`; diğer durumlarda mevcut davranış.
-- `PerAttack`: saldırı boyunca aynı hedefi korur.
-- `UntilDefeated`: geçerli bir rakip olduğu sürece sonraki saldırılarda da aynı hedefi korur.
+`RaidTargetPolicy` sonrasındaki beş alan için yeni baskın politikası gerekir. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` ve `RaidRetargetDelay` geçerlidir.
 
-### Hazırlık ve misilleme
+### Kuşatma ve mühendisler
 
-- `AttackPreparation`: `Native` (varsayılan) veya mevcut ordu saldırırken sonraki dalgayı kalede hazırlayan `DuringAttack`. Birlik sınırları ve dalga artışı geçerliliğini korur.
-- `AttackActivation`: `Immediate` (varsayılan) veya yeterince ciddi bir saldırıdan sonra ordu ve akın başlatan `AfterProvocation`. Savunma çıkışları kullanılabilir.
-- `ProvocationRules`: misilleme eşikleri. Varsayılanlar: `ThreatPower` **100**, `CombatTicks` **200**, `LossPower` **100**, `WindowTicks` **800**. İç kale yakınındaki uzun çatışmalar veya yeterli asker kaybı misillemeyi tetikler; lordun hasar alması hemen yeterlidir. Dört değeri birlikte belirtin. **800 tick = bir oyun ayı**.
+- `SafeSiegePlacement` dolu inşaat yerlerinden kaçınır (modül varsayılanı AÇIK).
+- `ActualSiegeResourcePayment` malzeme ve altın ister; eksikleri yapay zekâ olağan ticaretle alır (KAPALI).
+- `CoordinatedSiegeHarassment` toplanan araçları erişilebilir atış konumlarına yollar (KAPALI). `SiegeHarassMinEngines` istenen en az araç sayısıdır (0–20, varsayılan 3); `HarassingSiegeEnginesMax` toplam sınır olarak kalır.
+- `LargerSiegeForces` ana saldırının ayarlı kuşatma araçlarını yeniden üretir (KAPALI). `SiegeForceMax` etkin ve planlanan araçları sınırlar (0–20, varsayılan 10); 0 tek yerel üretim grubunu korur. `AttMaxEngineers` mürettebatı sınırlar.
+- `CorrectEngineerRoleCounting` atanmış mühendisleri birlik kotalarına sayar; kuşatma ve yağ görevleri ayrı kalır (AÇIK).
 
-### Akınlar
-
-- `RaidTargetPolicy`: `Native` (varsayılan), yakındaki erişilebilir binalar için `NearestReachable` veya mesafe, öncelik ve tehlikeyi değerlendiren `Opportunistic`.
-- `RaidGroupCount`: **1–4**, varsayılan **1**. Mevcut akın kuvvetini böler; fazladan asker toplamaz.
-- `RaidMinGroupSize`: **1–256**, varsayılan **4**. Küçük gruplar bekler veya birleşir.
-- `RaidFocus`: `Any` (varsayılan), `Food` (gıda), `Industry` (üretim), `HighValue` (yeniden yapım maliyeti). `Opportunistic` gerektirir.
-- `RaidRiskTolerance`: `Low`, `Medium` (varsayılan), `High`. Yakındaki düşman birlikleri ve savunmalarına karşı risk toleransı.
-- `RaidEnemyScope`: `PrimeTarget` (varsayılan) veya `AnyEnemy`. Ana ordunun hedefini değiştirmez.
-
-Bu beş akın ayarı yeni bir `RaidTargetPolicy` gerektirir. `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` ve `RaidRetargetDelay` geçerlidir. Varsayılana dönüş: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
-### Kuşatma araçları
-
-- `SafeSiegePlacement`: `true` kuşatma alanındaki kendi birliklerini korur; `false` oyunun yerleştirmesini kullanır. Alan yoksa modül ayarı geçerlidir (açık).
-- `ActualSiegeResourcePayment`: `true` yapımdan önce malzeme ve altın gerektirir; eksikleri normal yapay zekâ ticareti karşılar. `false` mevcut kontrolü korur. Alan yoksa modül ayarı geçerlidir (kapalı).
-- `CoordinatedSiegeHarassment`: `true` kuşatma araçlarını toplayıp erişilebilir atış noktalarına gönderir. `SiegeHarassMinEngines` (0–20, varsayılan 3) beklenecek araç sayısıdır; bir oyun ayı sonra yolu açık iki araç yeter. 0 veya 1 tek aracın çıkmasına izin verir. Alan yoksa modül ayarları geçerlidir (kapalı, 3). Toplam sınırı yine `HarassingSiegeEnginesMax` belirler.
-- `LargerSiegeForces`: `true` ana saldırıda mevcut kuşatma düzenini `SiegeForceMax` sınırına kadar tekrarlar (0–20, varsayılan 10). **0** özgün tek üretim turunu korur. Alanlar yoksa modül ayarları geçerlidir (kapalı, 10); `AttMaxEngineers` mevcut mühendis sayısını yine sınırlar.
-
-### Mühendis kotaları
-
-- `CorrectEngineerRoleCounting`: Atanmış mühendisler birlik kotasında sayılır; kuşatma ve yağ görevleri ayrıdır.
+Kuşatma ve mühendis seçeneklerinde, AIC içinde açıkça verilen `false` veya 0 dâhil her değer modül ayarından önceliklidir. Alan boşsa modül ayarı kullanılır.

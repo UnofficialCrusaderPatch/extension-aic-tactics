@@ -7,9 +7,8 @@ Use one additional field, `AICTactics`, inside each AI's existing
 `Targeting`, `Raids`, `Siege`, `States` and `Pressure`. These categories are
 for AIC authoring, separate from the module-wide controls in UCP
 Customizations. Ordinary native AIC fields remain at `Personality` level.
-The new names in this example are illustrative, **not supported keys**:
-This is the Loader's `AICharacters` file shape; the Toolkit's character
-document would put the same `AICTactics` object under its `aic` object.
+The new names in this example are illustrative, **not supported keys**.
+This is the Loader's `AICharacters` file shape.
 
 ```json
 {
@@ -56,16 +55,10 @@ empty object removes all nested overrides. Existing flat AIC Tactics fields
 remain accepted for old personalities. If old and nested representations
 assign the same behavior in one effective personality, reject a conflicting
 pair with a path-specific error rather than silently choosing one. The
-Toolkit should write the nested representation for new work and migrate old
-flat fields on edit, preserving values and defaults. Do not move native AIC
-fields or require authors to repeat inherited state rows.
-
-The current Toolkit editor recursively flattens objects and arrays into
-primitive controls and its template supplies many defaults. It needs a
-dedicated `AICTactics` editor for optional categories, ordered rule rows and
-per-state overrides; pre-populating five states would erase inheritance.
-Localize category headings, field help, validation and inherited-value labels
-through the live locale registry.
+module should provide a migration reference for old flat fields, preserving
+values and defaults. Do not move native AIC fields or require authors to
+repeat inherited state rows. Any AI Toolkit integration belongs to its own
+repository and is outside this module delivery.
 
 ## Native values remain the baseline
 
@@ -90,7 +83,7 @@ Resolve one property at its native owner's decision boundary, in this order:
 
 Resolve by *presence*, never truthiness: `false` and `0` win when authored.
 An explicit Normal override intentionally supersedes a native Weak/Strong
-row for that property. The Toolkit must show this provenance clearly and
+row for that property. Module documentation must explain this clearly and
 allow a state-specific override when the author wants a different Weak or
 Strong value. An absent policy follows the original call/RNG path exactly.
 
@@ -216,18 +209,13 @@ Do not add another unit or map scan. See
 
 ## Authoring and runtime cost
 
-The Toolkit should offer two small builders: **When does this state apply?**
-and **What changes in this state?** Put pressure under its own heading. Show
-inherited native values as labels, and add an override only when the author
-edits it. A preview with example
-gold, troop power and keep status can show which ordered rule wins; this is
-editor-only. Generate the module's machine-readable schema and concise help
-from one metadata source, with titles/help in all nine UCP languages. A
-simple example should teach one Normal mix and one stronger-state rule.
-The editor must show whether a value comes from that state, Normal, the
-existing AIC, or the module fallback; absence, explicit OFF and valid zero
-must stay distinct through profile merging and serialization. Do not add
-five full state pages full of copied defaults.
+Ship a machine-readable module schema and concise descriptions in every UCP
+language from the live locale registry. Explain in plain language when a
+state applies, what changes in it, and how omitted values inherit. Include
+one small example with a Normal value and a stronger-state override. State
+whether a value comes from that state, Normal, the existing AIC, or the
+module fallback. Absence, explicit OFF and valid zero must stay distinct in
+validation and serialization. Do not publish five copied state records.
 
 Compile bounded rules once at AIC load. Evaluate at the original monthly AI
 strength decision (also weekly in Extreme), short-circuit cheap conditions,
@@ -267,9 +255,9 @@ These are acceptance requirements, not completed measurements.
    separate native owners, using the existing friendly count and hostile
    census. Integrate only verified state-dependent siege limits with the
    independent per-AIC siege controls; do not create another planner.
-5. **Editor and delivery:** generate the schema and concise nine-language
-   labels/help from one field catalog, implement a sparse nested editor in
-   AI Toolkit, and migrate flat extension fields on edit. Verify per-slot
+5. **Module documentation and delivery:** generate the schema and concise
+   nine-language descriptions from one field catalog; document flat-to-nested
+   migration with one example per category. Verify per-slot
    opposing configurations, native fallback, zero/OFF, load/replay and
    normal/Extreme binding and performance. Multiplayer peers use matching
    AIC/module packages; duplicate instances of one slot get no special
@@ -277,5 +265,5 @@ These are acceptance requirements, not completed measurements.
    tester setup, as requested.
 
 Each stage must be delivered as a focused dependent change with its relevant
-schema/runtime/UI migration together. Do not advertise a nested key or a
+schema/runtime/documentation migration together. Do not advertise a nested key or a
 state effect before its consumer and save/replay path are implemented.

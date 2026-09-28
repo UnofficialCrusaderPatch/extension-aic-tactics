@@ -1,55 +1,37 @@
-Az AIC-ben állíthatod be az MI toborzását, a következő hullám előkészítését, célpontjait és portyáit. A hiányzó AIC-mezők az alapértéküket használják.
+Az AIC Tactics minden telepített MI-nél külön szabályozza a toborzást, a támadásokat, a portyákat és az ostromgépeket. A mezőket az adott MI AIC-jében add meg. Az új toborzási, támadási és portyaszabályok választhatók; a kihagyott ostrom- és mérnökmezők a modul beállításait követik. A meglévő egységlisták és korlátok változatlanok.
 
 ### Toborzás
 
-- `RecruitPolicy`: a `Native` (alapérték) megtartja a meglévő toborzást. A `WeightedRoles` a védelem, portyák, fő sereg és kitörések között osztja el.
-- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: kitörési súlyok normál, gyenge és erős MI-állapothoz. **0–100** közötti egész számok, alapérték **0**. A meglévő védelmi, portya- és támadási súlyokkal együtt minden szint összege **100** legyen. `WeightedRoles` szükséges; a csapatlisták, időközök és létszámkeretek megmaradnak.
-- `RecruitConditions`: legfeljebb **8** sorrendben vizsgált szabály, alapból üres. Az első illeszkedő szabály felülírja az erősségi szint súlyait. Mindegyikhez kell `When` és négy súly, összesen 100: `Defense`, `Raid`, `Attack`, `Sortie`. `WeightedRoles` szükséges.
-- `DefRecruitComposition`: a `Native` (alapérték) megtartja a jelenlegi működést. A `PreserveSlots` a `DefUnit1..8` bejegyzései szerint tart fenn helyeket; az ismétlések növelik az adott egység arányát. Hiányzó felszerelés esetén a helyek üresen maradnak. `WeightedRoles` szükséges.
-- `RecruitInitialDefenseMonths`: **0–30** hónap, alapérték **6**. Ezalatt nem toboroz portyázókat vagy a főhadseregbe, amíg a védelem hiányos. Kitörő csapatokat továbbra is toborozhat; a 0 súly változatlan. **0** kikapcsolja a várakozást. `WeightedRoles` szükséges.
+- `RecruitPolicy`: a `Native` megtartja a megszokott toborzást. A `WeightedRoles` a védelem, a portyák, a fő sereg és a kitörések között osztja el az újoncokat.
+- `RecruitProbSortieDefault`, `RecruitProbSortieWeak`, `RecruitProbSortieStrong`: a kitörések aránya a három eredeti erősségi állapotban. A védelem, portya, támadás és kitörés aránya állapotonként összesen 100 legyen.
+- `RecruitConditions`: legfeljebb 8 sorrendezett szabály; az első megfelelő egy toborzásra felülírja ezeket az arányokat. A `When` a `Strength`, `HomeUnderThreat`, `AttackActive`, `DefenseIncomplete` és `EquipmentSurplus` feltételeket vizsgálhatja.
+- `DefRecruitComposition`: a `PreserveSlots` megtartja a `DefUnit1..8` arányait; a `Native` a megszokott választást használja.
+- `RecruitInitialDefenseMonths`: ennyi ideig vár a portya és a fő sereg, amíg a védelem eléri a létszámát. A 0 kikapcsolja a várakozást; alapérték 6 hónap.
 
-A `When` feltételei: `Strength` (`Default`, `Weak`, `Strong`), `HomeUnderThreat` (bázis veszélyben), `AttackActive` (támadás folyik), `DefenseIncomplete` (hiányos védelmi létszám), `EquipmentSurplus` (felszereléstöbblet). Minden megadott feltételnek egyeznie kell; a `true` teljesülést, a `false` annak hiányát követeli meg. Az üres `When` mindig illeszkedik.
+A kitörések arányaihoz, a helyzeti szabályokhoz, a védők összetételéhez és a kezdeti várakozáshoz `WeightedRoles` kell. A toborzási időközök és korlátok továbbra is érvényesek.
 
-### Támadási célpontok
+### Támadás és megtorlás
 
-`AttackTargetPolicy`:
-
-- `Inherit` (alapérték): A meglévő `TargetChoice` szerint.
-- `LowestPopulation`: A legkevesebb polgár.
-- `FewestTroops`: A legkevesebb katonai egység.
-- `LowestCombatPower`: A legkisebb becsült katonai erő, távolságtól függetlenül.
-- `Random`: Véletlen választható ellenfél, egyenlő esélyekkel.
-- `LastAggressor`: A megtorlás feltételeinek megfelelő legutóbbi támadó.
-
-`AttackTargetCommitment`:
-
-- `Default`: új célválasztási szabálynál vagy `DuringAttack` mellett `PerAttack`; egyébként a meglévő viselkedés.
-- `PerAttack`: azonos célpont az egész támadás alatt.
-- `UntilDefeated`: azonos célpont több támadáson át, amíg érvényes ellenfél marad.
-
-### Felkészülés és visszavágás
-
-- `AttackPreparation`: `Native` (alapérték), vagy `DuringAttack`, amely támadás közben otthon toborozza a következő hullámot. A létszámkorlátok és a hullámok növekedése továbbra is érvényesek.
-- `AttackActivation`: `Immediate` (alapérték), vagy `AfterProvocation`: csak kellően súlyos ellenséges támadás után indít hadjáratot vagy portyát. A védekező kitörések továbbra is elérhetők.
-- `ProvocationRules`: a visszavágás küszöbei. Alapértékek: `ThreatPower` **100**, `CombatTicks` **200**, `LossPower` **100**, `WindowTicks` **800**. Tartós harc a vártorony közelében vagy elegendő katonai veszteség váltja ki; a várúr sérülése azonnal számít. Mind a négy értéket add meg. **800 tick = egy játékbeli hónap**.
+- `AttackTargetPolicy`: az `Inherit` a `TargetChoice` értékét használja. A többi lehetőség a legkevesebb lakost (`LowestPopulation`), katonát (`FewestTroops`), leggyengébb sereget (`LowestCombatPower`), véletlen ellenfelet (`Random`) vagy az utolsó megfelelő támadót (`LastAggressor`) választja.
+- `AttackTargetCommitment`: a `PerAttack` egy támadás alatt, az `UntilDefeated` több támadáson át tartja meg a célt. A `Default` új célválasztás vagy következő hullám előkészítése esetén `PerAttack`, egyébként a korábbi működés.
+- `AttackPreparation`: a `DuringAttack` otthon készíti elő a következő hullámot, miközben a sereg támad; a `Native` megtartja a korábbi ütemet.
+- `AttackActivation`: az `AfterProvocation` kellően erős ellenséges támadásra vár a sereg vagy portya indítása előtt; az `Immediate` nem vár. A védekező kitörések megmaradnak.
+- `ProvocationRules`: a `ThreatPower` és `CombatTicks` a vár közeli fenyegetést, a `LossPower` és `WindowTicks` a veszteségeket és az időablakot szabja meg. Az úr sérülése azonnal kiváltja a megtorlást. Mind a négy értéket add meg.
 
 ### Portyák
 
-- `RaidTargetPolicy`: `Native` (alapérték), `NearestReachable` a közeli, elérhető épületekhez, vagy `Opportunistic` a távolság, célprioritás és veszély mérlegeléséhez.
-- `RaidGroupCount`: **1–4**, alapérték **1**. A meglévő portyázókat osztja szét, nem toboroz több katonát.
-- `RaidMinGroupSize`: **1–256**, alapérték **4**. A kisebb csoportok várnak vagy egyesülnek.
-- `RaidFocus`: `Any` (alapérték), `Food` (élelmiszer), `Industry` (termelés), `HighValue` (újjáépítési költség). `Opportunistic` szükséges.
-- `RaidRiskTolerance`: `Low`, `Medium` (alapérték), `High`. A közeli ellenséges csapatok és védművek vállalható veszélye.
-- `RaidEnemyScope`: `PrimeTarget` (alapérték) vagy `AnyEnemy`. A fő sereg célpontját nem módosítja.
+- `RaidTargetPolicy`: a `Native` megtartja a megszokott portyákat; a `NearestReachable` közeli, elérhető épületeket választ; az `Opportunistic` a cél fontosságát és a veszélyt is figyeli.
+- A `RaidGroupCount` (1–4) a meglévő portyázókat osztja fel; a `RaidMinGroupSize` (1–256) a kis csoportokat várakoztatja vagy egyesíti.
+- A `RaidFocus` értéke `Any`, `Food`, `Industry` vagy `HighValue`; ehhez `Opportunistic` kell. A `RaidRiskTolerance` a vállalt veszély (`Low`, `Medium`, `High`). A `RaidEnemyScope` a fő célra korlátoz, vagy bármely ellenséget enged.
 
-Az öt portyabeállításhoz új `RaidTargetPolicy` szükséges. A `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` és `RaidRetargetDelay` továbbra is érvényes. Visszaállítás: `AttackPreparation: Native`, `AttackActivation: Immediate`, `RaidTargetPolicy: Native`.
-### Ostromgépek
+A `RaidTargetPolicy` utáni öt mezőhöz új portyaszabály kell. A `RaidUnitsBase`, `RaidUnitsRandom`, `RaidUnit1..8` és `RaidRetargetDelay` továbbra is érvényes.
 
-- `SafeSiegePlacement`: `true` védi a saját egységeket az ostromépítés helyén; `false` az eredeti elhelyezést használja. Hiányzó értéknél a modul kapcsolója érvényes (be).
-- `ActualSiegeResourcePayment`: `true` építés előtt anyagot és aranyat követel; a hiányt a szokásos MI-kereskedés kezeli. `false` megtartja az eredeti ellenőrzést. Hiányzó értéknél a modul kapcsolója érvényes (ki).
-- `CoordinatedSiegeHarassment`: `true` összegyűjti az ostromgépeket, majd elérhető tüzelőállásokba küldi őket. A `SiegeHarassMinEngines` (0–20, alapérték 3) a várt gépek száma; egy játékbeli hónap után két elérhető gép is elindulhat. A 0 vagy 1 egyetlen gépet is enged. Hiányzó mezőknél a modulértékek érvényesek (ki, 3). A `HarassingSiegeEnginesMax` továbbra is korlátoz.
-- `LargerSiegeForces`: `true` a fő támadásnál ismétli a beállított ostromgép-összetételt a `SiegeForceMax` határáig (0–20, alapérték 10). A **0** megtartja az eredeti egyszeri építést. Hiányzó mezőknél a modulértékek érvényesek (ki, 10); az `AttMaxEngineers` továbbra is korlátozza a mérnököket.
+### Ostrom és mérnökök
 
-### Mérnöki keretek
+- `SafeSiegePlacement`: kerüli a foglalt építési helyeket (modul: BE).
+- `ActualSiegeResourcePayment`: nyersanyagot és aranyat kér; a hiányt az MI a szokásos kereskedelemmel szerzi be (KI).
+- `CoordinatedSiegeHarassment`: összegyűjtött ostromgépeket küld elérhető lőállásokba (KI). A `SiegeHarassMinEngines` a kívánt minimum (0–20, alapérték 3); a `HarassingSiegeEnginesMax` marad az összes gép korlátja.
+- `LargerSiegeForces`: megismétli a fő támadás beállított ostromgép-összetételét (KI). A `SiegeForceMax` korlátozza az aktív és tervezett gépeket (0–20, alapérték 10); a 0 egy eredeti építési sorozatot hagy. Az `AttMaxEngineers` továbbra is korlátozza a kezelőket.
+- `CorrectEngineerRoleCounting`: a beosztott mérnököket a megfelelő csapatkeretbe számítja; az ostrom és az olajkezelés külön marad (BE).
 
-- `CorrectEngineerRoleCounting`: A beosztott mérnökök beleszámítanak a csapatkeretbe; az ostrom és az olaj külön marad.
+Az ostrom és a mérnökök esetében az AIC-ben megadott érték, így a `false` vagy a 0 is, felülírja a modul beállítását. Ha hiányzik, a modul értéke érvényes.
