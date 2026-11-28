@@ -7,7 +7,7 @@ BoundedDrawStatus drawBounded(int bound, TakeNativeRandomSample takeSample,
 {
     result.ticket = -1;
     result.samplesConsumed = 0;
-    if (bound < 1 || bound > 100)
+    if (bound < 1 || bound > 800)
         return InvalidRandomBound;
     if (bound == 1) {
         result.ticket = 0;

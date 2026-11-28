@@ -26,6 +26,7 @@ function M.new(native)
   local function rebuildIndex()
     core.setMemory(native.reserveGroupOwner, 0, 1250 * 4)
     core.setMemory(native.reserveGroupUID, 0, 1250 * 4)
+    if not native.game.players then return end
     for player = 1, 8 do
       local character = core.readInteger((native.game.players + 0x2300) + player * 0x39F4)
       if character >= 2 and character <= 17

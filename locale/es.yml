@@ -1,24 +1,31 @@
-legacyRecruitInterval: Mantener el ritmo de reclutamiento de Legacy
-legacyRecruitInterval_descr: 'Sustituye ai_recruitinterval de Legacy para personalidades Native: intervalo 1. WeightedRoles conserva los intervalos AIC. Desactiva la opción de Legacy; deja esta desactivada si no la usabas.'
-nativeInitialDefenseMonths: Defensa inicial de las IA Native
-nativeInitialDefenseMonths_descr: '0–30 meses; 6 por defecto. Copia aquí la duración inicial de Legacy y desactiva esa opción de Legacy. WeightedRoles usa RecruitInitialDefenseMonths.'
-nativeTargetPolicy: "Objetivo de las IA Native"
-nativeTargetPolicy_descr: "Sustituye Legacy ai_attacktarget. Copia aquí su selección y desactiva esa opción Legacy al usar nuevas reglas de objetivos. Native conserva TargetChoice."
-nativeTargetPolicy_native: "TargetChoice existente"
-nativeTargetPolicy_nearest: "Más cercano"
-nativeTargetPolicy_richest: "Más rico"
-nativeTargetPolicy_weakest: "Más débil"
-safeSiegePlacement: "Proteger unidades en obras de asedio"
-safeSiegePlacement_descr: "Evita construir sobre unidades propias. Prevalece el valor del AIC de cada IA."
-correctEngineerRoleCounting: "Contar ingenieros en los cupos de tropas"
-correctEngineerRoleCounting_descr: "Cuenta los ingenieros en su función militar actual. Las dotaciones de asedio y los trabajadores del aceite no cubren esos cupos. Prevalece el valor del AIC."
-actualSiegeResourcePayment: "Exigir recursos para el asedio"
-actualSiegeResourcePayment_descr: "Comprueba materiales y oro antes de construir. Los faltantes pasan al comercio habitual de la IA. El valor AIC de cada IA tiene prioridad."
-coordinatedSiegeHarassment: "Coordinar el hostigamiento de asedio"
-coordinatedSiegeHarassment_descr: "Reúne máquinas de asedio y las envía a posiciones de tiro accesibles. Tiene prioridad el valor AIC de cada IA."
-siegeHarassMinEngines: "Máquinas para el hostigamiento"
-siegeHarassMinEngines_descr: "Cantidad que espera antes de avanzar. Tras un mes de juego envía las disponibles; 0 envía la primera."
-largerSiegeForces: "Más máquinas en el ataque principal"
-largerSiegeForces_descr: "Repite la composición de asedio de esta IA hasta alcanzar su límite. Prevalece el valor AIC de cada IA."
-siegeForceMax: "Máquinas por ataque principal"
-siegeForceMax_descr: "Máximo construido en un ataque. 0 conserva la única tanda original; valor predeterminado: 10."
+patrolOrders: Grupos de patrulla de ataque
+patrolOrders_descr: Ordena a ambos grupos atacar cuando la IA dispone de un segundo grupo de patrulla.
+patrolOrders_all: Usar ambos grupos de patrulla de ataque
+patrolOrders_native: Predeterminado del juego
+patrolFormation: Ruta de la segunda patrulla
+patrolFormation_descr: Elige adónde se dirige el segundo grupo de patrulla durante un ataque.
+patrolFormation_wing: "Junto al primer grupo"
+patrolFormation_mirror: Lado opuesto del castillo
+patrolFormation_native: Predeterminado del juego
+lordHuntRetarget: Atacar el castillo que refugia al señor humano
+lordHuntRetarget_descr: Redirige el ataque cuando el señor se refugia tras las murallas de un aliado en las que la IA no puede entrar.
+patrolFormation_routes: Rodear y barrer
+siegeScreen: Apostar tropas de la IA junto a máquinas de asedio
+siegeScreen_descr: Asigna grupos de escolta para proteger las máquinas de asedio mientras actúan.
+siegeScreen_engineApproach: Escoltar las máquinas
+siegeScreen_native: Predeterminado del juego
+siegeTowerCrew: Embarcar tropas de la IA en torres de asedio
+siegeTowerCrew_descr: Embarca a las tropas de escolta en las torres de asedio que avanzan hacia la muralla si está activado el embarque en Improved Siegeengines.
+allyRelief: "Enviar tropas a aliados bajo ataque"
+allyRelief_descr: "Pide tropas en la pantalla de aliados o recibe ayuda automáticamente cuando ataquen tu castillo."
+allyGoods: "Permitir que los aliados de la IA compartan suministros y oro"
+allyGoods_descr: "Pide oro en la pantalla de aliados mientras los aliados de la IA comparten suministros y oro según haga falta."
+ai: IA
+improvements: Mejoras
+attack_patrols: Patrullas de ataque
+siege_tactics: Escolta y tripulación de asedio
+ally_help: Ayuda de aliados
+tactics_defaults: Estas opciones fijan valores predeterminados que cada personalidad de IA puede sobrescribir.
+cat_allies_outposts: Aliados y puestos avanzados
+cat_attacks_raids: Ataques e incursiones
+cat_siege_crews: Dotaciones y equipo de asedio

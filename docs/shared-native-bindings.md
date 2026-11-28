@@ -13,8 +13,8 @@ The context is the same owner used by unchanged Legacy
 `port/ai_recruitstate_initialtimer.lua`. It decodes the tick operand, timer
 immediate, RNG singleton/value and relative next-RNG call. The 16-bit RNG value
 must be two bytes into that singleton. Every subsequent preflight checks the
-resolved original instructions, permitting only the module's own timer value
-change. There are no repeated scans or fixed-address fallbacks.
+resolved original instructions around the timer immediate, which Legacy owns.
+There are no repeated scans or fixed-address fallbacks.
 
 Loader 1.1.4's `getNativeAICLayout` exposes the storage already resolved by its
 `addresses.lua:getAIStartAddress`. The existing value getter could read one
@@ -132,13 +132,14 @@ identifies the price function and its body is verified in place; the decoded
 price field is checked against the player layout on each game family.
 
 `combat-native.lua` consumes named hook sites and captured original instructions.
-It rejects occupied bytes and redirected calls before patching. Existing
+An occupied byte or redirected call leaves its feature off with a warning
+before patching. Existing
 framework allocation/write facilities preserve the displaced instructions and
 original native calls; the three damage gateways adapt native C++ callbacks.
 Framework `core.hookCode`/`detourCode` expose Lua callbacks, so using them here
 would add Lua dispatch to every observed hit. No additional dispatcher was added.
-The explicit Legacy target-policy replacement reaches the original selection
-paths and is compared with unchanged `ai_attacktarget.lua` below.
+Legacy `ai_attacktarget` owns the target choice; AIC Tactics only reads its
+short jump back for the match identity.
 
 No fixed executable addresses remain in AIC production Lua/C++ bindings. The
 remaining long hex values are integer limits, digest constants and a building
@@ -156,9 +157,9 @@ is untouched. The call-site preflight rejects another owner's replacement.
 Validation performed:
 
 - Actual SHC and Extreme instruction images resolve the complete context and
-  Loader storage; all 31 timer settings match unchanged Legacy patch bytes.
+  Loader storage; all 31 unchanged Legacy timer settings pass the preflight.
 - The recruitment binding ABI is checked against actual Lua writes on both images;
-  repeated timer changes perform zero scans. Classic calendar test executes
+  repeated preflights perform zero scans. Classic calendar test executes
   9,600 ticks. That calendar test has not been run on Extreme.
 - Ten failure checks cover missing/ambiguous/RNG-layout contexts and invalid
   DLL/Loader contracts, rejecting before native binding writes.
@@ -185,8 +186,9 @@ Validation performed:
   Legacy trampoline-byte checks. Repeated preflights perform no scans. Sortie
   cases cover the no-personality return path; these do not prove recruitment in
   an active game. The classic combat-wrapper regression also passes 297 cases.
-- The actual interval wrapper passes 11,520 FASM/Unicorn cases covering explicit
-  Legacy interval fallback, opted-in intervals, registers, flags and caller stack.
+- The actual interval hook, chained after Legacy `ai_recruitinterval`, passes
+  11,520 Unicorn cases against the original and Legacy instructions: Legacy's
+  interval 1, WeightedRoles intervals, registers, flags and caller stack.
 - `tests/check_aic_queries_native.py` resolves nine query/table contexts on both
   actual images and rejects 35 missing/ambiguous/inconsistent/occupied bindings.
   Each executes 1,920 native role-selection cases (including main-roster cursor
@@ -197,10 +199,10 @@ Validation performed:
   price calls, 80 native combat-value calls (identical output vectors), and 40
   native lifecycle early-return/nervousness cases. These do not test active armies.
 - Actual FASM combat/raid/damage gateways pass 297 cases on each image, preserving
-  displaced effects, callback arguments, registers, flags and stack. Ninety-one
-  occupied hook-byte/call checks reject before allocation. Forty-five cases per
-  image compare the explicit target-policy replacement with unchanged Legacy
-  through the original selection loop, including its stack and flags effects.
+  displaced effects, callback arguments, registers, flags and stack. Eighty-six
+  occupied hook-byte/call cases leave their feature off with one warning before
+  allocation. Legacy's three target
+  choices are read back from the same site on both images.
 - Seventy-six AIC Python/Lua tests and forty Loader tests passed. The initial
   full AIC run lacked `AICLOADER_TEST_ROOT`; rerunning with the actual prerequisite
   checkout passed.
@@ -316,7 +318,7 @@ are single startup observations, not simulation benchmarks. The twelve signed
 module ZIPs, signatures, native DLL architecture and nine GUI descriptions verify.
 
 The same bundle ran an eight-AI Extreme Ascension Green Haven spectator match.
-Read-only memory verified four neighboring allied pairs (91–92 tiles apart),
+Read-only memory verified four neighboring allied pairs (91â€“92 tiles apart),
 independent player state and custom recruitment by both Saladins. A native save
 loaded and continued; captures were 751 ticks apart, so exact save-boundary state
 equality was not measured. A 3,828-tick offline replay finished, then backward
@@ -328,6 +330,20 @@ This short segment contained no active attacks or player commands. It does not
 prove active-combat or cached-snapshot restoration, complete-world equality,
 Native baseline equivalence, physical multiplayer or simulation performance.
 Those remain release gates in [PR17](https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/pull/17).
+
+## UCP 3.0.8 scanner (0.0.21)
+
+Requiring AIC Tactics performs no game-code scans. Enable resolves the layout
+and Legacy settings used in save, replay and match identity. Feature preflight
+resolves additional bindings through the framework's cached \`core.AOBScan\`.
+A missing binding is retained as a
+failure for the process. When requested, the affected feature stays off and
+logs one error that names it.
+
+Legacy keeps its defense, recruitment interval, initial timer, target choice
+and assault-switch patches. The recruitment interval and target selector use
+the surviving instruction context. AIC Tactics checks the modified bytes and
+the assault-switch trampoline before hooking dependent features.
 
 ## Siege harassment owner review (current dependent draft)
 
@@ -356,7 +372,7 @@ construction; the native tribe allocator partition bounds free crew slots. A
 source-group snapshot returns surviving engineers left detached by a partial
 batch through native membership calls. The policy stops after no successful
 construction, depleted crew or tribe capacity. Its building scan happens once
-per attack transition; subsequent work is bounded by the configured 0–20 cap.
+per attack transition; subsequent work is bounded by the configured 0â€“20 cap.
 No new frame, map or complete unit census was introduced. Existing movement,
 harassment, payment and role-counting owners remain separate.
 

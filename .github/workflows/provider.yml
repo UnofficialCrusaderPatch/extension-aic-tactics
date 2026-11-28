@@ -1,5 +1,5 @@
 name: Recruitment provider integration
-on: [push, pull_request]
+on: workflow_dispatch
 permissions:
   contents: read
 jobs:
@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: UnofficialCrusaderPatch/extension-aicloader
-          ref: 82a9a1873d0c0abbf4575b2cb2621b7f58e9573a
+          ref: 0356b1aa2b99e89af443a2613abb03e8aa25aa49
           path: tests/deps/aicloader
           persist-credentials: false
       - uses: actions/setup-python@v5

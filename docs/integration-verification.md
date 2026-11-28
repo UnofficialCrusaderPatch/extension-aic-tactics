@@ -17,7 +17,7 @@ effects, registers, flags, caller stack, callback arguments, admission/skip bran
 and all three relocated damage prologues. C++ calls are ABI spies in this oracle;
 the separate instruction host exercises their native logic.
 The interval bridge additionally passes 11,520 original/Legacy interval, register,
-flag and stack comparisons with the 344-byte configuration layout.
+flag and stack comparisons of the hook chained after Legacy's interval patch.
 
 The integrated Lua suite passes 58 checks. Portable target and incident tests also
 compile and pass with MSVC2005. Map Extensions has eight required-state tests,

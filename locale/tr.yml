@@ -1,24 +1,31 @@
-legacyRecruitInterval: Legacy asker alım hızını koru
-legacyRecruitInterval_descr: 'Legacy ai_recruitinterval seçeneğinin yerine geçer: Native kişiliklerde aralık 1 olur. WeightedRoles, AIC aralıklarını kullanmaya devam eder. Legacy seçeneğini kapatın; önceden kapalıysa bu seçeneği de kapalı bırakın.'
-nativeInitialDefenseMonths: Native yapay zekâlar için başlangıç savunma süresi
-nativeInitialDefenseMonths_descr: '0–30 ay; varsayılan 6. Legacy başlangıç süresini buraya kopyalayıp o Legacy seçeneğini kapatın. WeightedRoles, RecruitInitialDefenseMonths değerini kullanır.'
-nativeTargetPolicy: "Native yapay zekâ hedef seçimi"
-nativeTargetPolicy_descr: "Legacy ai_attacktarget yerine geçer. Seçimini buraya kopyalayın ve yeni hedef kurallarında bu Legacy seçeneğini kapatın. Native, TargetChoice ayarını korur."
-nativeTargetPolicy_native: "Mevcut TargetChoice"
-nativeTargetPolicy_nearest: "En yakın"
-nativeTargetPolicy_richest: "En zengin"
-nativeTargetPolicy_weakest: "En zayıf"
-safeSiegePlacement: "Kuşatma alanındaki birlikleri koru"
-safeSiegePlacement_descr: "Kendi birliklerinin üzerine kuşatma aracı kurmaz. Her yapay zekânın AIC değeri önceliklidir."
-correctEngineerRoleCounting: "Mühendisleri birlik kotasında say"
-correctEngineerRoleCounting_descr: "Mühendisleri mevcut askerî görevlerine göre sayar. Kuşatma mürettebatı ve yağ görevlileri birlik kotasını doldurmaz. AIC değeri önceliklidir."
-actualSiegeResourcePayment: "Kuşatma yapımı için kaynak gerektir"
-actualSiegeResourcePayment_descr: "Yapımdan önce malzeme ve altını kontrol eder. Eksikler normal yapay zekâ ticaretine aktarılır. Her yapay zekânın AIC değeri önceliklidir."
-coordinatedSiegeHarassment: "Kuşatma tacizini koordine et"
-coordinatedSiegeHarassment_descr: "Kuşatma araçlarını toplayıp erişilebilir atış noktalarına gönderir. Her yapay zekânın AIC değeri önceliklidir."
-siegeHarassMinEngines: "Taciz için araç sayısı"
-siegeHarassMinEngines_descr: "Harekete geçmeden önce beklenecek araç sayısı. Bir oyun ayı sonra mevcut araçlar gider; 0 ilk araçla başlar."
-largerSiegeForces: "Ana saldırıda daha fazla kuşatma aracı"
-largerSiegeForces_descr: "Yapay zekânın mevcut kuşatma düzenini sınıra kadar tekrarlar. Her yapay zekânın AIC değeri önceliklidir."
-siegeForceMax: "Ana saldırı başına araç"
-siegeForceMax_descr: "Bir saldırıda üretilen araçların üst sınırı. 0 özgün tek üretim turunu korur; varsayılan 10."
+patrolOrders: Saldırı devriye grupları
+patrolOrders_descr: Yapay zekânın ikinci bir devriye grubu varsa her iki grubu da saldırıya gönderir.
+patrolOrders_all: Her iki saldırı devriye grubunu kullan
+patrolOrders_native: Oyun varsayılanı
+patrolFormation: İkinci devriye rotası
+patrolFormation_descr: Saldırı sırasında ikinci devriye grubunun nereye gideceğini seçin.
+patrolFormation_wing: "İlk grubun yanında"
+patrolFormation_mirror: Kalenin karşı tarafı
+patrolFormation_native: Oyun varsayılanı
+lordHuntRetarget: İnsan lordu barındıran kaleye saldır
+lordHuntRetarget_descr: Lord, yapay zekânın giremediği bir müttefik surunun arkasına sığındığında saldırıyı o kaleye yönlendirir.
+patrolFormation_routes: Çevrele ve süpür
+siegeScreen: Yapay zekâ birliklerini kuşatma araçlarının yanında tut
+siegeScreen_descr: Kuşatma araçlarını kullanıldıkları sırada korumak için refakat birlikleri görevlendirir.
+siegeScreen_engineApproach: Kuşatma araçlarına eşlik et
+siegeScreen_native: Oyun varsayılanı
+siegeTowerCrew: Yapay zekâ birliklerini kuşatma kulelerine bindir
+siegeTowerCrew_descr: Improved Siegeengines’te kuleye binme açıksa refakat birliklerini sura ilerleyen kuşatma kulelerine bindirir.
+allyRelief: "Saldırı altındaki müttefiklere asker gönder"
+allyRelief_descr: "Müttefik ekranından asker isteyin veya kaleniz saldırı altındayken otomatik yardım alın."
+allyGoods: "Yapay zekâ müttefikleri erzak ve altın paylaşsın"
+allyGoods_descr: "Yapay zekâ müttefikleri gerektiğinde erzak ve altın paylaşırken müttefik ekranından altın isteyin."
+ai: Yapay zekâ
+improvements: İyileştirmeler
+attack_patrols: Saldırı devriyeleri
+siege_tactics: Kuşatma koruması ve mürettebatı
+ally_help: Müttefik yardımı
+tactics_defaults: Bu seçimler varsayılanları belirler; tekil yapay zekâ kişilikleri bunları geçersiz kılabilir.
+cat_allies_outposts: Müttefikler ve karakollar
+cat_attacks_raids: Saldırılar ve akınlar
+cat_siege_crews: Kuşatma ekipleri ve donanımı

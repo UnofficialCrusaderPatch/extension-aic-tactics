@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/UnofficialCrusaderPatch/extension-aic-tactics/blob/main/schema/aic-tactics.schema.json",
+  "title": "AIC Tactics fields in an AI's aic object",
+  "description": "Authoring aid for extension fields. Ordinary AIC fields remain valid. The Lua provider is the runtime validator; it also checks cross-field dependencies and that each recruitment row totals 100.",
+  "type": "object",
+  "additionalProperties": true,
+  "$defs": {
+    "share": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "booleanFact": {
+      "type": "boolean"
+    },
+    "provocation": {
+      "type": "object",
+      "description": "How much pressure qualifies as an attack on this AI.",
+      "properties": {
+        "ThreatPower": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Enemy troop power near home."
+        },
+        "CombatTicks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9600,
+          "description": "Sustained nearby fighting."
+        },
+        "LossPower": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Military losses caused by an opponent."
+        },
+        "WindowTicks": {
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 9600,
+          "multipleOf": 32,
+          "description": "How long an incident remains relevant."
+        }
+      },
+      "additionalProperties": false
+    },
+    "when": {
+      "type": "object",
+      "properties": {
+        "Strength": {
+          "enum": [
+            "Default",
+            "Weak",
+            "Strong"
+          ],
+          "description": "Native strength state for this recruitment opportunity."
+        },
+        "HomeUnderThreat": {
+          "$ref": "#/$defs/booleanFact"
+        },
+        "AttackActive": {
+          "$ref": "#/$defs/booleanFact"
+        },
+        "DefenseIncomplete": {
+          "$ref": "#/$defs/booleanFact"
+        },
+        "EquipmentSurplus": {
+          "$ref": "#/$defs/booleanFact"
+        }
+      },
+      "additionalProperties": false
+    },
+    "recruitRow": {
+      "type": "object",
+      "description": "First matching row replaces this recruitment choice's four shares. All four must total 100.",
+      "properties": {
+        "When": {
+          "$ref": "#/$defs/when"
+        },
+        "Defense": {
+          "$ref": "#/$defs/share"
+        },
+        "Raid": {
+          "$ref": "#/$defs/share"
+        },
+        "Attack": {
+          "$ref": "#/$defs/share"
+        },
+        "Sortie": {
+          "$ref": "#/$defs/share"
+        }
+      },
+      "required": [
+        "When",
+        "Defense",
+        "Raid",
+        "Attack",
+        "Sortie"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "RecruitPolicy": {
+      "enum": [
+        "Native",
+        "WeightedRoles"
+      ],
+      "description": "Optional compatibility switch. Native uses the game's recruiter; WeightedRoles uses four shares. Authoring a sortie share activates WeightedRoles without this field."
+    },
+    "RecruitProbSortieDefault": {
+      "$ref": "#/$defs/share",
+      "description": "Sortie share at normal strength. Combine with the existing Defense, Raid and Attack shares to total 100."
+    },
+    "RecruitProbSortieWeak": {
+      "$ref": "#/$defs/share",
+      "description": "Sortie share when weak; the four weak shares must total 100."
+    },
+    "RecruitProbSortieStrong": {
+      "$ref": "#/$defs/share",
+      "description": "Sortie share when strong; the four strong shares must total 100."
+    },
+    "RecruitConditions": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/recruitRow"
+      },
+      "description": "Optional situation-specific shares; first matching row wins. Requires WeightedRoles."
+    },
+    "DefRecruitComposition": {
+      "enum": [
+        "Native",
+        "PreserveSlots"
+      ],
+      "description": "Preserve the proportions of DefUnit1..8 while recruiting defenders. Requires WeightedRoles."
+    },
+    "RecruitInitialDefenseMonths": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 30,
+      "description": "Months to prefer filling defense before raids and the main army; 0 removes the wait. Requires WeightedRoles. Unset follows the game's initial timer (6 months, or Legacy ai_recruitstate_initialtimer)."
+    },
+    "AttackTargetPolicy": {
+      "oneOf": [
+        {
+          "enum": [
+            "Inherit",
+            "InheritPerAttack",
+            "LowestPopulation",
+            "FewestTroops",
+            "LowestCombatPower",
+            "Random",
+            "LastAggressor"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "Choice": {
+              "enum": [
+                "Inherit",
+                "LowestPopulation",
+                "FewestTroops",
+                "LowestCombatPower",
+                "Random",
+                "LastAggressor"
+              ]
+            },
+            "UntilDefeated": {
+              "type": "boolean",
+              "description": "Keep the selected opponent across attacks while valid."
+            },
+            "Provocation": {
+              "$ref": "#/$defs/provocation",
+              "description": "Threshold overrides for LastAggressor only."
+            }
+          },
+          "required": [
+            "Choice"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Choose an opponent. New choices hold one target for the current attack by default; an object can keep it until defeated. Inherit uses TargetChoice."
+    },
+    "AttackTargetCommitment": {
+      "enum": [
+        "Default",
+        "PerAttack",
+        "UntilDefeated"
+      ],
+      "description": "Older AIC field retained for compatibility. New AICs set target duration inside AttackTargetPolicy."
+    },
+    "AttackActivation": {
+      "enum": [
+        "Immediate",
+        "AfterProvocation"
+      ],
+      "description": "Optionally wait for a qualifying attack before starting offensive armies or raids."
+    },
+    "ProvocationRules": {
+      "$ref": "#/$defs/provocation",
+      "description": "Shared retaliation thresholds for older AICs, threat-based recruitment or AfterProvocation. Direct use requires all four values."
+    },
+    "AttackPreparation": {
+      "enum": [
+        "Native",
+        "DuringAttack"
+      ],
+      "description": "Optionally prepare one next wave at home while the current army attacks."
+    },
+    "RaidTargetPolicy": {
+      "enum": [
+        "Native",
+        "NearestReachable",
+        "Opportunistic",
+        "RandomNearby"
+      ],
+      "description": "Building choice for raids. RandomNearby draws a reachable building, then clears nearby buildings before drawing again."
+    },
+    "RaidGroupCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "Split the existing total raid force into up to four groups; does not recruit extra troops."
+    },
+    "RaidMinGroupSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 256,
+      "description": "Minimum troops before a raid group leaves."
+    },
+    "RaidFocus": {
+      "oneOf": [
+        {
+          "enum": [
+            "Any",
+            "Food",
+            "Industry",
+            "HighValue"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "Food": {
+              "$ref": "#/$defs/share"
+            },
+            "Industry": {
+              "$ref": "#/$defs/share"
+            },
+            "HighValue": {
+              "$ref": "#/$defs/share"
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "description": "Building category or category percentages. Percentages may total at most 100; the remainder targets any building. Requires Opportunistic or RandomNearby."
+    },
+    "RaidRiskTolerance": {
+      "enum": [
+        "Low",
+        "Medium",
+        "High"
+      ],
+      "description": "How much nearby defense a raid accepts."
+    },
+    "RaidEnemyScope": {
+      "enum": [
+        "PrimeTarget",
+        "AnyEnemy"
+      ],
+      "description": "Raid the main opponent or any enemy; does not change the main army's target."
+    },
+    "SafeSiegePlacement": {
+      "type": "boolean",
+      "description": "Protect friendly units at siege construction sites. Module default OFF; advanced siege policies require it."
+    },
+    "ActualSiegeResourcePayment": {
+      "type": "boolean",
+      "description": "Require configured materials and gold before construction; module default OFF."
+    },
+    "CoordinatedSiegeHarassment": {
+      "type": "boolean",
+      "description": "Gather siege engines and approach reachable targets together; module default OFF."
+    },
+    "SiegeHarassMinEngines": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 20,
+      "description": "Preferred number of ready harassment engines before departure; module default 3."
+    },
+    "LargerSiegeForces": {
+      "type": "boolean",
+      "description": "Repeat the existing assault equipment mix while unassigned attack engineers and native capacity remain; module default OFF."
+    },
+    "SiegeForceMax": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 64,
+      "description": "Optional cap on active and pending assault equipment. 0 lets available engineers determine size; module default 0."
+    },
+    "AICTactics_PatrolOrders": {
+      "enum": [
+        "Native",
+        "AllGroups"
+      ],
+      "description": "AllGroups also sends the second native attack patrol group (AttUnitPatrolGroupsCount 2) into assaults; Native orders only the first. Absent uses the module setting (default Native)."
+    },
+    "AICTactics_PatrolFormation": {
+      "enum": [
+        "Native",
+        "Wing",
+        "Mirror",
+        "Routes"
+      ],
+      "description": "Where the patrol groups after the first go: Wing beside it in a line, Mirror the other side of the target keep, Routes on Smarter Patrols' routes (group 2 circles the target castle one way, group 3 sweeps along its front, group 4 circles the other way, later groups a quarter circle behind), Native their own route. Absent uses the module setting (default Native)."
+    },
+    "AICTactics_PatrolSpacing": {
+      "type": "integer",
+      "minimum": 4,
+      "maximum": 40,
+      "description": "Tiles between neighbouring patrol groups in Wing and Mirror. Absent uses the module setting (default 12)."
+    },
+    "AICTactics_PatrolExtraGroups": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6,
+      "description": "Extra patrol groups split off the native patrol groups while the army attacks, as long as each group keeps AICTactics_PatrolMinSize units; they rejoin when the attack ends. Absent uses the module setting (default 0)."
+    },
+    "AICTactics_PatrolMinSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "description": "Smallest patrol group a split may leave. Absent uses the module setting (default 4)."
+    },
+    "AICTactics_PatrolRadius": {
+      "type": "integer",
+      "minimum": 4,
+      "maximum": 100,
+      "description": "Walking distance from the target castle of the ring that Routes patrols follow. Absent uses the module setting (default 12, the native patrol ring)."
+    },
+    "AICTactics_SiegeTowerCrew": {
+      "type": "boolean",
+      "description": "Board this AI's siege-defence troops (AttUnitSiegeDef) on its wall-bound towers when climbing is active. Absent uses the module setting (default false)."
+    },
+    "AICTactics_SiegeScreen": {
+      "enum": [
+        "Native",
+        "EngineApproach"
+      ],
+      "description": "EngineApproach stations the siege-defence groups (AttUnitSiegeDef) on the engines' approach, the second group at a different engine, until the native wall assault takes over; Native keeps the game's rally. Absent uses the module setting (default Native)."
+    },
+    "AICTactics_SiegeScreenForward": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Tiles in front of the engines, toward the target castle, where melee siege-defence groups stand; ranged groups stay at the engines. Absent uses the module setting (default 4)."
+    },
+    "AICTactics_SiegeScreenExtraGroups": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6,
+      "description": "Extra siege-defence groups split off the two native groups while the engines work (attack states 3-4), each at its own engine, as long as every group keeps AICTactics_PatrolMinSize; they rejoin before the wall assault. Needs AICTactics_SiegeScreen EngineApproach. Absent uses the module setting (default 0)."
+    },
+    "AICTactics_LordHuntRetarget": {
+      "type": "boolean",
+      "description": "When the attacked human player's lord shelters inside an ally's walls that the attackers cannot enter, attack that castle with the full native siege. Absent uses the module setting (default false)."
+    },
+    "AICTactics_LordHuntSiege": {
+      "enum": [
+        "HidingCastle",
+        "HomeCastle"
+      ],
+      "description": "Which castle gets the full siege when the army splits because the lord's own castle still has people and buildings. Absent uses the module setting (default HidingCastle)."
+    },
+    "AICTactics_LordHuntSwitchPercent": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "During an attack, turn to another castle only while this percent of the army's largest size remains. Absent uses the module setting (default 80)."
+    },
+    "AICTactics_LordHuntShare": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percent of the army attacking the lord's castle that goes for the lord once the way to him is open; 0 turns the hunt off. Absent uses the module setting (default 0)."
+    },
+    "AICTactics_LordHuntSplitShare": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percent of the army sent to the castle without the full siege. Absent uses the module setting (default 50)."
+    },
+    "AICTactics_AllyRelief": {
+      "type": "boolean",
+      "description": "Send part of the idle attack army to an ally (human or AI) whose home is under attack, and when a human ally asks for help. false keeps the native help. Absent uses the module setting (default false)."
+    },
+    "AICTactics_AllyGoods": {
+      "type": "boolean",
+      "description": "Ask AI allies for goods and gold this AI cannot buy, give to them, and send gold to a human ally who asks. false keeps native trade. Absent uses the module setting (default false)."
+    },
+    "AICTactics_AllyGoldKeep": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000,
+      "description": "Gold this AI keeps before giving any to an ally, also when a human asks. Absent uses the module setting (default 1000)."
+    },
+    "AICTactics_AllyRecruitGoldBuffer": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5000,
+      "description": "When weak or threatened, this AI is helped up to its RecruitGoldThreshold plus this much gold. Absent uses the module setting (default 300)."
+    },
+    "AICTactics_AllyGoldSharePercent": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percent of the gold above AllyGoldKeep this AI adds unasked to a goods gift. 0 adds none; asked gold is still sent. Absent uses the module setting (default 25)."
+    },
+    "AICTactics_AllyMonthlyGivePercent": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percent of each good, gold included, this AI gives away per month. 0 gives nothing, 100 has no monthly limit. Absent uses the module setting (default 30)."
+    },
+    "AICTactics_AllyArmySharePercent": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percent of the idle attack army sent as relief, rounded up. 0 sends no troops, also when asked; 100 sends the whole idle attack army. Absent uses the module setting (default 75)."
+    },
+    "AICTactics_AllyReliefMinMonths": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 12,
+      "description": "Months this AI's relief stays at least before a calm ally home sends it back. Its own attack, its own danger, a lost ally or a withdrawn request still end it. Absent uses the module setting (default 0: home after one calm month)."
+    },
+    "AICTactics_AllyReliefGates": {
+      "type": "boolean",
+      "description": "When the helped ally's gates are shut, this AI's relief walks up to a gate and the gate is held open for it, and again for its troops leaving. Absent uses the module setting (default false)."
+    },
+    "AICTactics_AllyReliefKeep": {
+      "type": "boolean",
+      "description": "This AI's relief troops stand on the helped ally's keep, as the native help sends them, instead of at its entrance. Absent uses the module setting (default false)."
+    }
+  }
+}

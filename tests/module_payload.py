@@ -1,6 +1,4 @@
 """AIC runtime payload shared by local previews and the UCP store build."""
-import hashlib
-import json
 import re
 from pathlib import Path
 
@@ -11,21 +9,11 @@ def module_payload(root: Path, dll: Path):
     module_id = 'aic-tactics-' + version
     paths = [root / name for name in ('definition.yml', 'options.yml', 'LICENSE')]
     for pattern in ('*.lua', 'config/*.lua', 'locale/*.yml',
-                    'locale/description-*.md', 'docs/configuration-*.md'):
+                    'locale/description-*.md', 'docs/configuration-*.md',
+                    'schema/*.json'):
         paths.extend(root.glob(pattern))
     files = {path.relative_to(root).as_posix(): path.read_bytes() for path in paths}
     files['aicTactics.dll'] = dll.read_bytes()
-    identity = hashlib.sha256()
-    for name, data in sorted(files.items()):
-        encoded = name.encode('utf-8')
-        identity.update(len(encoded).to_bytes(4, 'little'))
-        identity.update(encoded)
-        identity.update(len(data).to_bytes(8, 'little'))
-        identity.update(data)
-    files['build-identity.lua'] = (
-        "return {module='" + module_id + "', sha256='" + identity.hexdigest()
-        + "', files={" + ','.join(json.dumps(name) for name in sorted(files))
-        + "}}\n").encode('ascii')
     return module_id, files
 
 

@@ -1,7 +1,12 @@
 local M = {}
 local path = 'recruitment-state.bin'
-local header = 'AICTACT\012'
+local header = 'AICTACT\014'
+local huntArrays = {'lordHuntRetarget', 'lordHuntSiege', 'lordHuntSwitch', 'lordHuntShare', 'lordHuntSplit'}
+local huntFallbacks = {'lordHuntRetargetFallback', 'lordHuntSiegeFallback', 'lordHuntSwitchFallback',
+  'lordHuntShareFallback', 'lordHuntSplitFallback'}
 local configurationBytes, aicBytes, censusWords, harassWords = 16 * 352, 16 * 676, 9 * 80, 9 * 9
+-- Per-AI ally settings: one word per setting and character.
+local allyBytes = #require('config.allies').settings * 4
 
 local function word(value)
   if value < 0 then value = value + 4294967296 end
@@ -18,15 +23,23 @@ local function number(bytes, offset)
   return a + b * 256 + c * 65536 + d * 16777216
 end
 
-function M.new(native, legacyInterval, fingerprint)
-  assert(type(fingerprint) == 'string' and #fingerprint == 64, 'AIC Tactics: missing package fingerprint')
+function M.new(native, legacyInterval, version)
+  assert(type(version) == 'string', 'AIC Tactics: missing module version')
   assert(native.configurationSize == 352, 'AIC Tactics: incompatible save ABI')
   assert(native.siegeHarassPlanSize == 36, 'AIC Tactics: incompatible siege plan ABI')
+  assert(type(native.captureIntegrityWithIdentity) == 'number'
+    and type(native.observeIntegrityBoundaryWithIdentity) == 'number', 'AIC Tactics: incompatible integrity ABI')
   local combat = require('combat-state').new(native)
   local army = require('army-state').new(native)
   local raids = require('raid-state').new(native)
-  local nativeIntegrity = core.exposeCode(native.captureIntegrity, 1, 0)
-  local observeBoundary = core.exposeCode(native.observeIntegrityBoundary, 1, 0)
+  local groups = require('group-state').new(native)
+  local hunts = require('lord-hunt-state').new(native)
+  local routes = require('patrol-state').new(native)
+  local attacks = require('config.attacks')
+  local patrolArrays, routesFormation = attacks.arrays, attacks.formations.Routes
+  local allies = require('ally-state').new(native)
+  local nativeIntegrity = core.exposeCode(native.captureIntegrityWithIdentity, 4, 0)
+  local observeBoundary = core.exposeCode(native.observeIntegrityBoundaryWithIdentity, 4, 0)
   local boundaryIntegrity = core.exposeCode(native.captureBoundaryIntegrity, 0, 0)
   local observed=false
   local function digest()
@@ -35,13 +48,48 @@ function M.new(native, legacyInterval, fingerprint)
     if second < 0 then second = second + 4294967296 end
     return string.format('aic-tactics-word-digest-v1-%08x%08x', first, second)
   end
+  local function legacyIdentity()
+    local value = legacyInterval
+    if type(value) == 'function' then
+      local target
+      value, target = value()
+      assert(value ~= nil, target)
+      return value and 1 or 0, target
+    end
+    return value and 1 or 0, core.readInteger(native.legacyTargetPolicy)
+  end
+  local function observe(callback)
+    local interval, target = legacyIdentity()
+    callback(interval, core.readInteger(native.game.initialDefenseTicks), target, native.game.aicRecords)
+  end
   local function active()
+    -- The module-level engineer switch participates in match identity.
     if core.readInteger(native.safePlacementFallback) ~= 0 then return true end
     if core.readInteger(native.engineerRoleFallback) ~= 0 then return true end
     if core.readInteger(native.siegePaymentFallback) ~= 0 then return true end
     if core.readInteger(native.siegeHarassFallback) ~= 0 then return true end
     if core.readInteger(native.largeSiegeFallback) ~= 0 then return true end
+    -- Lord hunt keeps detachments and their census in this section.
+    if core.readInteger(native.lordHuntRetargetFallback) ~= 0
+        or core.readInteger(native.lordHuntShareFallback) ~= 0 then return true end
+    -- Extra patrol and siege-defence groups and patrol routes keep their records in this section.
+    if core.readInteger(native.patrolExtraGroupsFallback) ~= 0
+        or core.readInteger(native.siegeScreenExtraGroupsFallback) ~= 0
+        or core.readInteger(native.patrolFormationFallback) == routesFormation then return true end
+    -- Ally help keeps gifts and relief timers in this section.
+    if core.readInteger(native.allyFallback) ~= 0 or core.readInteger(native.allyFallback + 4) ~= 0 then
+      return true
+    end
+    if core.readString(native.allySettings + allyBytes, 16 * allyBytes) ~= string.rep('\0', 16 * allyBytes) then
+      return true
+    end
     for ai = 1, 16 do
+      for _, name in ipairs(huntArrays) do
+        if core.readInteger(native[name] + ai * 4) ~= 0 then return true end
+      end
+      if core.readInteger(native.patrolExtraGroups + ai * 4) > 1
+          or core.readInteger(native.siegeScreenExtraGroups + ai * 4) > 1
+          or core.readInteger(native.patrolFormation + ai * 4) == routesFormation + 1 then return true end
       if core.readInteger(native.siegePaymentPolicy + ai * 4) ~= 0 then return true end
       if core.readInteger(native.siegeHarassPolicy + ai * 4) ~= 0
           or core.readInteger(native.siegeHarassMinimum + ai * 4) ~= 0 then return true end
@@ -51,14 +99,14 @@ function M.new(native, legacyInterval, fingerprint)
       if core.readInteger(address) ~= 0 or core.readInteger(address + 288) ~= 0
           or core.readInteger(address + 292) ~= 0 or core.readInteger(address + 296) ~= 0
           or core.readInteger(address + 316) ~= 0 or core.readInteger(address + 320) ~= 0
-          or core.readInteger(address + 344) ~= 0
-          or core.readInteger(address + 348) ~= 0 then return true end
+          or core.readInteger(address + 344) ~= 0 then return true end
     end
     return false
   end
   local function identity()
-    return header .. fingerprint .. word(legacyInterval and 1 or 0) .. word(core.readInteger(native.game.initialDefenseTicks))
-      .. word(core.readInteger(native.legacyTargetPolicy))
+    local interval, target = legacyIdentity()
+    return header .. word(interval) .. word(core.readInteger(native.game.initialDefenseTicks))
+      .. word(target)
       .. word(core.readInteger(native.safePlacementFallback))
       .. word(core.readInteger(native.engineerRoleFallback))
       .. word(core.readInteger(native.siegePaymentFallback))
@@ -74,6 +122,24 @@ function M.new(native, legacyInterval, fingerprint)
       .. core.readString(native.configuration + 352, configurationBytes)
       .. core.readString(native.game.aicRecords, aicBytes)
   end
+  -- Multiplayer peers must also agree on settings that keep no saved state.
+  -- Those settings stay out of save admission: a save reloads with changed
+  -- patrol settings and simply follows them from the next native decision.
+  local function matchIdentity()
+    local result = {identity(), version}
+    for _, name in ipairs(patrolArrays) do result[#result + 1] = core.readString(native[name] + 4, 16 * 4) end
+    for _, name in ipairs(patrolArrays) do result[#result + 1] = word(core.readInteger(native[name .. 'Fallback'])) end
+    for _, name in ipairs(huntArrays) do result[#result + 1] = core.readString(native[name] + 4, 16 * 4) end
+    for _, name in ipairs(huntFallbacks) do result[#result + 1] = word(core.readInteger(native[name])) end
+    result[#result + 1] = core.readString(native.allySettings + allyBytes, 16 * allyBytes)
+    result[#result + 1] = core.readString(native.allyFallback, allyBytes)
+    -- Features another module left off install no hooks even for an AI that opts in.
+    local off = {}
+    for key in pairs(native.unavailableFeatures) do off[#off + 1] = key end
+    table.sort(off)
+    result[#result + 1] = table.concat(off, ',')
+    return table.concat(result)
+  end
   local function capture()
     local result = {identity(), word(core.readInteger(native.defenseCensusTick)),
       word(core.readInteger(native.defenseCensusValid))}
@@ -86,13 +152,20 @@ function M.new(native, legacyInterval, fingerprint)
     for index = 0, harassWords - 1 do
       result[#result + 1] = word(core.readInteger(native.siegeHarassPlans + index * 4))
     end
+    for _, value in ipairs(groups.capture()) do result[#result + 1] = word(value) end
+    for _, value in ipairs(hunts.capture()) do result[#result + 1] = word(value) end
+    for _, value in ipairs(routes.capture()) do result[#result + 1] = word(value) end
+    for _, value in ipairs(allies.capture()) do result[#result + 1] = word(value) end
     return table.concat(result)
   end
   local function validate(bytes)
     assert(type(bytes) == 'string', 'AIC Tactics: missing saved recruitment state')
     local expected = identity()
-    assert(#bytes == #expected + 8 + (censusWords + combat.wordCount + army.wordCount + raids.wordCount + harassWords) * 4 and bytes:sub(1, #expected) == expected,
-      'AIC Tactics: this save requires its original AIC configuration and module version')
+    local size = #expected + 8 + (censusWords + combat.wordCount + army.wordCount + raids.wordCount + harassWords + groups.wordCount + hunts.wordCount + routes.wordCount + allies.wordCount) * 4
+    -- Earlier saves carry a 64-character package fingerprint after the header.
+    if #bytes == size + 64 and bytes:sub(#header + 1, #header + 64):match('^%x+$') then bytes = bytes:sub(1, #header) .. bytes:sub(#header + 65) end
+    assert(#bytes == size and bytes:sub(1, #expected) == expected,
+      'AIC Tactics: this save requires its original AIC configuration')
     local offset = #expected + 1
     local tick, valid = number(bytes, offset), number(bytes, offset + 4)
     assert(valid <= 1, 'AIC Tactics: invalid saved defense census')
@@ -131,10 +204,37 @@ function M.new(native, legacyInterval, fingerprint)
           and planValues[start + 7] <= 399 and planValues[start + 8] <= 399,
         'AIC Tactics: invalid saved siege harassment plan')
     end
-    return tick, valid, counts, combatValues, armyValues, raidValues, planValues
+    local groupValues = {}
+    local groupOffset = planOffset + harassWords * 4
+    for index = 0, groups.wordCount - 1 do
+      groupValues[index + 1] = number(bytes, groupOffset + index * 4)
+    end
+    groups.validate(groupValues)
+    local huntValues = {}
+    local huntOffset = groupOffset + groups.wordCount * 4
+    for index = 0, hunts.wordCount - 1 do
+      huntValues[index + 1] = number(bytes, huntOffset + index * 4)
+    end
+    hunts.validate(huntValues, groupValues)
+    local routeValues = {}
+    local routeOffset = huntOffset + hunts.wordCount * 4
+    for index = 0, routes.wordCount - 1 do
+      routeValues[index + 1] = number(bytes, routeOffset + index * 4)
+    end
+    routes.validate(routeValues)
+    local allyValues = {}
+    local allyOffset = routeOffset + routes.wordCount * 4
+    for index = 0, allies.wordCount - 1 do
+      allyValues[index + 1] = number(bytes, allyOffset + index * 4)
+    end
+    allies.validate(allyValues)
+    return tick, valid, counts, combatValues, armyValues, raidValues, planValues, groupValues, huntValues,
+      routeValues, allyValues
   end
   local function restore(bytes)
-    local tick, valid, counts, combatValues, armyValues, raidValues, planValues = validate(bytes)
+    local tick, valid, counts, combatValues, armyValues, raidValues, planValues, groupValues, huntValues,
+      routeValues, allyValues =
+      validate(bytes)
     -- Validate the entire payload before writing any state.
     core.writeInteger(native.defenseCensusValid, 0)
     for index, count in ipairs(counts) do core.writeInteger(native.defenseTypeCounts + (index - 1) * 4, count) end
@@ -143,38 +243,46 @@ function M.new(native, legacyInterval, fingerprint)
     combat.restore(combatValues)
     army.restore(armyValues)
     raids.restore(raidValues)
+    groups.restore(groupValues)
+    hunts.restore(huntValues, groupValues)
+    routes.restore(routeValues)
+    allies.restore(allyValues)
     for index, value in ipairs(planValues) do
       core.writeInteger(native.siegeHarassPlans + (index - 1) * 4,
         value >= 2147483648 and value - 4294967296 or value)
     end
   end
-  local function validateAbsent(kind)
-    assert(not active() or kind == 'map',
-      'AIC Tactics: this old save has no policy state; start a new match with these parameters')
-  end
-  local function initialize(self, context)
-    validateAbsent(context and context.kind)
+  local function initialize()
     core.writeInteger(native.defenseCensusValid, 0)
     core.setMemory(native.defenseTypeCounts, 0, censusWords * 4)
     core.writeInteger(native.defenseCensusTick, 0)
     combat.initialize()
     army.initialize()
     raids.initialize()
+    groups.initialize()
+    hunts.initialize()
+    routes.initialize()
+    allies.initialize()
     core.setMemory(native.siegeHarassPlans, 0, harassWords * 4)
+  end
+  local function writeState(self, handle)
+    if type(legacyInterval) == 'function' and legacyInterval() == nil and not active() then return end
+    handle:put(path, capture())
   end
   return {
     capture = capture, validate = validate, restore = restore, identity = identity,
+    matchIdentity = matchIdentity,
     callbacks = {
       isRequired = active,
       initialize = initialize,
-      serialize = function(self, handle) handle:put(path, capture()) end,
-      capture = function(self, handle) handle:put(path, capture()) end,
+      serialize = writeState,
+      capture = writeState,
       integrity = function()
-        nativeIntegrity(legacyInterval and 1 or 0)
+        observe(nativeIntegrity)
         return digest()
       end,
       observeBoundary = function()
-        observeBoundary(legacyInterval and 1 or 0); observed=true
+        observe(observeBoundary); observed=true
       end,
       boundaryIntegrity = function()
         assert(observed,'AIC Tactics: no observed replay boundary')
@@ -183,15 +291,16 @@ function M.new(native, legacyInterval, fingerprint)
       validate = function(self, handle)
         if handle.required then
           assert(handle:exists(path), 'AIC Tactics: required policy state is missing from this save')
-          validate(handle:get(path))
-          return
         end
-        if not active() then return end
-        if handle:exists(path) then validate(handle:get(path)) else validateAbsent(handle.loadKind) end
       end,
       deserialize = function(self, handle)
-        if active() and handle:exists(path) then restore(handle:get(path))
-        else initialize(nil, {kind=handle.loadKind}) end
+        -- A matching section is restored even with its features now off: the
+        -- detached groups in it go back to their slots at the next AI update.
+        -- A save made with other AIC settings loads with empty policy state.
+        local ok, err = handle:exists(path) and pcall(validate, handle:get(path))
+        if ok then restore(handle:get(path)) return end
+        if err then log(INFO, 'AIC Tactics: saved policy state not restored (' .. tostring(err) .. '); starting with empty policy state') end
+        initialize()
       end,
     },
   }

@@ -41,7 +41,7 @@ def check(identity):
     lua.globals().read_integer = read_integer
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
-      core={AOBScan=aob,readByte=read_byte,readInteger=read_integer}
+      core={AOBScan=function(pattern) return aob(pattern) or error('AOB not found') end,readByte=read_byte,readInteger=read_integer}
       local context=require('native-context')
       local site=context.find('AI engineer role recount',
         '0F B7 90 3E 0A 00 00 66 83 FA 0A 75 1C 69 FF F4 39 00 00 BB 01 00 00 00 '..

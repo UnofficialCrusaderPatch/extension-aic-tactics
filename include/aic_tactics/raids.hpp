@@ -6,7 +6,7 @@
 namespace AicTactics {
 namespace SHC141 {
 
-enum RaidPolicy { NativeRaids, NearestReachableRaid, OpportunisticRaid };
+enum RaidPolicy { NativeRaids, NearestReachableRaid, OpportunisticRaid, RandomNearbyRaid };
 enum RaidFocus { AnyRaidFocus, FoodRaidFocus, IndustryRaidFocus, HighValueRaidFocus };
 enum RaidRisk { LowRaidRisk, MediumRaidRisk, HighRaidRisk };
 enum RaidScope { PrimeRaidTarget, AnyRaidEnemy };

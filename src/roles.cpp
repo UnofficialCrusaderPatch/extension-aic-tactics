@@ -22,13 +22,11 @@ bool ordinaryRole(int role)
 // counters and all normal-unit cases. Role 10 retains its original engineer path.
 int __cdecl countableEngineerRole(int player, int unit)
 {
+    if (!engineerRoleFallback) return 0;
     if (player < 1 || player > 8 || unit <= 0
         || unit >= static_cast<int>(nativeBindings.unitCapacity)) return 0;
     const int character = read<int>(nativeBindings.players + player * 0x39F4, 0x2300);
     if (character < 2 || character > 17) return 0;
-    const int choice = configurations[character - 1].correctEngineerRoleCounting;
-    if (choice == 2 || (choice == 0 && !engineerRoleFallback)) return 0;
-
     const unsigned int address = nativeBindings.unitRecords + unit * 0x490;
     const int role = read<short>(address, 0x42A);
     if (read<short>(address, 0x8C) != 2 || read<short>(address, 0x8E) != 30

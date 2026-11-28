@@ -18,7 +18,8 @@ def lua(request):
       memory,writes,messages={},{},{}
       core={readInteger=function(a)return memory[a] or 0 end,
         writeInteger=function(a,v)memory[a]=v; writes[#writes+1]={a,v} end}
-      package.loaded.addresses={getAIStartAddress=function(ai)return 10000+ai*676 end}
+      core.AOBScan=function() return 5000 end
+      memory[5004], memory[5031]=10000,10000
       log=function(level,message)messages[#messages+1]=message end
       hooks={registerHookCallback=function(_,callback)afterInit=callback end}
       modules={}
@@ -77,6 +78,36 @@ def test_safe_siege_setting_is_per_ai_and_preserves_false(lua):
       assert(loader:getAICValue(1,'SafeSiegePlacement')==nil)
     ''')
 
+def test_sortie_share_opts_in_without_policy_switch(lua):
+    lua.execute('''
+      assert(loader:overwriteAIC(1,{RecruitProbDefDefault=30,RecruitProbSortieDefault=10}))
+      assert(loader:getAICValue(1,'RecruitPolicy')=='WeightedRoles')
+      assert(backendStates[1].mode==1 and backendStates[1].baseRows[1][4]==10)
+      assert(loader:getAICValue(2,'RecruitPolicy')=='Native')
+      assert(loader:overwriteAIC(2,{RecruitProbSortieDefault=0}))
+      assert(backendStates[2].mode==1)
+      assert(loader:overwriteAIC(3,{RecruitProbSortieDefault=10})==false)
+      assert(loader:getAICValue(3,'RecruitPolicy')=='Native')
+      assert(loader:overwriteAIC(4,{RecruitInitialDefenseMonths=0})==false)
+      assert(loader:getAICValue(4,'RecruitPolicy')=='Native')
+    ''')
+
+def test_combined_target_policy_and_legacy_commitment_updates(lua):
+    lua.execute('''
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy={Choice='FewestTroops',UntilDefeated=true}}))
+      assert(loader:getAICValue(1,'AttackTargetPolicy').UntilDefeated==true)
+      assert(loader:getAICValue(1,'AttackTargetCommitment')=='Default')
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy='Random'}))
+      assert(loader:getAICValue(1,'AttackTargetCommitment')=='Default')
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy='InheritPerAttack'}))
+      assert(loader:overwriteAIC(1,{AttackTargetCommitment='UntilDefeated'}))
+      assert(loader:getAICValue(1,'AttackTargetPolicy')=='Inherit')
+      assert(loader:getAICValue(1,'AttackTargetCommitment')=='UntilDefeated')
+      assert(loader:overwriteAIC(1,{AttackTargetPolicy={Choice='LastAggressor',UntilDefeated=true},
+        AttackTargetCommitment='PerAttack'})==false)
+      assert(loader:getAICValue(1,'AttackTargetPolicy')=='Inherit')
+    ''')
+
 
 def test_siege_payment_setting_is_per_ai_and_preserves_false(lua):
     lua.execute('''
@@ -110,19 +141,12 @@ def test_siege_harassment_setting_is_per_ai_and_preserves_zero(lua):
     ''')
 
 
-def test_engineer_role_setting_is_per_ai_and_preserves_false(lua):
+def test_engineer_role_fix_is_not_exposed_as_an_aic_setting(lua):
     lua.execute('''
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
-      assert(loader:overwriteAIC(1,{CorrectEngineerRoleCounting=false}))
-      assert(loader:overwriteAIC(2,{CorrectEngineerRoleCounting=true}))
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==false)
-      assert(loader:getAICValue(2,'CorrectEngineerRoleCounting')==true)
-      assert(loader:getAICValue(3,'CorrectEngineerRoleCounting')==nil)
-      assert(loader:overwriteAIC(1,{TargetChoice='Balanced'}))
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==false)
-      assert(loader:overwriteAIC(1,{CorrectEngineerRoleCounting='yes'})==false)
-      loader:resetAIC(1)
-      assert(loader:getAICValue(1,'CorrectEngineerRoleCounting')==nil)
+      assert(not pcall(loader.getAICValue,loader,1,'CorrectEngineerRoleCounting'))
+      assert(not loader:overwriteAIC(1,{CorrectEngineerRoleCounting=false}))
+      loader:overwriteAIC(1,{TargetChoice='Balanced'})
+      assert(not pcall(loader.getAICValue,loader,1,'CorrectEngineerRoleCounting'))
     ''')
 
 @pytest.mark.parametrize('spec', [
@@ -235,7 +259,7 @@ def test_native_downgrade_and_per_character_reset(lua):
 
 def test_grace_get_set_retention_and_reset(lua):
     lua.execute('''
-      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==6)
+      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==nil)
       activate()
       loader:setAICValue(1,'RecruitInitialDefenseMonths',0)
       assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==0)
@@ -245,7 +269,7 @@ def test_grace_get_set_retention_and_reset(lua):
       assert(loader:overwriteAIC(1,{RecruitPolicy='WeightedRoles'}))
       assert(backendStates[1].initialDefenseTicks==0)
       loader:resetAIC(1)
-      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==6)
+      assert(loader:getAICValue(1,'RecruitInitialDefenseMonths')==nil)
       assert(loader:getAICValue(1,'RecruitPolicy')=='Native')
     ''')
 
@@ -273,13 +297,20 @@ def test_native_identity_is_independent_of_character_update_order(lua, native_fi
     """Regression for a real cold-load mismatch: Caliph defaults versus zero storage."""
     lua.globals().native_first = native_first
     lua.execute('''
-      local native={configuration=100000,configurationSize=352,configurationLocked=200000,
+      local native={unavailableFeatures={},configuration=100000,configurationSize=352,configurationLocked=200000,
         siegePaymentPolicy=500000,siegePaymentFallback=500080,
         siegeHarassPolicy=500100,siegeHarassMinimum=500200,
         siegeHarassFallback=500300,
         largeSiegePolicy=500400,siegeForceMaximum=500500,
         largeSiegeFallback=500600,
-        game={gameTick=300000},preflightTargets=function()end,
+        patrolOrders=500700,patrolFormation=500800,patrolSpacing=500900,
+        lordHuntRetarget=501000,lordHuntSiege=501100,lordHuntSwitch=501200,lordHuntShare=501300,
+        lordHuntSplit=501400,
+        patrolExtraGroups=502000,patrolMinSize=502100,patrolRadius=502200,siegeScreen=502300,
+        siegeScreenForward=502400,siegeScreenExtraGroups=502500,
+        allySettings=503000,allyFallback=503800,
+        game={gameTick=300000,initialDefenseTicks=300004},
+        admissionTick=function() return 300000 end,
         preflightCombat=function()end,activateCombat=function()end}
       backend.prepare=require('config.backend').new(native).prepare
       local function nativeCaliph() loader:overwriteAIC(6,{TargetChoice='Balanced'}) end

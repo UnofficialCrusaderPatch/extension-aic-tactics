@@ -3,9 +3,11 @@ local targets = require('config.targets')
 local army = require('config.army')
 local raids = require('config.raids')
 local siege = require('config.siege')
-local roles = require('config.roles')
+local attacks = require('config.attacks')
+local lordHunt = require('config.lord-hunt')
+local allies = require('config.allies')
 local M = {fields = {}}
-for _, component in ipairs({recruitment, targets, army, raids, siege, roles}) do
+for _, component in ipairs({recruitment, targets, army, raids, siege, attacks, lordHunt, allies}) do
   for _, field in ipairs(component.fields) do M.fields[#M.fields + 1] = field end
 end
 
@@ -19,31 +21,45 @@ function M.defaults()
   result.AttackPreparation = 'Native'
   for field, value in pairs(raids.defaults()) do result[field] = value end
   for field, value in pairs(siege.defaults()) do result[field] = value end
-  for field, value in pairs(roles.defaults()) do result[field] = value end
+  for field, value in pairs(attacks.defaults()) do result[field] = value end
+  for field, value in pairs(lordHunt.defaults()) do result[field] = value end
+  for field, value in pairs(allies.defaults()) do result[field] = value end
   return result
 end
 
-function M.active(candidate)
+-- Whether the character's 352-byte record carries a policy. The attack
+-- patrol, lord hunt and ally fields live in separate per-AI arrays outside
+-- that record (and outside save admission), so they must not change it.
+function M.recordActive(candidate)
   return candidate.RecruitPolicy == 'WeightedRoles' or targets.active(candidate)
     or candidate.AttackPreparation ~= 'Native'
     or candidate.RaidTargetPolicy ~= 'Native' or candidate.SafeSiegePlacement ~= nil
-    or candidate.CorrectEngineerRoleCounting ~= nil
     or candidate.ActualSiegeResourcePayment ~= nil
     or candidate.CoordinatedSiegeHarassment ~= nil
     or candidate.SiegeHarassMinEngines ~= nil
     or candidate.LargerSiegeForces ~= nil or candidate.SiegeForceMax ~= nil
 end
 
-function M.prepare(previous, spec, readNative, resetting)
-  local authored, compiled = recruitment.prepare(previous, spec, readNative, resetting)
-  local targetAuthored, targetCompiled = targets.prepare(previous, spec, resetting)
-  local armyAuthored, armyCompiled = army.prepare(previous, spec, readNative, resetting)
+function M.active(candidate)
+  return M.recordActive(candidate) or attacks.active(candidate) or lordHunt.active(candidate) or allies.active(candidate)
+end
+
+function M.prepare(previous, spec, readNative, resetting, check)
+  check = check or assert
+  local authored, compiled = recruitment.prepare(previous, spec, readNative, resetting, check)
+  local targetAuthored, targetCompiled = targets.prepare(previous, spec, resetting, check)
+  local armyAuthored, armyCompiled = army.prepare(previous, spec, readNative, resetting, check)
   -- Preparing a second wave requires the deployed army's target to stay fixed.
   -- Preserve the authored Default so switching preparation back restores Native.
   if armyCompiled == 1 and targetCompiled.commitment == 0 then targetCompiled.commitment = 1 end
-  local raidAuthored, raidCompiled = raids.prepare(previous, spec, resetting)
-  local siegeAuthored, siegeCompiled = siege.prepare(previous, spec, resetting)
-  local roleAuthored, roleCompiled = roles.prepare(previous, spec, resetting)
+  local raidAuthored, raidCompiled = raids.prepare(previous, spec, resetting, check)
+  local siegeAuthored, siegeCompiled = siege.prepare(previous, spec, resetting, check)
+  local attackAuthored, attackCompiled = attacks.prepare(previous, spec, resetting, check)
+  local huntAuthored, huntCompiled = lordHunt.prepare(previous, spec, resetting, check)
+  local allyAuthored, allyCompiled = allies.prepare(previous, spec, resetting, check)
+  for field, value in pairs(attackAuthored) do authored[field] = value end
+  for field, value in pairs(huntAuthored) do authored[field] = value end
+  for field, value in pairs(allyAuthored) do authored[field] = value end
   for field, value in pairs(raidAuthored) do authored[field] = value end
   authored.AttackPreparation = armyAuthored.AttackPreparation
   authored.SafeSiegePlacement = siegeAuthored.SafeSiegePlacement
@@ -52,19 +68,20 @@ function M.prepare(previous, spec, readNative, resetting)
   authored.SiegeHarassMinEngines = siegeAuthored.SiegeHarassMinEngines
   authored.LargerSiegeForces = siegeAuthored.LargerSiegeForces
   authored.SiegeForceMax = siegeAuthored.SiegeForceMax
-  authored.CorrectEngineerRoleCounting = roleAuthored.CorrectEngineerRoleCounting
   if spec.ProvocationRules ~= nil and not resetting then
-    local used = targetAuthored.AttackActivation == 'AfterProvocation' or targetAuthored.AttackTargetPolicy == 'LastAggressor'
+    local used = targetAuthored.AttackActivation == 'AfterProvocation'
+      or targetCompiled.policy == 5
     if compiled.mode == 1 then
       for _, row in ipairs(compiled.conditions) do
         used = used or row.requiredFacts % 2 == 1 or row.forbiddenFacts % 2 == 1
       end
     end
-    assert(used, 'ProvocationRules requires AfterProvocation, LastAggressor or a HomeUnderThreat condition')
+    check(used, 'ProvocationRules requires AfterProvocation, LastAggressor or a HomeUnderThreat condition')
   end
   return combine(authored, targetAuthored),
-    {schemaVersion = 9, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
-      raids = raidCompiled, siege = siegeCompiled, roles = roleCompiled}
+    {schemaVersion = 10, recruitment = compiled, targeting = targetCompiled, preparation = armyCompiled,
+      raids = raidCompiled, siege = siegeCompiled, attacks = attackCompiled, lordHunt = huntCompiled,
+      allies = allyCompiled}
 end
 
 function M.copy(candidate)
@@ -77,7 +94,9 @@ function M.copy(candidate)
   result.SiegeHarassMinEngines = candidate.SiegeHarassMinEngines
   result.LargerSiegeForces = candidate.LargerSiegeForces
   result.SiegeForceMax = candidate.SiegeForceMax
-  result.CorrectEngineerRoleCounting = candidate.CorrectEngineerRoleCounting
+  for field, value in pairs(attacks.copy(candidate)) do result[field] = value end
+  for field, value in pairs(lordHunt.copy(candidate)) do result[field] = value end
+  for field, value in pairs(allies.copy(candidate)) do result[field] = value end
   return result
 end
 

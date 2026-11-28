@@ -69,14 +69,23 @@ def resolve(read=get, find=scan, second=scan):
     lua = LuaRuntime()
     lua.globals().root = root.as_posix()
     lua.execute("package.path=root..'/?.lua;'..package.path")
-    lua.globals().core = lua.table_from({'readInteger': read, 'AOBScan': find, 'scanForAOB': second})
-    return dict(lua.execute((root / 'native-layout.lua').read_text()).resolve().items())
+    lua.globals().core = lua.table_from({'readInteger': read, 'uniqueScan': find, 'scanForAOB': second})
+    lua.execute('core.AOBScan=function(pattern) return core.uniqueScan(pattern) or error("AOB not found") end')
+    return dict(lua.execute('''
+      local layout=require('native-layout')
+      local game=layout.resolve()
+      for key,value in pairs(layout.resolveArmy(game)) do game[key]=value end
+      for key,value in pairs(layout.resolveProjectiles()) do game[key]=value end
+      return game
+    ''').items())
 
 
 bound = resolve()
 for name, value in reference_values.items():
     assert bound[name] == value, (name, hex(bound[name]), hex(value))
 contexts = [item for item in scans if item[1] is None]
+# Keep the operand probes in their original context order.
+contexts = [contexts[index] for index in (0,1,2,4,5,3,6,7)]
 assert len(contexts) == 8 and len(scans) == 8
 assert bound['tribeMemberWords'] == (bound['unitCapacity'] + 15) // 16
 
@@ -85,8 +94,9 @@ def resolve_actions(read=get, find=scan, second=scan, byte=None):
     lua = LuaRuntime()
     lua.globals().root = root.as_posix()
     lua.execute("package.path=root..'/?.lua;'..package.path")
-    lua.globals().core = lua.table_from({'readInteger': read, 'AOBScan': find, 'scanForAOB': second,
+    lua.globals().core = lua.table_from({'readInteger': read, 'uniqueScan': find, 'scanForAOB': second,
         'readByte': byte or (lambda address: uc.mem_read(address, 1)[0])})
+    lua.execute('core.AOBScan=function(pattern) return core.uniqueScan(pattern) or error("AOB not found") end')
     return dict(lua.execute((root / 'native-group-actions.lua').read_text()).resolve(lua.table_from(bound)).items())
 
 
@@ -94,8 +104,7 @@ action_bindings = resolve_actions()
 action_contexts = [item for item in scans[len(contexts):] if item[1] is None]
 assert len(action_contexts) == 12
 
-# Establish uniqueness over each supported private image offline. Runtime uses
-# stock UCP's cached first-match API, with the decoded consistency checks below.
+# Check the fixture scanner's uniqueness independently of its Lua proxy.
 for pattern, _, address in contexts + action_contexts:
     assert scan(pattern, address + 1) is None, ('duplicate fixture context', pattern)
 

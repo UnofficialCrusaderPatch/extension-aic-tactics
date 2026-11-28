@@ -23,6 +23,7 @@ struct PlayerCensus {
 extern PlayerCensus combatCensus[9];
 extern unsigned int combatCensusTick;
 extern int combatCensusValid;
+inline bool combatCensusFresh(unsigned int tick) { return combatCensusValid && tick - combatCensusTick <= 1; }
 extern IncidentState incidents[9];
 extern TargetState targetStates[9];
 extern int targetLifecycle[9];
@@ -39,6 +40,8 @@ bool offensiveActionsAllowed(int player);
 bool targetPolicyActive(int player);
 bool committedAttackActive(int player);
 bool readTargetContext(int player, TargetContext& context);
+// The player's census lord while that unit is still alive with the same UID; 0 otherwise.
+int liveCensusLord(int player);
 int __fastcall observedUnitDamage(void* units, void*, int attacker, int victim);
 int __fastcall observedEntityDamage(void* units, void*, int victim, int entity, int third);
 int __fastcall observedFireDamage(void* units, void*, int victim, int owner, int third);

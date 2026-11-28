@@ -11,6 +11,9 @@ CharacterConfiguration configurations[17];
 RecruitmentObservation observations[9];
 int configurationLocked;
 int* legacyWallCounts;
+unsigned char ownerDefenseRows[17][80];
+unsigned char ownerDefenseGroups[17][20][10][11];
+unsigned char ownerRaidTypes[80];
 int defenseTypeCounts[9][80];
 unsigned int defenseCensusTick;
 int defenseCensusValid;
@@ -29,9 +32,6 @@ const unsigned int& Units = nativeBindings.units;
 const unsigned int& Tribes = nativeBindings.tribes;
 template<class T> T& memory(unsigned int address) { return *reinterpret_cast<T*>(address); }
 int& playerValue(int player, unsigned int address) { return memory<int>(address + player * PlayerStride); }
-int aicValue(void* aic, int character, int offset) {
-    return *reinterpret_cast<int*>(static_cast<unsigned char*>(aic) + (character - 1) * 0x2A4 + offset);
-}
 typedef void (__thiscall *PlayerAction)(void*, int);
 typedef int (__thiscall *PlayerQuery)(void*, int);
 typedef int (__thiscall *TwoIntQuery)(void*, int, int);
@@ -154,8 +154,10 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
         if (count > maximum) return false;
         smallest = count > 1;
     } else if (probe.role == RaidRole) {
+        const int ownerType = unitType >= 0 && unitType < 80 ? ownerRaidTypes[unitType] : 0;
+        const int raidType = ownerType ? ownerType : unitType;
         int index = 0;
-        while (index < 20 && memory<int>(nativeBindings.raidTypes + index * 4) != unitType) ++index;
+        while (index < 20 && memory<int>(nativeBindings.raidTypes + index * 4) != raidType) ++index;
         if (index == 20) return false;
         first = index < 1 ? 180 : index < 2 ? 181 : index < 7 ? 182
             : index < 12 ? 183 : index < 15 ? 184 : 185;
@@ -168,8 +170,11 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
             if (count < 1 || count > 10) return false;
             smallest = true;
         } else {
+            const int ai = probe.character - 1;
+            const int ownerRow = unitType >= 0 && unitType < 80 ? ownerDefenseRows[ai][unitType] : 0;
             int index = 0;
-            if (probe.character != 7 && playerValue(player, (nativeBindings.players + 0x3864)) == 1
+            if (ownerRow >= 1 && ownerRow < 20) index = ownerRow;
+            else if (probe.character != 7 && playerValue(player, (nativeBindings.players + 0x3864)) == 1
                 && memory<short>((nativeBindings.players + 0x386E) + player * PlayerStride) > 0
                 && playerValue(player, (nativeBindings.players + 0x30C0)) > 0
                 && (unitType == 22 || unitType == 23 || unitType == 70 || unitType == 72 || unitType == 76)) index = 13;
@@ -178,6 +183,8 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
                 if (index == 20) index = 0;
             }
             count = playerValue(player, (nativeBindings.players + 0x308C) + index * 4);
+            // The game takes the one-slot fallback on the slot count alone, before
+            // it asks for the group count.
             if (count < 1) {
                 first = 1;
                 for (int i = 0; i < 7; ++i)
@@ -185,10 +192,11 @@ bool destinationAvailable(const Probe& probe, int player, int unitType, int beha
                 count = 1;
             } else {
                 first = memory<int>(nativeBindings.defenseSlots + index * 4);
-                if (index == 8 || index == 10 || index == 17) {
-                    const int maximum = aicValue(probe.aic, probe.character, 0x114);
-                    if (count > maximum) count = maximum;
-                }
+                const int maximum = aicValue(probe.aic, probe.character, 0x114);
+                const int ownerGroups = ownerDefenseGroups[ai][index][(count > 10 ? 10 : count) - 1]
+                    [maximum < 0 ? 0 : maximum > 10 ? 10 : maximum];
+                if (ownerGroups) count = ownerGroups - 1;
+                else if ((index == 8 || index == 10 || index == 17) && count > maximum) count = maximum;
                 if (count > (first == 160 ? 6 : 10)) return false;
                 smallest = true;
             }

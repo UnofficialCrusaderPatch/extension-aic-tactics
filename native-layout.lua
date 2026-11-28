@@ -47,12 +47,31 @@ function M.resolve()
       and read(order + 190) == tribes + uid and read(order + 197) == tribes + target,
     'AIC Tactics: inconsistent native army target layout')
 
+  local clearBuildings = unique('building pool',
+    '53 56 8B D9 57 C7 03 00 00 00 00 8D 73 14 BF ? ? ? ? 56 6A 00 68 2C 03 00 00 B9 ? ? ? ? E8 ? ? ? ? 81 C6 2C 03 00 00 83 EF 01 75 E3 5F 5E C7 43 08 ? ? ? ? 5B C3')
+  assert(read(clearBuildings + 15) == 2000 and read(clearBuildings + 53) == 2000,
+    'AIC Tactics: unsupported native building pool layout')
+
+  local unitState = read(order + 176)
+  local result = {units=unitState, unitRecords=unitState + 0x614, unitCapacity=capacity,
+    tribes=tribes, tribeStride=stride, tribeMemberWords=math.ceil(capacity / 16),
+    tribeStance=stance, tribeTargetBuilding=target, tribeTargetBuildingUID=uid,
+    buildings=buildings, buildingCapacity=2000, players=read(order + 124) - 0x2BD8,
+    createTribe=create}
+  for _, value in pairs(result) do
+    assert(type(value) == 'number' and value > 0 and value == math.floor(value),
+      'AIC Tactics: invalid native layout operand')
+  end
+  return result
+end
+
+function M.resolveArmy(game)
+  local read = core.readInteger
   local path = unique('army path layout',
     '8B 44 24 04 69 C0 ? ? ? ? 8B 88 ? ? ? ? 0F BF 80 ? ? ? ? 69 C0 90 04 00 00 8B 90 ? ? ? ? 0F BF 04 55 ? ? ? ? 8B 54 24 08 0F BF 14 55 ? ? ? ? 6A 00 52 50 51 B9 ? ? ? ? E8 ? ? ? ? F7 D8 1B C0 F7 D8 C2 08 00')
-  local unitState = read(order + 176)
-  local records = read(path + 31) - 0xD4
+  local records, stride, tribes = game.unitRecords, game.tribeStride, game.tribes
   assert(read(path + 6) == stride and read(path + 12) == tribes + 0x2C
-      and read(path + 19) == tribes + 0x5A and records == unitState + 0x614,
+      and read(path + 19) == tribes + 0x5A and read(path + 31) == records + 0xD4,
     'AIC Tactics: inconsistent native army/unit layout')
 
   local add = unique('army membership',
@@ -64,11 +83,11 @@ function M.resolve()
       and read(add + 121) == records + 0x2E4 and read(add + 133) == records + 0x2DA,
     'AIC Tactics: inconsistent native membership layout')
 
-  local clearBuildings = unique('building pool',
-    '53 56 8B D9 57 C7 03 00 00 00 00 8D 73 14 BF ? ? ? ? 56 6A 00 68 2C 03 00 00 B9 ? ? ? ? E8 ? ? ? ? 81 C6 2C 03 00 00 83 EF 01 75 E3 5F 5E C7 43 08 ? ? ? ? 5B C3')
-  assert(read(clearBuildings + 15) == 2000 and read(clearBuildings + 53) == 2000,
-    'AIC Tactics: unsupported native building pool layout')
+  return {addUnitToTribe = add, tribePath = path}
+end
 
+function M.resolveProjectiles()
+  local read = core.readInteger
   local clearEntities = unique('projectile pool',
     '53 56 8B D9 57 C7 03 00 00 00 00 8D 73 14 BF ? ? ? ? 56 6A 00 68 E8 00 00 00 B9 ? ? ? ? E8 ? ? ? ? 81 C6 E8 00 00 00 83 EF 01 75 E3 '..
     '8D B3 ? ? ? ? BF 64 00 00 00 EB 03 8D 49 00 56 6A 00 6A 64 B9 ? ? ? ? E8 ? ? ? ? 83 C6 64 83 EF 01 75 E9 5F 5E C7 43 04 ? ? ? ? C7 43 08 19 00 00 00 5B C3')
@@ -84,17 +103,8 @@ function M.resolve()
   assert(read(damageOwner + 39) == teams and read(damageOwner + 63) == entities + 0x2A,
     'AIC Tactics: inconsistent native projectile ownership layout')
 
-  local result = {units=unitState, unitRecords=records, unitCapacity=capacity,
-    tribes=tribes, tribeStride=stride, tribeMemberWords=math.ceil(capacity / 16),
-    tribeStance=stance, tribeTargetBuilding=target, tribeTargetBuildingUID=uid,
-    buildings=buildings, buildingCapacity=2000, players=read(order + 124) - 0x2BD8,
-    createTribe=create, addUnitToTribe=add, tribePath=path,
-    entities=entities, entityCapacity=entityCapacity, teams=teams}
-  for _, value in pairs(result) do
-    assert(type(value) == 'number' and value > 0 and value == math.floor(value),
-      'AIC Tactics: invalid native layout operand')
-  end
-  return result
+  assert(entities > 0 and teams > 0, 'AIC Tactics: invalid projectile layout operand')
+  return {entities = entities, entityCapacity = entityCapacity, teams = teams}
 end
 
 return M

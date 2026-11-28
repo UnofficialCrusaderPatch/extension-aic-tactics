@@ -55,9 +55,8 @@ The native configuration ABI is now 288 bytes per character; Lua and DLL reject
 earlier ABIs. This is an unreleased format change, not a migration
 promise for earlier development saves.
 
-Old saves remain loadable with Native recruitment. A new match initializes empty
-census state. An old save without policy state is rejected when WeightedRoles is
-active; start a new match with that policy. Save/load with the same configuration
+A new match, and a save without policy state, initialize empty census state.
+Save/load with the same configuration
 restores the census instead of skipping a decision while rebuilding it.
 
 Full module/content admission remains a release gate: Map Extensions 1.0.0 does

@@ -1,24 +1,31 @@
-legacyRecruitInterval: 保留 Legacy 招募间隔
-legacyRecruitInterval_descr: '替代 Legacy 的 ai_recruitinterval：Native 个性使用间隔 1，WeightedRoles 仍使用各自的 AIC 间隔。请关闭 Legacy 中的该选项；如果原本未启用，也请关闭此选项。'
-nativeInitialDefenseMonths: Native AI 的初期防御时长
-nativeInitialDefenseMonths_descr: '0–30 个月，默认 6。将 Legacy 初期计时器的原有数值填入此处，然后关闭该 Legacy 选项。WeightedRoles 使用 RecruitInitialDefenseMonths。'
-nativeTargetPolicy: "Native AI 的目标选择"
-nativeTargetPolicy_descr: "替代 Legacy ai_attacktarget。使用新目标规则时，将原选项复制到这里并关闭该 Legacy 选项。Native 保留 TargetChoice。"
-nativeTargetPolicy_native: "现有 TargetChoice"
-nativeTargetPolicy_nearest: "最近"
-nativeTargetPolicy_richest: "最富有"
-nativeTargetPolicy_weakest: "最弱"
-safeSiegePlacement: "保护攻城建造地点的友军"
-safeSiegePlacement_descr: "不会在自己的单位所在位置建造攻城器械。各 AI 的 AIC 设置优先。"
-correctEngineerRoleCounting: "将工程兵计入部队配额"
-correctEngineerRoleCounting_descr: "按当前部队职责统计工程兵。攻城器械乘员和油锅值守人员不计入这些配额。该 AI 的 AIC 设置优先。"
-actualSiegeResourcePayment: "攻城建造需有资源"
-actualSiegeResourcePayment_descr: "建造前检查材料和金币；缺少的材料交由 AI 的常规贸易购买。各 AI 的 AIC 设置优先。"
-coordinatedSiegeHarassment: "协同攻城骚扰"
-coordinatedSiegeHarassment_descr: "先集结攻城器械，再前往不同的可达射击位置。各 AI 的 AIC 设置优先。"
-siegeHarassMinEngines: "攻城骚扰集结数量"
-siegeHarassMinEngines_descr: "出发前等待的器械数量。一个游戏月后派出已有器械；0 表示有一台就出发。"
-largerSiegeForces: "主攻建造更多攻城器械"
-largerSiegeForces_descr: "重复使用该 AI 原有的攻城器械配置，直到达到上限。各 AI 的 AIC 设置优先。"
-siegeForceMax: "每次主攻的器械上限"
-siegeForceMax_descr: "一次主攻最多建造的器械数。0 保留原版的一轮建造；默认 10。"
+patrolOrders: 进攻巡逻编组
+patrolOrders_descr: 当 AI 拥有第二支巡逻队时，命令两支队伍一同发起进攻。
+patrolOrders_all: 出动全部两支进攻巡逻队
+patrolOrders_native: 游戏默认
+patrolFormation: 第二支巡逻队路线
+patrolFormation_descr: 选择第二支巡逻队在进攻时的行进方向。
+patrolFormation_wing: "第一支队伍旁边"
+patrolFormation_mirror: 城堡另一侧
+patrolFormation_native: 游戏默认
+lordHuntRetarget: 进攻庇护玩家领主的城堡
+lordHuntRetarget_descr: 当领主躲进 AI 无法进入的盟友城墙后方时，改攻该盟友城堡。
+patrolFormation_routes: 绕行包抄
+siegeScreen: 在攻城器械旁部署 AI 部队
+siegeScreen_descr: 指派攻城护卫队在攻城器械作业时进行掩护。
+siegeScreen_engineApproach: 护卫攻城器械
+siegeScreen_native: 游戏默认
+siegeTowerCrew: 让 AI 部队登上攻城塔
+siegeTowerCrew_descr: 在 Improved Siegeengines 中启用登塔功能后，让负责掩护攻城器械的部队登上正驶向城墙的攻城塔。
+allyRelief: "派兵支援遇袭盟友"
+allyRelief_descr: "可在盟友界面请求援军，或在城堡遇袭时自动获得支援。"
+allyGoods: "允许 AI 盟友共享物资与金币"
+allyGoods_descr: "可在盟友界面请求金币，同时 AI 盟友也会按需共享物资与金币。"
+ai: AI
+improvements: 改进
+attack_patrols: 进攻巡逻队
+siege_tactics: 攻城护卫与乘员
+ally_help: 盟友援助
+tactics_defaults: 这些选项为默认设置，各 AI 性格可单独覆盖。
+cat_allies_outposts: 盟友与前哨站
+cat_attacks_raids: 进攻与突袭
+cat_siege_crews: 攻城人员与器械

@@ -12,8 +12,9 @@ local facts = {HomeUnderThreat = 1, AttackActive = 2, DefenseIncomplete = 4, Equ
 local roles = {'Defense', 'Raid', 'Attack', 'Sortie'}
 local rowKeys = {When = true, Defense = true, Raid = true, Attack = true, Sortie = true}
 
-local function integer(value, low, high, name)
-  assert(type(value) == 'number' and value == math.floor(value)
+local function integer(value, low, high, name, check)
+  assert(type(value) == 'number', name .. ' must be a number')
+  check(value == math.floor(value)
     and value >= low and value <= high, name .. ' must be an integer from ' .. low .. ' to ' .. high)
   return value
 end
@@ -22,26 +23,27 @@ local function plainTable(value, name)
   assert(type(value) == 'table' and getmetatable(value) == nil, name .. ' must be a plain table')
 end
 
-local function conditions(value)
+local function conditions(value, check)
   plainTable(value, 'RecruitConditions')
   local count = 0
   for key in pairs(value) do
-    integer(key, 1, 8, 'RecruitConditions index')
+    integer(key, 1, 8, 'RecruitConditions index', check)
     count = count + 1
   end
   local authored, compiled = {}, {}
   for index = 1, count do
     local row = value[index]
     plainTable(row, 'RecruitConditions row ' .. index)
-    for key in pairs(row) do assert(rowKeys[key], 'Unknown recruitment row key: ' .. tostring(key)) end
+    for key in pairs(row) do check(rowKeys[key], 'Unknown recruitment row key: ' .. tostring(key)) end
     plainTable(row.When, 'RecruitConditions.When')
     local when, strength, required, forbidden = {}, -1, 0, 0
     for key, item in pairs(row.When) do
       if key == 'Strength' then
-        assert(strengthNumbers[item] ~= nil, 'Strength must be Default, Weak or Strong')
+        assert(type(item) == 'string', 'Strength must be a string')
+        check(strengthNumbers[item] ~= nil, 'Strength must be Default, Weak or Strong')
         strength = strengthNumbers[item]
       else
-        assert(facts[key], 'Unknown recruitment condition: ' .. tostring(key))
+        check(facts[key], 'Unknown recruitment condition: ' .. tostring(key))
         assert(type(item) == 'boolean', key .. ' must be boolean')
         if item then required = required + facts[key] else forbidden = forbidden + facts[key] end
       end
@@ -49,11 +51,11 @@ local function conditions(value)
     end
     local saved, weights, sum = {When = when}, {}, 0
     for roleIndex, role in ipairs(roles) do
-      local weight = integer(row[role], 0, 100, 'RecruitConditions.' .. role)
+      local weight = integer(row[role], 0, 100, 'RecruitConditions.' .. role, check)
       saved[role], weights[roleIndex] = weight, weight
       sum = sum + weight
     end
-    assert(sum == 100, 'RecruitConditions row ' .. index .. ' must total 100')
+    check(sum == 100, 'RecruitConditions row ' .. index .. ' must total 100')
     authored[index] = saved
     compiled[index] = {strength = strength, requiredFacts = required,
       forbiddenFacts = forbidden, weights = weights}
@@ -64,10 +66,11 @@ end
 function M.defaults()
   return {RecruitPolicy = 'Native', RecruitProbSortieDefault = 0,
     RecruitProbSortieWeak = 0, RecruitProbSortieStrong = 0, RecruitConditions = {},
-    DefRecruitComposition = 'Native', RecruitInitialDefenseMonths = 6}
+    DefRecruitComposition = 'Native'}
 end
 
-function M.prepare(previous, spec, readNative, resetting)
+function M.prepare(previous, spec, readNative, resetting, check)
+  check = check or assert
   local candidate = M.defaults()
   for _, field in ipairs(M.fields) do
     if not resetting then
@@ -76,25 +79,39 @@ function M.prepare(previous, spec, readNative, resetting)
     end
   end
   local mode = candidate.RecruitPolicy
-  assert(mode == 'Native' or mode == 'WeightedRoles', 'RecruitPolicy must be Native or WeightedRoles')
-  if mode == 'Native' and not resetting then
-    for index = 2, #M.fields do
-      assert(spec[M.fields[index]] == nil, M.fields[index] .. ' requires RecruitPolicy=WeightedRoles')
-    end
+  assert(type(mode) == 'string', 'RecruitPolicy must be a string')
+  check(mode == 'Native' or mode == 'WeightedRoles', 'RecruitPolicy must be Native or WeightedRoles')
+  -- A sortie share is an explicit request for four-role recruitment. The
+  -- original AIC's three-role rows are still read as authored and must total
+  -- 100 with that share; never scale them silently. Other extension settings
+  -- cannot implicitly replace the native role chooser.
+  if not resetting and spec.RecruitPolicy == nil
+      and (spec.RecruitProbSortieDefault ~= nil or spec.RecruitProbSortieWeak ~= nil
+        or spec.RecruitProbSortieStrong ~= nil) then
+    mode = 'WeightedRoles'
+    candidate.RecruitPolicy = mode
   end
   for _, strength in ipairs(strengths) do
     local field = 'RecruitProbSortie' .. strength
-    integer(candidate[field], 0, 100, field)
+    integer(candidate[field], 0, 100, field, check)
   end
-  integer(candidate.RecruitInitialDefenseMonths, 0, 30, 'RecruitInitialDefenseMonths')
+  local months = candidate.RecruitInitialDefenseMonths
+  if months ~= nil then integer(months, 0, 30, 'RecruitInitialDefenseMonths', check) end
   local rows
-  assert(candidate.DefRecruitComposition == 'Native' or candidate.DefRecruitComposition == 'PreserveSlots',
+  assert(type(candidate.DefRecruitComposition) == 'string', 'DefRecruitComposition must be a string')
+  check(candidate.DefRecruitComposition == 'Native' or candidate.DefRecruitComposition == 'PreserveSlots',
     'DefRecruitComposition must be Native or PreserveSlots')
-  candidate.RecruitConditions, rows = conditions(candidate.RecruitConditions)
+  candidate.RecruitConditions, rows = conditions(candidate.RecruitConditions, check)
+  if mode == 'Native' and not resetting then
+    for index = 2, #M.fields do
+      check(spec[M.fields[index]] == nil, M.fields[index] .. ' requires RecruitPolicy=WeightedRoles')
+    end
+  end
   local compiled = {schemaVersion = M.version, mode = mode == 'Native' and 0 or 1,
     conditions = rows, baseRows = {},
     defenseComposition = candidate.DefRecruitComposition == 'PreserveSlots' and 1 or 0,
-    initialDefenseTicks = candidate.RecruitInitialDefenseMonths * 800}
+    -- Unset follows the native timer (Legacy ai_recruitstate_initialtimer).
+    initialDefenseTicks = months and months * 800}
   if mode == 'WeightedRoles' then
     for index, strength in ipairs(strengths) do
       local weights = {
@@ -102,8 +119,8 @@ function M.prepare(previous, spec, readNative, resetting)
         readNative('RecruitProbAttack' .. strength), candidate['RecruitProbSortie' .. strength],
       }
       local sum = 0
-      for role = 1, 4 do sum = sum + integer(weights[role], 0, 100, strengths[index] .. ' weight') end
-      assert(sum == 100, 'Recruitment ' .. strength .. ' row must total 100')
+      for role = 1, 4 do sum = sum + integer(weights[role], 0, 100, strengths[index] .. ' weight', check) end
+      check(sum == 100, 'Recruitment ' .. strength .. ' row must total 100')
       compiled.baseRows[index] = weights
     end
   end
@@ -114,7 +131,7 @@ end
 function M.copy(candidate)
   local result = {}
   for _, field in ipairs(M.fields) do result[field] = candidate[field] end
-  result.RecruitConditions = conditions(candidate.RecruitConditions)
+  result.RecruitConditions = conditions(candidate.RecruitConditions, assert)
   return result
 end
 

@@ -1,18 +1,14 @@
 {
   "AttackPreparation": "DuringAttack",
-  "AttackTargetPolicy": "LastAggressor",
-  "AttackTargetCommitment": "PerAttack",
-  "AttackActivation": "AfterProvocation",
-  "ProvocationRules": {
-    "ThreatPower": 100,
-    "CombatTicks": 200,
-    "LossPower": 100,
-    "WindowTicks": 800
+  "AttackTargetPolicy": {
+    "Choice": "LastAggressor",
+    "Provocation": {"ThreatPower": 100, "CombatTicks": 200, "LossPower": 100, "WindowTicks": 800}
   },
+  "AttackActivation": "AfterProvocation",
   "RaidTargetPolicy": "Opportunistic",
   "RaidGroupCount": 2,
   "RaidMinGroupSize": 4,
-  "RaidFocus": "Food",
+  "RaidFocus": {"Food": 70},
   "RaidRiskTolerance": "Low",
   "RaidEnemyScope": "AnyEnemy"
 }

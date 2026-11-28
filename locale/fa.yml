@@ -1,24 +1,31 @@
-legacyRecruitInterval: حفظ آهنگ سربازگیری Legacy
-legacyRecruitInterval_descr: 'جایگزین ai_recruitinterval در Legacy می‌شود: شخصیت‌های Native از فاصلهٔ ۱ استفاده می‌کنند. WeightedRoles فاصله‌های AIC را نگه می‌دارد. گزینهٔ Legacy را خاموش کنید؛ اگر قبلاً خاموش بود، این گزینه را هم خاموش بگذارید.'
-nativeInitialDefenseMonths: مدت دفاع اولیه برای هوش مصنوعی Native
-nativeInitialDefenseMonths_descr: '۰ تا ۳۰ ماه؛ پیش‌فرض ۶. مقدار قبلی زمان‌سنج اولیهٔ Legacy را اینجا وارد کنید و آن گزینهٔ Legacy را خاموش کنید. WeightedRoles از RecruitInitialDefenseMonths استفاده می‌کند.'
-nativeTargetPolicy: "انتخاب هدف برای هوش مصنوعی Native"
-nativeTargetPolicy_descr: "جایگزین Legacy ai_attacktarget است. انتخاب آن را اینجا وارد کنید و هنگام استفاده از قواعد هدف‌گیری جدید، آن گزینهٔ Legacy را خاموش کنید. Native تنظیم TargetChoice را حفظ می‌کند."
-nativeTargetPolicy_native: "TargetChoice فعلی"
-nativeTargetPolicy_nearest: "نزدیک‌ترین"
-nativeTargetPolicy_richest: "ثروتمندترین"
-nativeTargetPolicy_weakest: "ضعیف‌ترین"
-safeSiegePlacement: "حفاظت از نیروها هنگام ساخت ادوات محاصره"
-safeSiegePlacement_descr: "روی نیروهای خودی ادوات محاصره نمی‌سازد. مقدار AIC هر هوش مصنوعی اولویت دارد."
-correctEngineerRoleCounting: "شمارش مهندسان در سهمیهٔ نیروها"
-correctEngineerRoleCounting_descr: "مهندسان را بر پایهٔ نقش نظامی کنونی‌شان می‌شمارد. خدمهٔ ادوات محاصره و کارکنان روغن در این سهمیه‌ها حساب نمی‌شوند. مقدار AIC اولویت دارد."
-actualSiegeResourcePayment: "نیاز به منابع برای ساخت ادوات محاصره"
-actualSiegeResourcePayment_descr: "پیش از ساخت، مصالح و طلا را بررسی می‌کند. کمبودها وارد روند معمول خرید هوش مصنوعی می‌شوند. مقدار AIC هر هوش مصنوعی اولویت دارد."
-coordinatedSiegeHarassment: "هماهنگی یورش ادوات محاصره"
-coordinatedSiegeHarassment_descr: "ادوات محاصره را گرد می‌آورد و به مواضع تیراندازی قابل دسترس می‌فرستد. مقدار AIC هر هوش مصنوعی اولویت دارد."
-siegeHarassMinEngines: "حداقل ادوات برای یورش"
-siegeHarassMinEngines_descr: "تعداد ادواتی که پیش از حرکت منتظر می‌مانند. پس از یک ماه بازی، ادوات موجود اعزام می‌شوند؛ ۰ با اولین دستگاه حرکت می‌کند."
-largerSiegeForces: "ادوات بیشتر برای حملهٔ اصلی"
-largerSiegeForces_descr: "ترکیب محاصرهٔ همان هوش مصنوعی را تا سقف تعیین‌شده تکرار می‌کند. مقدار AIC هر هوش مصنوعی اولویت دارد."
-siegeForceMax: "سقف ادوات در حملهٔ اصلی"
-siegeForceMax_descr: "حداکثر ادوات ساخته‌شده در هر حمله. ۰ همان نوبت ساخت اصلی را نگه می‌دارد؛ پیش‌فرض ۱۰ است."
+patrolOrders: گروه‌های گشت حمله
+patrolOrders_descr: هنگامی که هوش مصنوعی گروه گشت دومی دارد، به هر دو گروه فرمان یورش می‌دهد.
+patrolOrders_all: استفاده از هر دو گروه گشت حمله
+patrolOrders_native: پیش‌فرض بازی
+patrolFormation: مسیر گروه گشت دوم
+patrolFormation_descr: انتخاب کنید گروه گشت دوم هنگام حمله به کدام سو برود.
+patrolFormation_wing: "کنار گروه نخست"
+patrolFormation_mirror: سمت مقابل قلعه
+patrolFormation_native: پیش‌فرض بازی
+lordHuntRetarget: حمله به قلعه‌ای که لرد بازیکن را پناه داده است
+lordHuntRetarget_descr: وقتی لرد پشت دیوارهای متحدی پناه می‌گیرد که هوش مصنوعی نمی‌تواند واردش شود، حمله را به آن سو برمی‌گرداند.
+patrolFormation_routes: دور زدن و پاک‌سازی
+siegeScreen: استقرار نیروهای هوش مصنوعی کنار ادوات محاصره
+siegeScreen_descr: گروه‌های پشتیبان را مأمور حفاظت از ادوات محاصره در حین کار می‌کند.
+siegeScreen_engineApproach: همراهی ادوات محاصره
+siegeScreen_native: پیش‌فرض بازی
+siegeTowerCrew: سوار کردن نیروهای هوش مصنوعی در برج‌های محاصره
+siegeTowerCrew_descr: اگر سوار شدن بر برج‌ها در Improved Siegeengines فعال باشد، نیروهای پشتیبان ادوات محاصره را سوار برج‌هایی می‌کند که به سوی دیوار می‌روند.
+allyRelief: "اعزام نیرو به متحدان زیر حمله"
+allyRelief_descr: "در صفحهٔ متحدان درخواست نیرو کنید یا هنگام حمله به قلعه‌تان به‌طور خودکار کمک بگیرید."
+allyGoods: "اشتراک‌گذاری کالا و طلا میان متحدان هوش مصنوعی"
+allyGoods_descr: "در صفحهٔ متحدان درخواست طلا کنید، در حالی که متحدان هوش مصنوعی در صورت نیاز کالا و طلا تقسیم می‌کنند."
+ai: هوش مصنوعی
+improvements: بهبودها
+attack_patrols: گشت‌های حمله
+siege_tactics: همراهی و خدمهٔ محاصره
+ally_help: کمک متحدان
+tactics_defaults: این گزینه‌ها پیش‌فرض‌هایی تعیین می‌کنند که شخصیت هر هوش مصنوعی می‌تواند آن‌ها را بازنویسی کند.
+cat_allies_outposts: متحدان و پایگاه‌های مرزی
+cat_attacks_raids: حمله‌ها و یورش‌ها
+cat_siege_crews: خدمه و تجهیزات محاصره

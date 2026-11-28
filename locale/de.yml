@@ -1,24 +1,31 @@
-legacyRecruitInterval: Legacy-Rekrutierungstakt beibehalten
-legacyRecruitInterval_descr: 'Ersetzt Legacy ai_recruitinterval für Native-Persönlichkeiten: Intervall 1. WeightedRoles nutzt weiterhin die AIC-Intervalle. Die Legacy-Option muss AUS sein. War sie bisher aus, bleibt auch diese Option aus.'
-nativeInitialDefenseMonths: Anfängliche Verteidigungsphase für Native-KIs
-nativeInitialDefenseMonths_descr: '0–30 Monate, Standard 6. Übernimm hier den bisherigen Wert des Legacy-Starttimers und schalte die Legacy-Option aus. Bei WeightedRoles gilt RecruitInitialDefenseMonths.'
-nativeTargetPolicy: "Zielwahl für Native-KIs"
-nativeTargetPolicy_descr: "Ersetzt Legacy ai_attacktarget. Übernimm dessen Auswahl hier und schalte die Legacy-Option bei neuen Zielregeln aus. Native behält TargetChoice bei."
-nativeTargetPolicy_native: "Bisheriges TargetChoice"
-nativeTargetPolicy_nearest: "Nächster Gegner"
-nativeTargetPolicy_richest: "Reichster Gegner"
-nativeTargetPolicy_weakest: "Schwächster Gegner"
-safeSiegePlacement: "Eigene Einheiten beim Belagerungsbau schützen"
-safeSiegePlacement_descr: "Verhindert den Bau von Belagerungsgeräten auf eigenen Einheiten. Der AIC-Wert hat Vorrang."
-correctEngineerRoleCounting: "Ingenieure richtig zählen"
-correctEngineerRoleCounting_descr: "Zählt Ingenieure in ihrem aktuellen Truppenverband. Belagerungsbesatzungen und Öldienst zählen nicht mit. Der AIC-Wert hat Vorrang."
-actualSiegeResourcePayment: "Belagerungsbau nur mit Rohstoffen"
-actualSiegeResourcePayment_descr: "Prüft Rohstoffe und Gold vor dem Bau. Fehlmengen gehen in den normalen KI-Handel. Der AIC-Wert je KI hat Vorrang."
-coordinatedSiegeHarassment: "Belagerungsangriffe koordinieren"
-coordinatedSiegeHarassment_descr: "Belagerungsgeräte sammeln und gemeinsam zu erreichbaren Schusspositionen schicken. Der AIC-Wert je KI hat Vorrang."
-siegeHarassMinEngines: "Mindestzahl für Belagerungsangriffe"
-siegeHarassMinEngines_descr: "So viele Geräte vor dem Aufbruch abwarten. Nach einem Spielmonat starten die vorhandenen; 0 startet mit dem ersten Gerät."
-largerSiegeForces: "Mehr Belagerungsgeräte im Hauptangriff"
-largerSiegeForces_descr: "Wiederholt den eingestellten Gerätemix bis zur Obergrenze. AIC-Werte je KI haben Vorrang."
-siegeForceMax: "Geräte pro Hauptangriff"
-siegeForceMax_descr: "Höchstzahl je Angriff. 0 belässt die native Bauserie; Standard 10."
+patrolOrders: Angriffspatrouillen-Gruppen
+patrolOrders_descr: Schickt beide Gruppen in den Angriff, wenn die KI eine zweite Patrouillengruppe besitzt.
+patrolOrders_all: Beide Angriffspatrouillen einsetzen
+patrolOrders_native: Spielstandard
+patrolFormation: Route der zweiten Patrouille
+patrolFormation_descr: Wähle, wohin die zweite Patrouillengruppe bei einem Angriff zieht.
+patrolFormation_wing: "Neben der ersten Gruppe"
+patrolFormation_mirror: Gegenüberliegende Burgseite
+patrolFormation_native: Spielstandard
+lordHuntRetarget: Die Burg angreifen, die den menschlichen Lord schützt
+lordHuntRetarget_descr: Lenkt den Angriff um, wenn der Lord in der Burg eines Verbündeten Schutz sucht und die KI nicht hineinkommt.
+patrolFormation_routes: Umfassen und aufräumen
+siegeScreen: KI-Truppen neben Belagerungsgeräten aufstellen
+siegeScreen_descr: Teilt Begleittruppen ein, die Belagerungsgeräte während ihres Einsatzes schützen.
+siegeScreen_engineApproach: Belagerungsgeräte eskortieren
+siegeScreen_native: Spielstandard
+siegeTowerCrew: KI-Truppen auf Belagerungstürme schicken
+siegeTowerCrew_descr: Schickt die Begleittruppen auf Belagerungstürme, die zur Mauer fahren, wenn das Einsteigen in Improved Siegeengines erlaubt ist.
+allyRelief: "Truppen an angegriffene Verbündete senden"
+allyRelief_descr: "Fordere im Verbündetenmenü Truppen an oder erhalte automatisch Hilfe, wenn deine Burg angegriffen wird."
+allyGoods: "KI-Verbündete Vorräte und Gold teilen lassen"
+allyGoods_descr: "Fordere im Verbündetenmenü Gold an, während KI-Verbündete bei Bedarf Vorräte und Gold teilen."
+ai: KI
+improvements: Verbesserungen
+attack_patrols: Angriffspatrouillen
+siege_tactics: Belagerungsschutz und Besatzung
+ally_help: Verbündetenhilfe
+tactics_defaults: Diese Einstellungen legen Standardwerte fest, die einzelne KI-Persönlichkeiten überschreiben können.
+cat_allies_outposts: Verbündete und Außenposten
+cat_attacks_raids: Angriffe und Überfälle
+cat_siege_crews: Belagerungstrupps und Gerät

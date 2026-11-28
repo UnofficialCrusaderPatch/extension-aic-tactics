@@ -6,7 +6,8 @@ local M = {fields = {'SafeSiegePlacement', 'ActualSiegeResourcePayment',
 -- remain distinct from a field that was never supplied by the AIC.
 function M.defaults() return {} end
 
-function M.prepare(previous, spec, resetting)
+function M.prepare(previous, spec, resetting, check)
+  check = check or assert
   local value, payment, coordination, minimum, larger, forceMaximum
   if not resetting then
     if previous then value = previous.SafeSiegePlacement end
@@ -31,19 +32,24 @@ function M.prepare(previous, spec, resetting)
     'ActualSiegeResourcePayment must be boolean')
   assert(coordination == nil or type(coordination) == 'boolean',
     'CoordinatedSiegeHarassment must be boolean')
-  assert(minimum == nil or (type(minimum) == 'number' and minimum == math.floor(minimum)
+  assert(minimum == nil or type(minimum) == 'number', 'SiegeHarassMinEngines must be a number')
+  check(minimum == nil or (minimum == math.floor(minimum)
       and minimum >= 0 and minimum <= 20),
     'SiegeHarassMinEngines must be an integer from 0 to 20')
   assert(larger == nil or type(larger) == 'boolean',
     'LargerSiegeForces must be boolean')
-  assert(forceMaximum == nil or (type(forceMaximum) == 'number'
-      and forceMaximum == math.floor(forceMaximum)
-      and forceMaximum >= 0 and forceMaximum <= 20),
-    'SiegeForceMax must be an integer from 0 to 20')
+  assert(forceMaximum == nil or type(forceMaximum) == 'number', 'SiegeForceMax must be a number')
+  check(forceMaximum == nil or (forceMaximum == math.floor(forceMaximum)
+      and forceMaximum >= 0 and forceMaximum <= 64),
+    'SiegeForceMax must be an integer from 0 to 64')
+  local advanced = payment == true or coordination == true or larger == true
+  check(not advanced or value ~= false,
+    'SafeSiegePlacement=false conflicts with enabled advanced siege behavior')
+  local effectiveSafe = advanced and 1 or value == nil and 0 or value and 1 or 2
   return {SafeSiegePlacement = value, ActualSiegeResourcePayment = payment,
       CoordinatedSiegeHarassment = coordination, SiegeHarassMinEngines = minimum,
       LargerSiegeForces = larger, SiegeForceMax = forceMaximum},
-    {value == nil and 0 or value and 1 or 2,
+    {effectiveSafe,
       payment == nil and 0 or payment and 1 or 2,
       coordination == nil and 0 or coordination and 1 or 2,
       minimum == nil and 0 or minimum + 1,

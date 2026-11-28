@@ -120,12 +120,15 @@ void runCombatCases() {
     check(raidUnitPower[1][4*32+2]==100,"raid exposure grid differs");
     at<unsigned int>(Units+id*0x490+0x2E4)=78; countRaidUnit(id,100);
     check(raidGroupCensus[1][0].combatants==1,"recycled raid UID counted");
-    captureIntegrity(0); const unsigned int first=integrityDigest[0], second=integrityDigest[1];
-    captureIntegrity(0);
+    const void* aicRecords = reinterpret_cast<const void*>(nativeBindings.aicRecords);
+    const unsigned int defenseTicks = *reinterpret_cast<const unsigned int*>(nativeBindings.initialDefenseTicks);
+    captureIntegrity(0, defenseTicks, legacyTargetPolicy, aicRecords);
+    const unsigned int first=integrityDigest[0], second=integrityDigest[1];
+    captureIntegrity(0, defenseTicks, legacyTargetPolicy, aicRecords);
     check(first==integrityDigest[0] && second==integrityDigest[1],"observation changed digest");
-    observeIntegrityBoundary(0); captureBoundaryIntegrity();
+    observeIntegrityBoundary(0, defenseTicks, legacyTargetPolicy, aicRecords); captureBoundaryIntegrity();
     check(first==integrityDigest[0] && second==integrityDigest[1],"boundary snapshot digest differs from live state");
-    raidStates[1].retargetPending=15; captureIntegrity(0);
+    raidStates[1].retargetPending=15; captureIntegrity(0, defenseTicks, legacyTargetPolicy, aicRecords);
     check(first!=integrityDigest[0] || second!=integrityDigest[1],"pending raid decision missing from digest");
     captureBoundaryIntegrity();
     check(first==integrityDigest[0] && second==integrityDigest[1],"ending observation changed with the live world");
@@ -210,15 +213,17 @@ void runIntegrityBenchmark()
     // routine consumes this synthetic observation fixture.
     std::memset(raidUnitPower,0x35,sizeof(raidUnitPower));
     std::memset(raidStaticDefenses,0x72,sizeof(raidStaticDefenses));
-    for (int warm=0;warm<100;++warm) observeIntegrityBoundary(0);
+    const void* aicRecords = reinterpret_cast<const void*>(nativeBindings.aicRecords);
+    const unsigned int defenseTicks = *reinterpret_cast<const unsigned int*>(nativeBindings.initialDefenseTicks);
+    for (int warm=0;warm<100;++warm) observeIntegrityBoundary(0, defenseTicks, legacyTargetPolicy, aicRecords);
     for (int sample=0;sample<Samples;++sample) {
         for (int step=0;step<3;++step) {
             const int kind=(sample+step)%3;
             QueryPerformanceCounter(&begin);
             for (int repeat=0;repeat<Batch;++repeat) {
                 if (kind==0) ++baseline;
-                else if (kind==1) observeIntegrityBoundary(0);
-                else captureIntegrity(0);
+                else if (kind==1) observeIntegrityBoundary(0, defenseTicks, legacyTargetPolicy, aicRecords);
+                else captureIntegrity(0, defenseTicks, legacyTargetPolicy, aicRecords);
             }
             QueryPerformanceCounter(&end);
             elapsed[kind][sample]=static_cast<double>(end.QuadPart-begin.QuadPart)

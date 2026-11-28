@@ -6,20 +6,6 @@ config-sparse:
           enabled:
             contents:
               required-value: true
-        ai_recruitinterval:
-          enabled:
-            contents:
-              required-value: false
-        ai_recruitstate_initialtimer:
-          contents:
-            required-value:
-              enabled: false
-              sliderValue: 0
-        ai_attacktarget:
-          contents:
-            required-value:
-              enabled: false
-              choice: ''
   plugins: {}
 meta:
   version: 1.0.0

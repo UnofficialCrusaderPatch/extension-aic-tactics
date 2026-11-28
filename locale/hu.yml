@@ -1,24 +1,31 @@
-legacyRecruitInterval: A Legacy toborzási ütemének megtartása
-legacyRecruitInterval_descr: 'A Legacy ai_recruitinterval beállítását helyettesíti: Native személyiségeknél 1-es időköz. A WeightedRoles az AIC időközeit használja. Kapcsold ki a Legacy beállítását; ha eddig sem használtad, ezt is hagyd kikapcsolva.'
-nativeInitialDefenseMonths: A Native MI-k kezdeti védelmi időszaka
-nativeInitialDefenseMonths_descr: '0–30 hónap, alapérték 6. Másold ide a Legacy kezdeti időzítőjének értékét, majd kapcsold ki azt a Legacy-beállítást. WeightedRoles esetén a RecruitInitialDefenseMonths érvényes.'
-nativeTargetPolicy: "Célválasztás Native MI-knél"
-nativeTargetPolicy_descr: "A Legacy ai_attacktarget helyettesítője. Másold ide a választását, és új célválasztási szabályoknál kapcsold ki azt a Legacy opciót. Native esetén a TargetChoice marad."
-nativeTargetPolicy_native: "Meglévő TargetChoice"
-nativeTargetPolicy_nearest: "Legközelebbi"
-nativeTargetPolicy_richest: "Leggazdagabb"
-nativeTargetPolicy_weakest: "Leggyengébb"
-safeSiegePlacement: "Saját egységek védelme ostromépítéskor"
-safeSiegePlacement_descr: "Nem épít ostromeszközt saját egységekre. Az adott MI AIC-értéke elsőbbséget élvez."
-correctEngineerRoleCounting: "Mérnökök számolása a csapatkeretben"
-correctEngineerRoleCounting_descr: "A mérnököket az aktuális katonai szerepük szerint számolja. Az ostromgépek kezelői és az olajos szolgálat nem töltik fel a csapatkeretet. Az AIC értéke elsőbbséget élvez."
-actualSiegeResourcePayment: "Ostromépítés csak fedezettel"
-actualSiegeResourcePayment_descr: "Építés előtt ellenőrzi az anyagokat és az aranyat. A hiány a szokásos MI-kereskedéshez kerül. Az egyes MI-k AIC-értéke elsőbbséget élvez."
-coordinatedSiegeHarassment: "Ostromgépek összehangolt bevetése"
-coordinatedSiegeHarassment_descr: "Összegyűjti az ostromgépeket, majd elérhető tüzelőállásokba küldi őket. Az egyes MI-k AIC-értéke elsőbbséget élvez."
-siegeHarassMinEngines: "Bevetéshez várt ostromgépek"
-siegeHarassMinEngines_descr: "Ennyi gépre vár indulás előtt. Egy játékbeli hónap után a meglévőket küldi; 0 az első géppel indul."
-largerSiegeForces: "Több ostromgép a fő támadáshoz"
-largerSiegeForces_descr: "A beállított ostromgép-összetételt ismétli a felső határig. Az egyes MI-k AIC-értéke elsőbbséget élvez."
-siegeForceMax: "Ostromgépek fő támadásonként"
-siegeForceMax_descr: "Egy támadásban építhető gépek felső határa. A 0 megtartja az eredeti egyszeri építést; alapérték: 10."
+patrolOrders: Támadó járőrcsoportok
+patrolOrders_descr: Mindkét csoportot rohamra küldi, ha az MI rendelkezik második járőrcsoporttal.
+patrolOrders_all: Mindkét támadó járőrcsoport bevetése
+patrolOrders_native: Játék alapértelmezése
+patrolFormation: Második járőr útvonala
+patrolFormation_descr: Válaszd ki, merre induljon a második járőrcsoport támadáskor.
+patrolFormation_wing: "Az első csoport mellett"
+patrolFormation_mirror: A vár túloldala
+patrolFormation_native: Játék alapértelmezése
+lordHuntRetarget: A játékos lordját bújtató vár megtámadása
+lordHuntRetarget_descr: Átirányítja a támadást, ha a lord egy szövetséges falai mögött rejtőzik, ahová az MI nem jut be.
+patrolFormation_routes: Körbejárás és tisztogatás
+siegeScreen: MI-csapatok állítása ostromgépek mellé
+siegeScreen_descr: Fedezőcsapatokat rendel a működő ostromgépek védelmére.
+siegeScreen_engineApproach: Ostromgépek kísérése
+siegeScreen_native: Játék alapértelmezése
+siegeTowerCrew: MI-csapatok ültetése ostromtornyokba
+siegeTowerCrew_descr: A fedezőcsapatokat a falak felé tartó ostromtornyokra küldi, ha a beszállás engedélyezve van az Improved Siegeengines modulban.
+allyRelief: "Csapatok küldése támadás alatt álló szövetségeseknek"
+allyRelief_descr: "Kérj csapatokat a szövetségesek képernyőjén, vagy kapj automatikus segítséget, ha megtámadják a váradat."
+allyGoods: "Az MI-szövetségesek osszanak meg nyersanyagot és aranyat"
+allyGoods_descr: "Kérj aranyat a szövetségesek képernyőjén, miközben az MI-szövetségesek szükség szerint nyersanyagot és aranyat is megosztanak."
+ai: MI
+improvements: Fejlesztések
+attack_patrols: Támadó járőrök
+siege_tactics: Ostromkíséret és személyzet
+ally_help: Szövetségesi segítség
+tactics_defaults: Ezek alapértelmezéseket állítanak be, amelyeket az egyes MI-személyiségek felülírhatnak.
+cat_allies_outposts: Szövetségesek és előőrsök
+cat_attacks_raids: Támadások és portyák
+cat_siege_crews: Ostromlegénység és -felszerelés

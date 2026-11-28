@@ -1,24 +1,31 @@
-legacyRecruitInterval: Conserver le rythme de recrutement Legacy
-legacyRecruitInterval_descr: 'Remplace ai_recruitinterval de Legacy pour les personnalités Native : intervalle 1. WeightedRoles conserve les intervalles AIC. Désactivez l’option Legacy ; laissez celle-ci désactivée si vous ne l’utilisiez pas.'
-nativeInitialDefenseMonths: Période de défense initiale des IA Native
-nativeInitialDefenseMonths_descr: '0–30 mois, 6 par défaut. Recopiez ici la durée initiale de Legacy, puis désactivez cette option Legacy. WeightedRoles utilise RecruitInitialDefenseMonths.'
-nativeTargetPolicy: "Cible des IA Native"
-nativeTargetPolicy_descr: "Remplace Legacy ai_attacktarget. Recopiez son choix ici et désactivez cette option Legacy pour les nouvelles règles de ciblage. Native conserve TargetChoice."
-nativeTargetPolicy_native: "TargetChoice existant"
-nativeTargetPolicy_nearest: "Plus proche"
-nativeTargetPolicy_richest: "Plus riche"
-nativeTargetPolicy_weakest: "Plus faible"
-safeSiegePlacement: "Protéger les unités lors d’un siège"
-safeSiegePlacement_descr: "Évite de construire sur ses propres unités. La valeur AIC de chaque IA prévaut."
-correctEngineerRoleCounting: "Compter les ingénieurs dans les quotas"
-correctEngineerRoleCounting_descr: "Compte les ingénieurs selon leur rôle militaire actuel. Les servants de siège et les préposés à l’huile ne remplissent pas ces quotas. La valeur AIC prévaut."
-actualSiegeResourcePayment: "Exiger les ressources pour le siège"
-actualSiegeResourcePayment_descr: "Vérifie les matériaux et l’or avant la construction. Les manques passent par le commerce normal de l’IA. La valeur AIC de chaque IA prime."
-coordinatedSiegeHarassment: "Coordonner le harcèlement de siège"
-coordinatedSiegeHarassment_descr: "Rassemble les engins et les envoie vers des positions de tir accessibles. La valeur AIC de chaque IA prime."
-siegeHarassMinEngines: "Engins à rassembler"
-siegeHarassMinEngines_descr: "Nombre d’engins attendus avant le départ. Après un mois de jeu, les engins disponibles partent ; 0 lance le premier."
-largerSiegeForces: "Plus d’engins pour l’assaut principal"
-largerSiegeForces_descr: "Répète la composition de siège de cette IA jusqu’à sa limite. La valeur AIC de chaque IA prime."
-siegeForceMax: "Engins par assaut principal"
-siegeForceMax_descr: "Maximum construit pour un assaut. 0 conserve la seule série native ; valeur par défaut : 10."
+patrolOrders: Groupes de patrouille d’attaque
+patrolOrders_descr: Lance les deux groupes à l’assaut lorsque l’IA dispose d’un second groupe de patrouille.
+patrolOrders_all: Utiliser les deux groupes de patrouille d’attaque
+patrolOrders_native: Par défaut du jeu
+patrolFormation: Itinéraire de la seconde patrouille
+patrolFormation_descr: Choisissez où se dirige le second groupe de patrouille pendant une attaque.
+patrolFormation_wing: "À côté du premier groupe"
+patrolFormation_mirror: Côté opposé du château
+patrolFormation_native: Par défaut du jeu
+lordHuntRetarget: Attaquer le château abritant le seigneur humain
+lordHuntRetarget_descr: Redirige l’attaque lorsque le seigneur s’abrite derrière les murs d’un allié inaccessibles à l’IA.
+patrolFormation_routes: Contourner et balayer
+siegeScreen: Poster les troupes IA près des engins de siège
+siegeScreen_descr: Affecte des groupes d’escorte à la protection des engins de siège pendant leur utilisation.
+siegeScreen_engineApproach: Escorter les engins
+siegeScreen_native: Par défaut du jeu
+siegeTowerCrew: Embarquer les troupes IA dans les tours de siège
+siegeTowerCrew_descr: Fait monter les troupes d’escorte dans les tours de siège en route vers les murs si l’embarquement est activé dans Improved Siegeengines.
+allyRelief: "Envoyer des troupes aux alliés attaqués"
+allyRelief_descr: "Demandez des troupes sur l’écran des alliés ou recevez de l’aide automatiquement lorsque votre château est attaqué."
+allyGoods: "Laisser les alliés IA partager vivres et or"
+allyGoods_descr: "Demandez de l’or sur l’écran des alliés tandis que les alliés IA partagent vivres et or selon les besoins."
+ai: IA
+improvements: Améliorations
+attack_patrols: Patrouilles d’attaque
+siege_tactics: Escorte et équipages de siège
+ally_help: Aide des alliés
+tactics_defaults: Ces choix définissent des valeurs par défaut que chaque personnalité d’IA peut remplacer.
+cat_allies_outposts: Alliés et avant-postes
+cat_attacks_raids: Attaques et raids
+cat_siege_crews: Équipes et engins de siège

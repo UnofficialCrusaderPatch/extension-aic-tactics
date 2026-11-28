@@ -44,7 +44,7 @@ def check(identity):
     lua.globals().tribes = 0x1F9AFC0 if 'Extreme' in path.name else 0x1667F78
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
-      core={AOBScan=aob,readByte=read_byte,readInteger=read_integer}
+      core={AOBScan=function(pattern) return aob(pattern) or error('AOB not found') end,readByte=read_byte,readInteger=read_integer}
       local game=require('native-layout').resolve()
       game.mapRows=1;game.gameState=1
       sites=require('native-siege-bindings').resolve(game)
@@ -52,6 +52,7 @@ def check(identity):
       assert(core.readByte(sites.siegePlacementCall)==0xE8)
       assert(core.readByte(sites.siegeAssaultBatchCall)==0xE8)
       assert(sites.siegeAssaultBatch>0)
+      clear=require('native-siege-bindings').resolveGroupMove(game).clearGroupMoveFlags
     ''')
     return {'variant': path.name, 'sha256': identity['sha256'][:8],
             'placementCall': hex(lua.globals().sites['siegePlacementCall']),
@@ -62,7 +63,8 @@ def check(identity):
             'anglePostPlace': hex(lua.globals().sites['siegeAnglePostPlace']),
             'placementFail': hex(lua.globals().sites['siegePlacementFail']),
             'resourceCheck': hex(lua.globals().sites['siegeResourceCheck']),
-            'tentPointX': hex(lua.globals().sites['siegeTentPointX'])}
+            'tentPointX': hex(lua.globals().sites['siegeTentPointX']),
+            'clearGroupMoveFlags': hex(lua.globals().clear)}
 
 
 if __name__ == '__main__':

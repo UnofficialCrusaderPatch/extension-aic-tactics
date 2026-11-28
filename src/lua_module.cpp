@@ -1,12 +1,23 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "aic_tactics/runtime.hpp"
+#include "aic_tactics/patrols.hpp"
+#include "aic_tactics/groups.hpp"
+#include "aic_tactics/lord_hunt.hpp"
+#include "aic_tactics/allies.hpp"
+#include "aic_tactics/diagnostics.hpp"
 
 typedef char ConfigurationABI[sizeof(AicTactics::SHC141::CharacterConfiguration) == 352 ? 1 : -1];
 typedef char ReserveABI[sizeof(AicTactics::SHC141::ReserveState) == 196 ? 1 : -1];
 typedef char RaidABI[sizeof(AicTactics::SHC141::RaidState) == 96 ? 1 : -1];
 typedef char IncidentABI[sizeof(AicTactics::IncidentState) == 2632 ? 1 : -1];
+typedef char DetachedGroupABI[sizeof(AicTactics::SHC141::DetachedGroup) == 48 ? 1 : -1];
+typedef char PatrolRouteABI[sizeof(AicTactics::SHC141::PatrolRoute) == 36 ? 1 : -1];
 typedef char CombatCensusABI[sizeof(AicTactics::SHC141::PlayerCensus) == 48 ? 1 : -1];
+typedef char LordHuntABI[sizeof(AicTactics::SHC141::LordHuntState) == 68 ? 1 : -1];
+typedef char LordHuntCensusABI[sizeof(AicTactics::SHC141::LordHuntCensus) == 1544 ? 1 : -1];
+typedef char AllyStateABI[sizeof(AicTactics::SHC141::AllyState) == 260 ? 1 : -1];
+typedef char AllyBindingsABI[sizeof(AicTactics::SHC141::AllyBindings) == 56 ? 1 : -1];
 
 // The bridge only publishes addresses. These stable Lua C API calls use the
 // host's lua.dll; no Lua VM or allocator is embedded in the module.
@@ -37,17 +48,31 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         "isReserveUnit", "recruitWithReserve", "reserveRecruitType", "reserveGroupOwner", "reserveGroupUID",
         "raidStates", "raidStateSize", "raidGroupCensus", "raidUnitPower", "raidStaticDefenses",
         "raidBuildingCensusTick", "raidBuildingCensusValid", "resetRaidBuildingCensus",
-        "countRaidBuilding", "completeRaidBuildingCensus", "integrityDigest", "captureIntegrity",
-        "observeIntegrityBoundary", "captureBoundaryIntegrity", "nativeBindings", "nativeBindingsSize",
+        "countRaidBuilding", "completeRaidBuildingCensus", "integrityDigest", "captureIntegrityWithIdentity",
+        "observeIntegrityBoundaryWithIdentity", "captureBoundaryIntegrity", "nativeBindings", "nativeBindingsSize",
         "safePlacementFallback", "checkedSiegeTile", "siegePlacementPolicyEnabled",
         "siegeTentCandidateAllowed", "failedSiegeTent", "placeSiegeTentAndRecoverEngineers",
         "engineerRoleFallback", "countableEngineerRole", "siegePaymentFallback",
         "siegePaymentPolicy", "siegeResourceAdmission", "siegePaymentEnabledForGoldOffset",
         "siegeHarassFallback", "siegeHarassMinimumFallback", "siegeHarassPolicy",
         "siegeHarassMinimum", "siegeHarassPlans", "siegeHarassPlanSize",
-        "suppressNativeSiegeHarassMove", "largeSiegeFallback",
+        "suppressNativeSiegeHarassMove", "siegeCatapultRange",
+        "largeSiegeFallback",
         "siegeForceMaximumFallback", "largeSiegePolicy", "siegeForceMaximum",
-        "buildLargerSiegeForce"};
+        "buildLargerSiegeForce", "patrolOrders", "patrolFormation", "patrolSpacing",
+        "dispatchAttackPatrols", "patrolOrdersFallback", "patrolFormationFallback",
+        "patrolSpacingFallback", "detachedGroups", "detachedGroupSize",
+        "lordHuntRetarget", "lordHuntSiege", "lordHuntSwitch", "lordHuntShare", "lordHuntSplit",
+        "lordHuntRetargetFallback", "lordHuntSiegeFallback", "lordHuntSwitchFallback",
+        "lordHuntShareFallback", "lordHuntSplitFallback", "lordHunts", "lordHuntStateSize",
+        "lordHuntCensus", "lordHuntCensusSize", "lordHuntUnits",
+        "patrolExtraGroups", "patrolMinSize", "patrolRadius", "siegeScreen", "siegeScreenForward",
+        "patrolExtraGroupsFallback", "patrolMinSizeFallback", "patrolRadiusFallback",
+        "siegeScreenFallback", "siegeScreenForwardFallback", "patrolRoutes", "patrolRouteSize",
+        "screenSiegeDefenceMove", "siegeScreenExtraGroups", "siegeScreenExtraGroupsFallback",
+        "allyBindings", "allyBindingsSize", "allySettings", "allyFallback", "allyStates", "allyStateSize",
+        "allyGoldRequestAllowed", "allyGoldRequestCommand", "allyGateHeld", "diagnosticsLog",
+        "ownerDefenseRows", "ownerDefenseGroups", "ownerRaidTypes"};
     const unsigned int values[] = {
         reinterpret_cast<unsigned int>(configurations), sizeof(CharacterConfiguration),
         reinterpret_cast<unsigned int>(observations), sizeof(RecruitmentObservation),
@@ -98,11 +123,56 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_aicTactics(lua_State* state
         reinterpret_cast<unsigned int>(siegeHarassMinimum),
         reinterpret_cast<unsigned int>(siegeHarassPlans), sizeof(SiegeHarassPlan),
         reinterpret_cast<unsigned int>(&suppressNativeSiegeHarassMove),
+        reinterpret_cast<unsigned int>(&siegeCatapultRange),
         reinterpret_cast<unsigned int>(&largeSiegeFallback),
         reinterpret_cast<unsigned int>(&siegeForceMaximumFallback),
         reinterpret_cast<unsigned int>(largeSiegePolicy),
         reinterpret_cast<unsigned int>(siegeForceMaximum),
-        reinterpret_cast<unsigned int>(&buildLargerSiegeForce)};
+        reinterpret_cast<unsigned int>(&buildLargerSiegeForce),
+        reinterpret_cast<unsigned int>(patrolOrders),
+        reinterpret_cast<unsigned int>(patrolFormation),
+        reinterpret_cast<unsigned int>(patrolSpacing),
+        reinterpret_cast<unsigned int>(&dispatchAttackPatrols),
+        reinterpret_cast<unsigned int>(&patrolOrdersFallback),
+        reinterpret_cast<unsigned int>(&patrolFormationFallback),
+        reinterpret_cast<unsigned int>(&patrolSpacingFallback),
+        reinterpret_cast<unsigned int>(detachedGroups), sizeof(DetachedGroup),
+        reinterpret_cast<unsigned int>(lordHuntRetarget),
+        reinterpret_cast<unsigned int>(lordHuntSiege),
+        reinterpret_cast<unsigned int>(lordHuntSwitch),
+        reinterpret_cast<unsigned int>(lordHuntShare),
+        reinterpret_cast<unsigned int>(lordHuntSplit),
+        reinterpret_cast<unsigned int>(&lordHuntRetargetFallback),
+        reinterpret_cast<unsigned int>(&lordHuntSiegeFallback),
+        reinterpret_cast<unsigned int>(&lordHuntSwitchFallback),
+        reinterpret_cast<unsigned int>(&lordHuntShareFallback),
+        reinterpret_cast<unsigned int>(&lordHuntSplitFallback),
+        reinterpret_cast<unsigned int>(lordHunts), sizeof(LordHuntState),
+        reinterpret_cast<unsigned int>(lordHuntCensus), sizeof(LordHuntCensus),
+        reinterpret_cast<unsigned int>(lordHuntUnits),
+        reinterpret_cast<unsigned int>(patrolExtraGroups),
+        reinterpret_cast<unsigned int>(patrolMinSize),
+        reinterpret_cast<unsigned int>(patrolRadius),
+        reinterpret_cast<unsigned int>(siegeScreen),
+        reinterpret_cast<unsigned int>(siegeScreenForward),
+        reinterpret_cast<unsigned int>(&patrolExtraGroupsFallback),
+        reinterpret_cast<unsigned int>(&patrolMinSizeFallback),
+        reinterpret_cast<unsigned int>(&patrolRadiusFallback),
+        reinterpret_cast<unsigned int>(&siegeScreenFallback),
+        reinterpret_cast<unsigned int>(&siegeScreenForwardFallback),
+        reinterpret_cast<unsigned int>(patrolRoutes), sizeof(PatrolRoute),
+        reinterpret_cast<unsigned int>(&screenSiegeDefenceMove),
+        reinterpret_cast<unsigned int>(siegeScreenExtraGroups),
+        reinterpret_cast<unsigned int>(&siegeScreenExtraGroupsFallback),
+        reinterpret_cast<unsigned int>(&allyBindings), sizeof(AllyBindings),
+        reinterpret_cast<unsigned int>(allySettings), reinterpret_cast<unsigned int>(allyFallback),
+        reinterpret_cast<unsigned int>(allyStates), sizeof(AllyState),
+        reinterpret_cast<unsigned int>(&allyGoldRequestAllowed),
+        reinterpret_cast<unsigned int>(&allyGoldRequestCommand),
+        reinterpret_cast<unsigned int>(&allyGateHeld), reinterpret_cast<unsigned int>(&diagnosticsLog),
+        reinterpret_cast<unsigned int>(ownerDefenseRows), reinterpret_cast<unsigned int>(ownerDefenseGroups),
+        reinterpret_cast<unsigned int>(ownerRaidTypes)};
+    typedef char ExportCount[sizeof(names) / sizeof(names[0]) == sizeof(values) / sizeof(values[0]) ? 1 : -1];
     createTable(state, 0, sizeof(names) / sizeof(names[0]));
     for (unsigned int i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         pushNumber(state, values[i]);

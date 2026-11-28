@@ -1,24 +1,31 @@
-legacyRecruitInterval: Сохранить темп найма Legacy
-legacyRecruitInterval_descr: 'Заменяет ai_recruitinterval из Legacy: для личностей Native используется интервал 1. WeightedRoles сохраняет интервалы AIC. Отключите опцию Legacy; если она уже была отключена, оставьте эту опцию выключенной.'
-nativeInitialDefenseMonths: Начальный период обороны для ИИ Native
-nativeInitialDefenseMonths_descr: '0–30 месяцев, по умолчанию 6. Перенесите сюда прежнее значение начального таймера Legacy и отключите эту настройку Legacy. Для WeightedRoles действует RecruitInitialDefenseMonths.'
-nativeTargetPolicy: "Выбор цели для Native ИИ"
-nativeTargetPolicy_descr: "Заменяет Legacy ai_attacktarget. Перенесите его выбор сюда и отключите эту опцию Legacy для новых правил выбора цели. Native сохраняет TargetChoice."
-nativeTargetPolicy_native: "Исходный TargetChoice"
-nativeTargetPolicy_nearest: "Ближайший"
-nativeTargetPolicy_richest: "Самый богатый"
-nativeTargetPolicy_weakest: "Самый слабый"
-safeSiegePlacement: "Защищать войска при осадном строительстве"
-safeSiegePlacement_descr: "Не строит осадные машины поверх своих войск. Значение AIC каждого ИИ имеет приоритет."
-correctEngineerRoleCounting: "Учитывать инженеров в квотах войск"
-correctEngineerRoleCounting_descr: "Учитывает инженеров по их текущей военной роли. Расчёты осадных машин и работа с маслом не заполняют эти квоты. Значение AIC имеет приоритет."
-actualSiegeResourcePayment: "Требовать ресурсы для осады"
-actualSiegeResourcePayment_descr: "Перед постройкой проверяет материалы и золото. Недостающее поступает в обычную торговую очередь ИИ. Значение AIC каждого ИИ имеет приоритет."
-coordinatedSiegeHarassment: "Согласованный рейд осадных машин"
-coordinatedSiegeHarassment_descr: "Собирает осадные машины и отправляет их на доступные огневые позиции. Значение AIC каждого ИИ имеет приоритет."
-siegeHarassMinEngines: "Число машин для рейда"
-siegeHarassMinEngines_descr: "Сколько машин ждать перед выходом. Через игровой месяц отправляются имеющиеся; 0 — выход с первой машиной."
-largerSiegeForces: "Больше осадных машин в главной атаке"
-largerSiegeForces_descr: "Повторяет заданный состав осадных машин до указанного предела. Значение AIC каждого ИИ имеет приоритет."
-siegeForceMax: "Машин на главную атаку"
-siegeForceMax_descr: "Максимум машин за одну атаку. 0 сохраняет один обычный цикл строительства; по умолчанию 10."
+patrolOrders: Группы атакующего патруля
+patrolOrders_descr: Отправляет в штурм обе группы, если у ИИ есть вторая патрульная группа.
+patrolOrders_all: Использовать обе группы атакующего патруля
+patrolOrders_native: По умолчанию
+patrolFormation: Маршрут второго патруля
+patrolFormation_descr: Выберите, куда направляется вторая патрульная группа во время атаки.
+patrolFormation_wing: "Рядом с первой группой"
+patrolFormation_mirror: Противоположная сторона замка
+patrolFormation_native: По умолчанию
+lordHuntRetarget: Атаковать замок, укрывающий лорда игрока
+lordHuntRetarget_descr: Перенаправляет атаку, когда лорд укрывается за стенами союзника, куда ИИ не может войти.
+patrolFormation_routes: Обход и зачистка
+siegeScreen: Выставлять войска ИИ рядом с осадными орудиями
+siegeScreen_descr: Отряды прикрытия охраняют осадные орудия, пока те используются.
+siegeScreen_engineApproach: Сопровождать осадные орудия
+siegeScreen_native: По умолчанию
+siegeTowerCrew: Сажать войска ИИ на осадные башни
+siegeTowerCrew_descr: Отряды прикрытия садятся на осадные башни, идущие к стенам, если в Improved Siegeengines включена посадка на башни.
+allyRelief: "Отправлять войска союзникам, которых атакуют"
+allyRelief_descr: "Запрашивайте войска на экране союзников или получайте помощь автоматически при нападении на ваш замок."
+allyGoods: "Разрешить союзному ИИ делиться припасами и золотом"
+allyGoods_descr: "Запрашивайте золото на экране союзников. Союзный ИИ по мере необходимости делится припасами и золотом."
+ai: ИИ
+improvements: Улучшения
+attack_patrols: Атакующие патрули
+siege_tactics: Прикрытие и экипажи осадных орудий
+ally_help: Помощь союзников
+tactics_defaults: Эти настройки задают значения по умолчанию, которые отдельные личности ИИ могут переопределять.
+cat_allies_outposts: Союзники и аванпосты
+cat_attacks_raids: Атаки и набеги
+cat_siege_crews: Осадные расчёты и техника

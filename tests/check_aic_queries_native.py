@@ -71,9 +71,12 @@ lua=LuaRuntime()
 g=lua.globals();g.root=root.as_posix()
 lua.execute("package.path=root..'/?.lua;'..package.path")
 g.core=lua.table_from({'readInteger':get,'readByte':lambda address:uc.mem_read(address,1)[0],
-    'AOBScan':scan,'scanForAOB':scan})
+    'uniqueScan':scan,'scanForAOB':scan})
+lua.execute('core.AOBScan=function(pattern) return core.uniqueScan(pattern) or error("AOB not found") end')
 lua.execute("""
-game=require('native-layout').resolve()
+local layout=require('native-layout')
+      game=layout.resolve()
+      for key,value in pairs(layout.resolveArmy(game)) do game[key]=value end
 for k,v in pairs(require('native-group-actions').resolve(game)) do game[k]=v end
 for k,v in pairs(require('native-recruitment').resolve(game)) do game[k]=v end
 """)
@@ -87,15 +90,15 @@ for pattern,_,address in contexts:
 sites={pattern:address for pattern,_,address in contexts}
 negative=0
 for pattern,_,address in contexts:
-    g.core.AOBScan=lambda pat:None if pat==pattern else sites[pat]
+    g.core.uniqueScan=lambda pat:None if pat==pattern else sites[pat]
     g.core.scanForAOB=lambda *args: None
     try:owner.resolve(g.game)
     except Exception as error:assert 'AIC Tactics:' in str(error)
     else:raise AssertionError(('absent',pattern))
     negative+=1
-g.core.AOBScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
+g.core.uniqueScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
 for index,offset in [(1,22),(1,27),(2,12),(2,289),(3,22),(4,2),(4,44),
-                     (5,13),(5,118),(6,30),(7,142),(8,46)]:
+                     (5,3),(5,108),(6,30),(7,142),(8,46)]:
     target=contexts[index][2]+offset
     g.core.readInteger=lambda address:0 if address==target else get(address)
     try:owner.resolve(g.game)
@@ -180,7 +183,7 @@ print(json.dumps(result))
 
 if a.combat_output:
     for k,v in bound.items():g.game[k]=v
-    g.core.AOBScan=scan;g.core.scanForAOB=scan
+    g.core.uniqueScan=scan;g.core.scanForAOB=scan
     clock=lua.eval("(require('config.grace'))").resolveNative()
     g.game.gameTick=clock.gameTick
     start=len(scans)
@@ -191,13 +194,13 @@ if a.combat_output:
     sites={pattern:address for pattern,_,address in contexts}
     negative=0
     for pattern,_,address in contexts:
-        g.core.AOBScan=lambda pat:None if pat==pattern else sites[pat]
+        g.core.uniqueScan=lambda pat:None if pat==pattern else sites[pat]
         g.core.scanForAOB=lambda *args: None
         try:combat_owner.resolve(g.game)
         except Exception as error:assert 'AIC Tactics:' in str(error)
         else:raise AssertionError(('combat','absent',pattern))
         negative+=1
-    g.core.AOBScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
+    g.core.uniqueScan=sites.__getitem__;g.core.scanForAOB=lambda *_:None
     for index,offset in [(0,18),(0,86),(0,326),(1,25),(2,132),(2,226),(3,84),
             (4,122),(4,160),(5,49),(6,19),(6,28),(7,22),(7,27),(7,127),(8,28),
             (9,96),(10,71),(12,3),(12,11),(12,127),(13,1),(14,33),(15,19),

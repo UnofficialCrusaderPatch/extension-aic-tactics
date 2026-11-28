@@ -79,7 +79,22 @@ g.utils=lua.table_from({'itob':itob})
 g.core=lua.table_from({'writeCode':write,'AOBScan':scan,'scanForAOB':scan,'allocateCode':allocate,'allocate':allocate,
     'calculateCodeSize':size,'readInteger':get,'readByte':lambda address:uc.mem_read(address,1)[0],
     'getRelativeAddress':lambda address,target,offset:target-address+offset})
-lua.execute('core.relTo=function(target,offset)return function(address)return utils.itob(target-address+offset)end end')
+lua.execute('''
+core.relTo=function(target,offset)return function(address)return utils.itob(target-address+offset)end end
+local function branch(opcode,target)
+  return function(address) return {opcode, utils.itob(target-address-5)} end
+end
+core.callTo=function(target) return branch(0xE8,target) end
+core.jmpTo=function(target) return branch(0xE9,target) end
+core.AOBScan=function(pattern) return core.uniqueScan(pattern) or error("AOB not found") end
+ERROR=1; warnings={}
+function log(level,message) if level==ERROR then warnings[#warnings+1]=message end end
+''')
+def unique_scan(pattern):
+    found=scan(pattern)
+    if found is None: return None,'not found'
+    return found
+g.core.uniqueScan=unique_scan
 assembly_count=0
 def assemble(source,symbols):
     global assembly_count
@@ -100,6 +115,7 @@ package.path=root..'/?.lua;'..package.path
 modules={aicloader={getNativeAICLayout=function()
   return {version=1,address=owner.getAIStartAddress(1),characters=16,stride=676}
 end}}
+assert(owner.resolve())
 local recruitment=require('native-recruitment')
 local resolveRecruitment=recruitment.resolve
 recruitment.resolve=function(game)
@@ -108,13 +124,6 @@ recruitment.resolve=function(game)
   markRecruitment()
   return result
 end
-local bindings=require('native-bindings')
-local resolve=bindings.resolve
-bindings.resolve=function()
-  assert(preparedGame==nil, 'module load must resolve once')
-  preparedGame=resolve()
-  return preparedGame
-end
 configFinal={}
 ''')
 # Execute the actual module entry point during load, before any Legacy enable.
@@ -122,49 +131,57 @@ before_allocation=allocation
 before_storage=bytes(uc.mem_read(0x3051000,256))
 before_contexts=len(scan_log)
 module=lua.execute((Path(g.root)/'init.lua').read_text())
-assert g.preparedGame is not None and allocation==before_allocation
+assert len(scan_log)==before_contexts and allocation==before_allocation
 assert bytes(uc.mem_read(0x3051000,256))==before_storage
 assert lua.eval("package.loaded['aicTactics.dll']==nil")
-for pattern,start,address in list(scan_log[before_contexts:]):
-    assert start is None
-    assert scan(pattern,address+1) is None, ('duplicate fixture context',pattern)
-target_context=next(pattern for pattern,start,address in scan_log
-                    if start is None and address==g.preparedGame.selectAttackTarget)
 persistent_path=a.legacy.parent.parent/'persistent-state.lua'
 persistent=lua.execute(persistent_path.read_text()).new() if persistent_path.exists() else None
 port=lua.execute(a.legacy.read_text());port.init(port,lua.table());port.enable(port,lua.table(),persistent)
 assault_path=a.legacy.with_name('ai_assaultswitch.lua')
 assault=lua.execute(assault_path.read_text())
 assault.init(assault,lua.table());assault.enable(assault,lua.table())
-assert scan(target_context) is None, 'Legacy must reproduce the former late-resolution failure'
 reset_site=port.ai_defense_reset_edit;count_site=port.ai_defense_count_edit
 original={reset_site:bytes(uc.mem_read(reset_site,5)),count_site:bytes(uc.mem_read(count_site,6))}
 wall_hook=port.ai_defense_check_edit+5+get(port.ai_defense_check_edit+1);wall_counts=get(wall_hook+7)
 before_enable_scans=scan_count
 lua.execute('''
+local bindings=require('native-bindings')
+preparedGame=bindings.resolve()
+bindings.requireBindings(preparedGame, {'AICLayout', 'Grace', 'Layout', 'Interval', 'Target'})
 package.loaded['aicTactics.dll']={configurationSize=352,configuration=0x3050000,
-  nativeBindings=0x3051000,nativeBindingsSize=300,
+  nativeBindings=0x3051000,nativeBindingsSize=368,allyBindings=0x3052000,allyBindingsSize=56,
   resetDefenseCensus=0x3070000,countDefenseUnit=0x3070020}
 native=require('native').new(preparedGame)
-native.preflightCombat();native.preflightTargets();native.preflightRaids()
+native.preflightCombat();native.preflightRaids()
+assert(next(native.unavailableFeatures)==nil,warnings[1])
+bindings.publish(native)
 ''')
-assert scan_count==before_enable_scans, 'Enable must consume load-phase bindings without rescanning'
+assert scan_count>before_enable_scans
+after_preflight_scans=scan_count
+lua.execute('native.preflightCombat();native.preflightRaids()')
+assert scan_count==after_preflight_scans, 'Preflight must reuse startup binding results'
 assert get(0x3051000+54*4)==g.preparedGame.selectAttackTarget
 # Exercise every production context against absence. Captured
 # addresses only avoid repeating private-fixture scans for negative cases.
 recruitment_contexts=[item for item in scan_log[recruitment_scan_range[0]:recruitment_scan_range[1]] if item[1] is None]
-assert len(recruitment_contexts)==11
+assert len(recruitment_contexts)==10
+prefix=next(item for item in scan_log if item[1] is None
+            and item[2]==g.preparedGame.recruitmentInterval-97)
+recruitment_contexts.insert(6,prefix)
 context_sites={pattern:address for pattern,_,address in recruitment_contexts}
 resolver=lua.eval("require('native-recruitment')")
 negative=0
+# Exercise resolution without the retained identity address for this probe.
+interval=g.native.game.recruitmentInterval
+g.native.game.recruitmentInterval=None
 for pattern,_,address in recruitment_contexts:
-    g.core.AOBScan=lambda pat: None if pat==pattern else context_sites[pat]
+    g.core.uniqueScan=lambda pat: None if pat==pattern else context_sites[pat]
     g.core.scanForAOB=lambda *args: None
     try:resolver.resolve(g.native.game)
     except Exception as error:assert 'AIC Tactics:' in str(error)
     else:raise AssertionError(('absent',pattern))
     negative+=1
-g.core.AOBScan=context_sites.__getitem__;g.core.scanForAOB=lambda *_:None
+g.core.uniqueScan=context_sites.__getitem__;g.core.scanForAOB=lambda *_:None
 # Decoded caller identity, roots, structure strides, cleanup branches and ABI.
 for index,offset in [(1,14),(1,19),(1,30),(1,46),(2,43),(3,18),(3,181),
                      (3,269),(4,175),(5,20),(6,17),(7,15),(7,51),(8,12),(10,2)]:
@@ -174,7 +191,8 @@ for index,offset in [(1,14),(1,19),(1,30),(1,46),(2,43),(3,18),(3,181),
     except Exception as error:assert 'AIC Tactics:' in str(error)
     else:raise AssertionError(('operand',index,offset))
     negative+=1
-g.core.readInteger=get;g.core.AOBScan=scan;g.core.scanForAOB=scan
+g.native.game.recruitmentInterval=interval
+g.core.readInteger=get;g.core.uniqueScan=unique_scan;g.core.scanForAOB=scan
 # Validate all bytes and operands of the unchanged owner's three trampolines.
 legacy_negative=0
 for site,length in [(wall_hook,16),(reset_site+5+get(reset_site+1),25),(count_site+5+get(count_site+1),40)]:
@@ -316,7 +334,7 @@ for player in range(1,9):
             opportunity_cases+=1
 
 result={'variant':a.variant,'cases':cases,'contexts':11,'negativeResolutionCases':negative,
-    'loadBeforeLegacyEnable':True,'enableScans':0,
+    'requireScans':0,'postLegacyScanCalls':after_preflight_scans-before_enable_scans,
     'legacyAssaultSwitchSHA256':hashlib.sha256(assault_path.read_bytes()).hexdigest(),
     'legacyAssaultSwitchCases':assault_cases,
     'negativeLegacyTrampolineCases':legacy_negative,'repeatPreflightScans':0,
@@ -327,27 +345,30 @@ result={'variant':a.variant,'cases':cases,'contexts':11,'negativeResolutionCases
 print(json.dumps(result))
 
 if a.combat:
-    # Every occupied patch byte and redirected scheduler call must be rejected
-    # before allocating/writing a combat hook.
+    # Every occupied patch byte and redirected scheduler call leaves its
+    # feature off with one error, before allocating/writing a combat hook.
+    lua.execute('warnings={}')
     hooks=g.native.game.combatSites
+    off=g.native.unavailableFeatures
+    def left_off(preflight,key,case):
+        before=assembly_count
+        preflight()
+        assert assembly_count==before,case
+        assert off[key] and len(g.warnings)==1 and 'is off' in g.warnings[1],case
+        for name in list(off.keys()):off[name]=None
+        lua.execute('warnings={}')
     occupied_cases=0
     for name,pattern in g.native.game.combatOriginals.items():
-        preflight=g.native.preflightTargets if name=='targetChoice' else g.native.preflightRaids if name.startswith('building') else g.native.preflightCombat
+        key='Raids' if name.startswith('building') else 'Combat'
         for offset in range(len(pattern.split())):
             address=hooks[name]+offset;old=bytes(uc.mem_read(address,1))
             uc.mem_write(address,bytes([old[0]^1]))
-            before=assembly_count
-            try:preflight()
-            except Exception as error:assert 'AIC Tactics:' in str(error)
-            else:raise AssertionError(('occupied',name,offset))
+            try:left_off(g.native['preflight'+key],key,('occupied',name,offset))
             finally:uc.mem_write(address,old)
-            assert assembly_count==before
             occupied_cases+=1
     for name,target in g.native.game.combatCalls.items():
         address=hooks[name]+1;old=get(address);put(address,old+1)
-        try:g.native.preflightCombat()
-        except Exception as error:assert 'AIC Tactics:' in str(error)
-        else:raise AssertionError(('redirected',name))
+        try:left_off(g.native.preflightCombat,'Combat',('redirected',name))
         finally:put(address,old)
         occupied_cases+=1
     # Reuse the same reference image, actual Lua assembler and register oracle.
@@ -446,42 +467,20 @@ if a.combat:
     (a.output/'combat-result.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result))
 
-    # Compare explicit replacement policies to the real, unchanged Legacy port
-    # through the native selection loop's comparison and stack updates.
+    # AIC writes no target-choice code; it reads Legacy's applied choice back.
     target_port=lua.execute(a.legacy.with_name('ai_attacktarget.lua').read_text())
     choice_site=hooks.targetChoice
     original_choice=pe.get_data(choice_site-base,5)
+    assert g.native.legacyTargetChoice()==0
     policy_cases=0
-    for choice in ('Nearest','Richest','Weakest'):
-        uc.mem_write(choice_site,original_choice)
-        target_port.init(target_port,lua.table_from({'choice':choice.lower()}))
+    for number,choice in enumerate(('nearest','richest','weakest'),1):
+        target_port.init(target_port,lua.table_from({'choice':choice}))
         target_port.enable(target_port,lua.table())
-        legacy_patch=bytes(uc.mem_read(choice_site,5))
-        uc.mem_write(choice_site,original_choice)
-        candidate=lua.table_from({'game':game,'legacyTargetPolicy':0x306F100})
-        lua.eval("require('combat-native').attach")(candidate)
-        candidate.enableNativeTargetPolicy(choice)
-        replacement=bytes(uc.mem_read(choice_site,5))
-        for configured in range(5):
-            for flags in (0x202,0x247,0xA92):
-                results=[]
-                for patch in (legacy_patch,replacement):
-                    uc.mem_write(choice_site,patch);uc.ctl_remove_cache(choice_site,choice_site+5)
-                    initial=[configured,0x98765432,0x12345678,0x10203040,
-                        game.players+0x39F4+0x50C,2,0,0x308F000,flags]
-                    frame=bytearray(64)
-                    uc.mem_write(initial[7],bytes(frame));put(initial[7]+0x10,10000)
-                    put(initial[7]+0x18,1000000)
-                    put(initial[4],300)
-                    for register,value in zip(registers,initial):uc.reg_write(register,value)
-                    uc.emu_start(choice_site,game.selectAttackTarget+0x1C7,count=100)
-                    results.append(([uc.reg_read(register) for register in registers],
-                        bytes(uc.mem_read(initial[7],64))))
-                assert results[0]==results[1],(choice,configured,flags,results)
-                policy_cases+=1
+        assert g.native.legacyTargetChoice()==number,choice
         uc.mem_write(choice_site,original_choice);uc.ctl_remove_cache(choice_site,choice_site+5)
+        policy_cases+=1
     policy_result={'variant':a.variant,'cases':policy_cases,
         'legacySHA256':hashlib.sha256(a.legacy.with_name('ai_attacktarget.lua').read_bytes()).hexdigest(),
-        'scope':'Actual Legacy target-policy patch versus actual AIC FASM/native selection loop; no active-game acceptance'}
+        'scope':'Actual Legacy target-policy patch read back by AIC; no active-game acceptance'}
     (a.output/'target-policy-result.json').write_text(json.dumps(policy_result,indent=2)+'\n')
     print(json.dumps(policy_result))

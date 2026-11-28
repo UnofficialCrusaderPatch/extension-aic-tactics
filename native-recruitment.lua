@@ -8,7 +8,7 @@ local signatures = {
   rangedSortie = '55 57 8B 7C 24 0C 8B E9 8B CF 69 C9 F4 39 00 00 8B 81 ? ? ? ? 85 C0 0F 84 01 01 00 00 83 C0 FF 69 C0 A4 02 00 00 53 8D 1C 28 56 8B B3 4C 01 00 00 85 F6 0F 8C E3 00 00 00 8B 81 ? ? ? ? 99 2B C2 D1 F8 03 C6 39 81 ? ? ? ? 0F 8D CA 00 00 00 83 B9 ? ? ? ? 00 0F 8E BD 00 00 00 83 B9 ? ? ? ? 00 0F 84 B0 00 00 00 8B 83 50 01 00 00 83 F8 1E 0F 84 A1 00 00 00 83 F8 1D 0F 84 98 00 00 00 83 F8 05 0F 84 8F 00 00 00 83 F8 46 7D 08 8B 89 ? ? ? ? EB 06 8B 89 ? ? ? ? 85 C9 74 78 83 F8 46 6A 00 57 51 50 B9 ? ? ? ? 7D 07 E8 ? ? ? ? EB 05 E8 ? ? ? ? 8B F0 85 F6 75 2D 8B 83 9C 00 00 00 85 C0 7E 4D 83 3D ? ? ? ? 02 75 44 69 FF 7D 0E 00 00 03 3D ? ? ? ? 5E 5B 89 04 BD ? ? ? ? 5F 5D C2 04 00 8B C6 69 C0 90 04 00 00 68 A6 00 00 00 57 8B CD 66 C7 80 ? ? ? ? 06 00 E8 ? ? ? ? 50 56 B9 ? ? ? ? E8 ? ? ? ? 5E 5B 5F 5D C2 04 00',
   meleeSortie = '55 57 8B 7C 24 0C 8B E9 8B CF 69 C9 F4 39 00 00 8B 81 ? ? ? ? 85 C0 0F 84 F4 00 00 00 83 C0 FF 69 C0 A4 02 00 00 53 8D 1C 28 8B 83 54 01 00 00 85 C0 0F 8C D8 00 00 00 39 81 ? ? ? ? 0F 8D CC 00 00 00 83 B9 ? ? ? ? 00 0F 8E BF 00 00 00 83 B9 ? ? ? ? 00 0F 84 B2 00 00 00 8B 83 58 01 00 00 83 F8 1E 0F 84 A3 00 00 00 83 F8 1D 0F 84 9A 00 00 00 83 F8 05 0F 84 91 00 00 00 83 F8 46 7D 08 8B 89 ? ? ? ? EB 06 8B 89 ? ? ? ? 85 C9 74 7A 83 F8 46 56 6A 00 57 51 50 B9 ? ? ? ? 7D 07 E8 ? ? ? ? EB 05 E8 ? ? ? ? 8B F0 85 F6 75 2D 8B 83 9C 00 00 00 85 C0 7E 4D 83 3D ? ? ? ? 02 75 44 69 FF 7D 0E 00 00 03 3D ? ? ? ? 5E 5B 89 04 BD ? ? ? ? 5F 5D C2 04 00 8B C6 69 C0 90 04 00 00 68 A7 00 00 00 57 8B CD 66 C7 80 ? ? ? ? 07 00 E8 ? ? ? ? 50 56 B9 ? ? ? ? E8 ? ? ? ? 5E 5B 5F 5D C2 04 00',
   scheduler = '57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 57 8B CB E8 ? ? ? ? 39 3D ? ? ? ? 0F 85 ? ? ? ?',
-  recruitmentPrefix = '83 EC 14 53 56 8B 74 24 20 69 F6 F4 39 00 00 8B 86 ? ? ? ? 33 DB 3B C3 8B D1 89 54 24 10 0F 84 ? ? ? ? 32 C9 83 3D ? ? ? ? 03 57 89 5C 24 0C 8D 78 FF 75 14 83 3D ? ? ? ? 01 75 0B 83 3D ? ? ? ? 02 75 02 B1 01 8B C7 69 C0 A9 00 00 00 55 8B AE ? ? ? ? 03 E8 89 44 24 20 8B 84 AA 64 01 00 00 8B E8 F7 DD 1B ED 83 C5 02',
+  recruitmentPrefix = '83 EC 14 53 56 8B 74 24 20 69 F6 F4 39 00 00 8B 86 ? ? ? ? 33 DB 3B C3 8B D1 89 54 24 10 0F 84 ? ? ? ? 32 C9 83 3D ? ? ? ? 03 57 89 5C 24 0C 8D 78 FF 75 14 83 3D ? ? ? ? 01 75 0B 83 3D ? ? ? ? 02 75 02 B1 01 8B C7 69 C0 A9 00 00 00 55 8B AE ? ? ? ? 03 E8 89 44 24 20 ? ? ? ? ? ? ? 8B E8 F7 DD 1B ED 83 C5 02',
   opportunity = '83 86 ? ? ? ? 01 39 86 ? ? ? ? 0F 8C ? ? ? ? 39 9E ? ? ? ? 89 9E ? ? ? ? 0F 8E ? ? ? ? 39 9E ? ? ? ? 0F 84 ? ? ? ? 8B 86 ? ? ? ? 85 C0 75 44 8B C7 69 C0 A4 02 00 00 84 C9 8B 84 10 70 01 00 00',
   wallCheck = '3B 91 80 01 00 00 50 8B CF 7C 07 E8 ? ? ? ? EB 28 E8 ? ? ? ? EB 21',
   wallReset = '8B FF 3B CA 89 90 78 05 00 00 89 10 89 90 7C 05 00 00 89 90 80 05 00 00 89 90 84 05 00 00 89 90 D0 0D 00 00 89 90 D8 0D 00 00 89 50 EC 89 50 F0 89 50 3C 89 90 60 0E 00 00 89 50 40',
@@ -18,12 +18,18 @@ local signatures = {
 -- Discovery runs during module load. Legacy's census/check patches are outside
 -- these contexts; legacyCounter checks their complete installed trampolines
 -- before they are consumed or chained during activation.
+-- Legacy may replace the seven interval-load bytes before our enable.
+function M.resolveInterval()
+  return context.find('recruitment interval', signatures.recruitmentPrefix) + 97
+end
+
 function M.resolve(game)
   local sites = {}
-  for _, name in ipairs({'moatVacancies','moatRecruitment','moatGroup','rangedSortie','meleeSortie','scheduler','recruitmentPrefix',
+  for _, name in ipairs({'moatVacancies','moatRecruitment','moatGroup','rangedSortie','meleeSortie','scheduler',
       'opportunity','wallCheck','wallReset','wallCount'}) do
     sites[name] = context.find(name, signatures[name])
   end
+  sites.recruitmentPrefix = (game.recruitmentInterval or M.resolveInterval()) - 97
   local function operand(site, offset, expected)
     assert(core.readInteger(site + offset) == expected,
       'AIC Tactics: incompatible native recruitment operand')

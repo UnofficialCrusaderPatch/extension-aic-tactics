@@ -32,11 +32,10 @@ bool enabled(int player)
         && configurations[character - 1].preparation == PrepareDuringAttack;
 }
 
-int aicValue(void* aic, int player, int offset)
+int playerAicValue(void* aic, int player, int offset)
 {
     const int character = field(player, (nativeBindings.players + 0x2300));
-    if (character < 2 || character > 17) return 0;
-    return *reinterpret_cast<int*>(static_cast<unsigned char*>(aic) + (character - 1) * 0x2A4 + offset);
+    return character >= 2 && character <= 17 ? aicValue(aic, character, offset) : 0;
 }
 
 bool validGroup(const ReserveGroup& group, int player)
@@ -81,7 +80,7 @@ int size(const ReserveGroup& group, int player)
 int combatLimit(void* aic, int player)
 {
     // The native writer already applied the selected Legacy growth/cap and RNG.
-    const __int64 desired = static_cast<__int64>(aicValue(aic, player, 0x1F4)) + field(player, (nativeBindings.players + 0x38A0));
+    const __int64 desired = static_cast<__int64>(playerAicValue(aic, player, 0x1F4)) + field(player, (nativeBindings.players + 0x38A0));
     return desired <= 0 ? 0 : desired > nativeBindings.unitCapacity ? static_cast<int>(nativeBindings.unitCapacity) : static_cast<int>(desired);
 }
 
@@ -89,7 +88,7 @@ int roleLimit(void* aic, int player, int role)
 {
     const int offsets[11] = {0x23C,0x244,0x250,0x24C,0x254,0x258,0x260,0x26C,0x278,0x280,0x298};
     if (role < 10 || role > 20) return 0;
-    int result = aicValue(aic, player, offsets[role - 10]);
+    int result = playerAicValue(aic, player, offsets[role - 10]);
     if (role == 10) {
         const __int64 wave = static_cast<__int64>(field(player, (nativeBindings.players + 0x3924))) * 4;
         if (wave < result) result = wave <= 0 ? 0 : static_cast<int>(wave);
@@ -106,10 +105,10 @@ bool destinationRoom(void* aic, int player, int role)
     }
     if (!count) return false;
     int configured = 1;
-    if (role == 16) configured = aicValue(aic, player, 0x264);
-    if (role == 17) configured = aicValue(aic, player, 0x270);
-    if (role == 19) configured = aicValue(aic, player, 0x284);
-    if (role == 20) configured = aicValue(aic, player, 0x29C);
+    if (role == 16) configured = playerAicValue(aic, player, 0x264);
+    if (role == 17) configured = playerAicValue(aic, player, 0x270);
+    if (role == 19) configured = playerAicValue(aic, player, 0x284);
+    if (role == 20) configured = playerAicValue(aic, player, 0x29C);
     if (configured < 1) configured = 1;
     if (configured > count) return false;
     for (int index = first; index < first + configured; ++index) {

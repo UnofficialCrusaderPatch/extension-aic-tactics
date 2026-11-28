@@ -5,13 +5,15 @@
 namespace AicTactics { namespace SHC141 {
 CharacterConfiguration configurations[17];
 NativeBindings nativeBindings;
+int siegeHarassPolicy[17];
+int siegeHarassFallback;
 }}
 
 using namespace AicTactics::SHC141;
 
 namespace {
 unsigned char players[9 * 0x39F4 + 0x2304];
-unsigned char units[4 * 0x490];
+unsigned char units[80 * 0x490];
 unsigned char tiles[0x23D7E0 + 80400 * 2];
 unsigned char tribes[1250 * 0x334];
 unsigned char buildings[5 * 0x32C + 0x14];
@@ -101,7 +103,7 @@ int __fastcall countEngines(void*, void*, int player)
 int __fastcall indexedCrew(void*, void*, int tribe, int index)
 {
     assert(tribe == 2 && index >= 0 && index < 64);
-    return index % 2 ? 3 : 2;
+    return index + 2;
 }
 
 void setShort(unsigned char* memory, unsigned int offset, short value)
@@ -121,7 +123,7 @@ int main()
     std::memset(tiles, 0, sizeof(tiles));
     nativeBindings.players = reinterpret_cast<unsigned int>(players);
     nativeBindings.unitRecords = reinterpret_cast<unsigned int>(units);
-    nativeBindings.unitCapacity = 4;
+    nativeBindings.unitCapacity = 80;
     nativeBindings.siegeTileOccupancyOffset = 0x23D7E0;
     nativeBindings.originalSiegeTileCheck = reinterpret_cast<unsigned int>(&originalTile);
     nativeBindings.siegeTileMap = reinterpret_cast<unsigned int>(tiles);
@@ -261,11 +263,15 @@ int main()
     setShort(units, 2 * 0x490 + 0x96, 1);
     setShort(units, 2 * 0x490 + 0x42A, 10);
     setShort(units, 2 * 0x490 + 0x2D8, 2);
+    setInt(units, 2 * 0x490 + 0x3C8, 100);
+    setInt(units, 2 * 0x490 + 0x2E4, 77);
     setShort(units, 3 * 0x490 + 0x8E, 30);
     setShort(units, 3 * 0x490 + 0x8C, 2);
     setShort(units, 3 * 0x490 + 0x96, 1);
     setShort(units, 3 * 0x490 + 0x42A, 10);
     setShort(units, 3 * 0x490 + 0x2D8, 2);
+    setInt(units, 3 * 0x490 + 0x3C8, 100);
+    setInt(units, 3 * 0x490 + 0x2E4, 77);
     crewMembers[0] = 2;
     crewMembers[1] = 3;
     setShort(tribes, 0x334 + 0x5C, 2);
@@ -284,7 +290,8 @@ int main()
     assert(placeSiegeTentAndRecoverEngineers(0, 0, 1, 190, 60, 15) == 0);
     assert(placeCalls == 3 && popCalls == 2 && addCalls == 2);
 
-    // A two-entry native composition can be reused up to the per-AI cap.
+    // A two-entry native composition can be reused while eligible engineers
+    // remain; a higher cap cannot create crews from nothing.
     // A complete batch with no successful construction stops immediately.
     setInt(players, 0x39F4 + 0x3924, 1);
     setInt(aicRecords, 0x214, 39);
@@ -292,12 +299,12 @@ int main()
     setInt(aicRecords, 0x21C, 0);
     largeSiegeFallback = 0;
     largeSiegePolicy[1] = 1;
-    siegeForceMaximum[1] = 6; // Explicit cap of five.
+    siegeForceMaximum[1] = 6; // Explicit cap of six.
     placeResult = 1;
     batchCalls = 0;
     const int before = placeCalls;
     buildLargerSiegeForce(0, 0, 1);
-    assert(batchCalls == 3 && placeCalls - before == 5);
+    assert(batchCalls == 1 && placeCalls - before == 2);
     largeSiegePolicy[1] = 2;
     batchCalls = 0;
     buildLargerSiegeForce(0, 0, 1);
@@ -308,10 +315,15 @@ int main()
     buildLargerSiegeForce(0, 0, 2);
     assert(batchCalls == 1); // Player two has no authored siege composition.
     largeSiegePolicy[1] = 1;
-    siegeForceMaximum[1] = 1; // Explicit zero means one native batch.
+    siegeForceMaximum[1] = 1; // Explicit cap of one.
     batchCalls = 0;
     buildLargerSiegeForce(0, 0, 1);
     assert(batchCalls == 1);
+    setShort(tribes, 2 * 0x334 + 0x5C, 0);
+    batchCalls = 0;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 0); // No source crew must not trigger a native batch.
+    setShort(tribes, 2 * 0x334 + 0x5C, 2);
     siegeForceMaximum[1] = 6;
     placeResult = 0;
     batchCalls = 0;
@@ -325,12 +337,12 @@ int main()
     batchCalls = 0;
     const int withPending = placeCalls;
     buildLargerSiegeForce(0, 0, 1);
-    assert(batchCalls == 2 && placeCalls - withPending == 4);
+    assert(batchCalls == 1 && placeCalls - withPending == 2);
     nativeEngineCount = 1;
     batchCalls = 0;
     const int withActive = placeCalls;
     buildLargerSiegeForce(0, 0, 1);
-    assert(batchCalls == 2 && placeCalls - withActive == 3);
+    assert(batchCalls == 1 && placeCalls - withActive == 2);
     nativeEngineCount = 0;
     setShort(tribes, 2 * 0x334 + 0x5C, 2);
     setShort(units, 2 * 0x490 + 0x2D8, 2);
@@ -341,6 +353,25 @@ int main()
     assert(batchCalls == 1 && addCalls == beforeRestore + 1);
     assert(*reinterpret_cast<short*>(units + 2 * 0x490 + 0x2D8) == 2);
     orphanMode = false;
+    // Fifty living attack engineers admit fifty successful engines without a
+    // new global default cap. The native batch still chooses each engine.
+    setShort(buildings, 0x14 + 0x32C + 0xD0, 3);
+    siegeForceMaximum[1] = 1;
+    setShort(tribes, 2 * 0x334 + 0x5C, 50);
+    for (int id = 2; id < 52; ++id) {
+        setShort(units, id * 0x490 + 0x8C, 2);
+        setShort(units, id * 0x490 + 0x8E, 30);
+        setShort(units, id * 0x490 + 0x96, 1);
+        setShort(units, id * 0x490 + 0x42A, 10);
+        setShort(units, id * 0x490 + 0x2D8, 2);
+        setInt(units, id * 0x490 + 0x2E4, 77);
+        setInt(units, id * 0x490 + 0x3C8, 100);
+    }
+    batchCalls = 0;
+    const int beforeFifty = placeCalls;
+    buildLargerSiegeForce(0, 0, 1);
+    assert(batchCalls == 25 && placeCalls - beforeFifty == 50);
+    setShort(tribes, 2 * 0x334 + 0x5C, 2);
     for (int id = 1249; id > 0; id -= 8)
         setShort(tribes, id * 0x334 + 0x40, 2);
     batchCalls = 0;

@@ -10,13 +10,28 @@ def state():
     lua.execute('''
       package.path=root..'/?.lua;'..package.path
       memory,writes={},0
-      native={configurationSize=352,configuration=10000,defenseTypeCounts=20000,
+      native={configurationSize=352,configuration=10000,defenseTypeCounts=20000,unavailableFeatures={},
         siegePaymentPolicy=190200,siegePaymentFallback=190300,
         siegeHarassFallback=190400,siegeHarassMinimumFallback=190404,
         siegeHarassPolicy=190500,siegeHarassMinimum=190600,
         siegeHarassPlans=190700,siegeHarassPlanSize=36,
         largeSiegeFallback=191100,siegeForceMaximumFallback=191104,
         largeSiegePolicy=191200,siegeForceMaximum=191300,
+        patrolOrders=191400,patrolFormation=191500,patrolSpacing=191600,
+        patrolOrdersFallback=191700,patrolFormationFallback=191704,patrolSpacingFallback=191708,
+        detachedGroups=200000,detachedGroupSize=48,
+        lordHuntRetarget=4000000,lordHuntSiege=4000100,lordHuntSwitch=4000200,
+        lordHuntShare=4000300,lordHuntSplit=4000400,
+        lordHuntRetargetFallback=4000500,lordHuntSiegeFallback=4000504,lordHuntSwitchFallback=4000508,
+        lordHuntShareFallback=4000512,lordHuntSplitFallback=4000516,
+        lordHunts=4001000,lordHuntStateSize=68,lordHuntCensus=4002000,lordHuntCensusSize=1544,
+        lordHuntUnits=4020000,
+        patrolExtraGroups=191800,patrolMinSize=191900,patrolRadius=192000,siegeScreen=192100,
+        siegeScreenForward=192200,patrolExtraGroupsFallback=192300,patrolMinSizeFallback=192304,
+        patrolRadiusFallback=192308,siegeScreenFallback=192312,siegeScreenForwardFallback=192316,
+        siegeScreenExtraGroups=192400,siegeScreenExtraGroupsFallback=192320,
+        patrolRoutes=210000,patrolRouteSize=36,
+        allySettings=220000,allyFallback=220800,allyStates=221000,allyStateSize=260,
         game={gameTick=0x1FE7DA8,initialDefenseTicks=0x4D34B1,aicRecords=0x23FC8E8+676,unitCapacity=2500,buildingCapacity=2000,tribeMemberWords=157,players=0x115BDF8,tribes=0x1667F78,tribeStride=0x334},
         defenseCensusTick=23000,defenseCensusValid=23004, legacyTargetPolicy=23008,
         incidentSize=2632,combatCensusTick=24000,combatCensusValid=24004,
@@ -24,8 +39,9 @@ def state():
         reserveSize=196,reserves=60000,reserveGroupOwner=65000,reserveGroupUID=71000,
         raidStateSize=96,raidStates=80000,raidGroupCensus=81000,
         raidUnitPower=90000,raidStaticDefenses=130000,raidBuildingCensusTick=170000,
-        raidBuildingCensusValid=170004,captureIntegrity=180000,integrityDigest=180004}
-      fingerprint=string.rep('a',64)
+        raidBuildingCensusValid=170004,captureIntegrityWithIdentity=180000,
+        observeIntegrityBoundaryWithIdentity=180008,integrityDigest=180004}
+      version='0.0.20'
       core={readInteger=function(a)return memory[a] or 0 end,
         readString=function(a,n)
           local result={}
@@ -40,7 +56,7 @@ def state():
         readSmallInteger=function(a)return memory[a] or 0 end,
         writeInteger=function(a,v)memory[a]=v;writes=writes+1 end,
         setMemory=function(a,v,n)for i=0,n-1,4 do memory[a+i]=v end end}
-      state=require('state').new(native,true,fingerprint)
+      state=require('state').new(native,true,version)
       memory[native.configuration+4*352]=1
       memory[native.configuration+4*352+280]=1
       memory[native.defenseCensusTick]=1234
@@ -119,7 +135,7 @@ def test_bad_payload_and_configuration_do_not_write():
       memory[0x23FC8E8+676+0x184]=24
       assert(not pcall(state.restore,bytes) and writes==0)
       memory[0x23FC8E8+676+0x184]=0
-      assert(not pcall(require('state').new(native,false,fingerprint).restore,bytes) and writes==0)
+      assert(not pcall(require('state').new(native,false,version).restore,bytes) and writes==0)
       memory[0x4D34B1]=800
       assert(not pcall(state.restore,bytes) and writes==0)
       memory[0x4D34B1]=0
@@ -137,9 +153,10 @@ def test_native_old_save_and_new_match_initialization():
       assert(state.callbacks.isRequired())
       for _,tick in ipairs({0,1000}) do
         memory[0x1FE7DA8]=tick
-        assert(not pcall(state.callbacks.initialize) and writes==0)
-        assert(not pcall(state.callbacks.initialize,nil,{kind='save'}) and writes==0)
-        assert(not pcall(state.callbacks.validate,nil,{loadKind='save',exists=function()return false end}) and writes==0)
+        -- A save without policy state loads with empty policy state.
+        assert(pcall(state.callbacks.validate,nil,{loadKind='save',exists=function()return false end}))
+        state.callbacks.initialize(nil,{kind='save'})
+        assert(memory[native.defenseCensusValid]==0)
       end
       -- Maps can contain an editor tick; only the owner's file context admits them.
       state.callbacks:initialize({kind='map'})
@@ -161,7 +178,7 @@ def test_default_on_siege_fallback_requires_state_but_map_starts_fresh():
       assert(state.callbacks.isRequired())
       local onIdentity=state.identity()
       local missing={loadKind='save',exists=function()return false end}
-      assert(not pcall(state.callbacks.validate,state.callbacks,missing))
+      assert(pcall(state.callbacks.validate,state.callbacks,missing))
       state.callbacks:initialize({kind='map'})
       memory[native.safePlacementFallback]=0
       assert(not state.callbacks.isRequired())
@@ -169,22 +186,18 @@ def test_default_on_siege_fallback_requires_state_but_map_starts_fresh():
     ''')
 
 
-def test_engineer_role_fallback_and_per_ai_override_enter_save_identity():
+def test_engineer_role_module_switch_enters_save_identity():
     state().execute('''
       native.engineerRoleFallback=190100
       memory[native.configuration+4*352]=0
       memory[native.engineerRoleFallback]=1
       assert(state.callbacks.isRequired())
-      local inherited=state.identity()
+      local enabled=state.identity()
       memory[native.engineerRoleFallback]=0
       assert(not state.callbacks.isRequired())
-      assert(state.identity()~=inherited)
-      memory[native.configuration+4*352+348]=1
-      assert(state.callbacks.isRequired())
-      local explicit=state.identity()
-      memory[native.configuration+4*352+348]=2
-      assert(state.identity()~=explicit)
+      assert(state.identity()~=enabled)
       state.callbacks:initialize({kind='map'})
+      assert(not state.callbacks.isRequired())
     ''')
 
 
@@ -207,6 +220,7 @@ def test_saved_combat_reserve_and_raid_state_survives_exactly():
       memory[native.reserves+196+16]=155
       memory[native.raidStates+96]=3
       memory[native.raidStates+96+12]=15
+      memory[native.raidStates+96+32]=1 -- RandomNearby local-clear phase
       memory[native.raidUnitPower+(1024+19)*4]=500
       memory[native.raidStaticDefenses+(2048+20)*4]=4
       memory[native.raidBuildingCensusTick]=1234
@@ -215,12 +229,13 @@ def test_saved_combat_reserve_and_raid_state_survives_exactly():
       state.callbacks:initialize({kind='map'})
       state.restore(bytes)
       assert(state.capture()==bytes)
-      assert(memory[native.raidStates+96+12]==15 and memory[native.reserves+196+16]==155)
+      assert(memory[native.raidStates+96+12]==15 and memory[native.raidStates+96+32]==1
+        and memory[native.reserves+196+16]==155)
       assert(memory[native.raidUnitPower+(1024+19)*4]==500)
     ''')
 
 
-def test_invalid_late_state_and_changed_build_rejected_before_any_write():
+def test_invalid_late_state_rejected_before_any_write():
     state().execute('''
       for _,entry in ipairs({{native.reserves+196+12,22},{native.raidStates+96+12,16},
           {native.raidStates+96+16+16,8},{native.combatCensusValid,2},
@@ -233,7 +248,6 @@ def test_invalid_late_state_and_changed_build_rejected_before_any_write():
       end
       local bytes=state.capture()
       writes=0
-      assert(not pcall(require('state').new(native,true,string.rep('b',64)).restore,bytes) and writes==0)
       local captured
       state.callbacks:capture({put=function(_,_,data)captured=data end})
       assert(captured==bytes and writes==0)
@@ -245,11 +259,197 @@ def test_native_only_optional_state_does_not_impose_new_package_requirement():
       memory[native.configuration+4*352]=0
       local bytes=state.capture()
       local reader={exists=function()return true end,get=function()return bytes end}
-      local other=require('state').new(native,true,string.rep('b',64))
+      local other=require('state').new(native,false,version)
       other.callbacks:validate(reader)
       assert(writes==0)
       reader.required=true
-      assert(not pcall(other.callbacks.validate,other.callbacks,reader) and writes==0)
+      -- A save made with other AIC settings loads with empty policy state.
+      other.callbacks:validate(reader)
+      assert(writes==0)
       reader.exists=function()return false end
       assert(not pcall(state.callbacks.validate,state.callbacks,reader) and writes==0)
+    ''')
+
+
+def test_patrol_settings_enter_match_identity_but_not_save_admission():
+    state().execute('''
+      local saveIdentity,matchIdentity=state.identity(),state.matchIdentity()
+      assert(matchIdentity:sub(1,#saveIdentity)==saveIdentity)
+      local bytes=state.capture()
+      memory[native.patrolOrders+4*4]=1
+      memory[native.patrolFormation+4*4]=1
+      memory[native.patrolSpacing+4*4]=14
+      memory[native.patrolOrdersFallback]=1
+      assert(state.identity()==saveIdentity)
+      assert(state.matchIdentity()~=matchIdentity)
+      -- A save made before the change still validates and restores.
+      state.restore(bytes)
+      assert(state.capture()==bytes)
+    ''')
+
+
+def test_detached_group_records_round_trip_and_reject_bad_values():
+    state().execute('''
+      local record=native.detachedGroups+(3*8+1)*48
+      memory[record]=1040;memory[record+4]=24736;memory[record+8]=2
+      memory[record+12]=1;memory[record+32]=12;memory[record+36]=1;memory[record+40]=3
+      local bytes=state.capture()
+      for offset=0,44,4 do memory[record+offset]=0 end
+      state.restore(bytes)
+      assert(memory[record]==1040 and memory[record+4]==24736 and memory[record+8]==2)
+      assert(memory[record+32]==12 and memory[record+36]==1 and state.capture()==bytes)
+      memory[record+8]=9
+      local bad=state.capture()
+      memory[record+8]=2
+      assert(not pcall(state.restore,bad))
+    ''')
+
+
+def test_lord_hunt_settings_enter_match_identity_but_not_save_admission():
+    state().execute('''
+      local saveIdentity,matchIdentity=state.identity(),state.matchIdentity()
+      local bytes=state.capture()
+      memory[native.lordHuntShare+4*4]=31
+      assert(state.identity()==saveIdentity and state.matchIdentity()~=matchIdentity)
+      memory[native.lordHuntShare+4*4]=0
+      memory[native.lordHuntSiegeFallback]=1
+      assert(state.identity()==saveIdentity and state.matchIdentity()~=matchIdentity)
+      state.restore(bytes)
+      assert(state.capture()==bytes)
+    ''')
+
+
+def test_split_and_screen_settings_enter_match_identity_but_not_save_admission():
+    state().execute('''
+      local saveIdentity,matchIdentity=state.identity(),state.matchIdentity()
+      local bytes=state.capture()
+      for _,name in ipairs({'patrolExtraGroups','patrolMinSize','patrolRadius','siegeScreen',
+          'siegeScreenForward','siegeScreenExtraGroups','patrolExtraGroupsFallback','siegeScreenFallback',
+          'siegeScreenExtraGroupsFallback'}) do
+        local address=native[name]+(name:find('Fallback') and 0 or 4*4)
+        memory[address]=3
+        assert(state.identity()==saveIdentity and state.matchIdentity()~=matchIdentity)
+        memory[address]=0
+      end
+      state.restore(bytes)
+      assert(state.capture()==bytes)
+    ''')
+
+
+def test_lord_hunt_module_setting_requires_its_saved_state():
+    state().execute('''
+      memory[native.configuration+4*352]=0
+      assert(not state.callbacks.isRequired())
+      memory[native.lordHuntRetargetFallback]=1
+      assert(state.callbacks.isRequired())
+      memory[native.lordHuntRetargetFallback]=0
+      memory[native.lordHuntShare+4*4]=51
+      assert(state.callbacks.isRequired())
+    ''')
+
+
+def test_saved_hunt_split_and_census_survive_exactly():
+    state().execute('''
+      -- AI 2 attacks human 1 whose lord hides with ally 3: hunt in record 0,
+      -- melee and ranged split troops in records 1 and 2.
+      for index,duty in ipairs({2,3,3}) do
+        local group=native.detachedGroups+(2*8+index-1)*48
+        memory[group]=40+index;memory[group+4]=900+index;memory[group+8]=duty
+      end
+      local hunt=native.lordHunts+2*68
+      local values={1,7001,3,1,5,40,1,2,3,1,0,6000,0,1,10,0,6050}
+      for index,value in ipairs(values) do memory[hunt+(index-1)*4]=value end
+      local census=native.lordHuntCensus+2*1544
+      memory[census]=20;memory[census+4]=2;memory[census+8]=25;memory[census+12]=12+65536
+      memory[native.lordHuntUnits+4]=3
+      local bytes=state.capture()
+      for index=0,16 do memory[hunt+index*4]=0 end
+      memory[census+12]=0;memory[native.lordHuntUnits+4]=0
+      state.restore(bytes)
+      for index,value in ipairs(values) do assert(memory[hunt+(index-1)*4]==value) end
+      assert(memory[census+12]==12+65536 and memory[native.lordHuntUnits+4]==3)
+      assert(state.capture()==bytes)
+    ''')
+
+
+def test_bad_lord_hunt_state_is_rejected_before_any_write():
+    state().execute('''
+      local hunt=native.lordHunts+2*68
+      local census=native.lordHuntCensus+2*1544
+      local group=native.detachedGroups+(2*8)*48
+      memory[group]=41;memory[group+4]=901;memory[group+8]=2
+      memory[hunt]=1;memory[hunt+4]=7001;memory[hunt+24]=1
+      local good=state.capture()
+      local cases={
+        {hunt,2},            -- the AI attacks itself
+        {hunt+8,9},          -- no such host
+        {hunt+28,1},         -- split troops in the hunt's record (duty 2)
+        {hunt+36,3},         -- no third hunt wave
+        {census+4,385},      -- more candidates than the census holds
+        {census+8,0},        -- an empty candidate slot inside the count
+      }
+      memory[census+4]=1;memory[census+8]=17
+      good=state.capture()
+      for _,case in ipairs(cases) do
+        local saved=memory[case[1]]
+        memory[case[1]]=case[2]
+        local bad=state.capture()
+        memory[case[1]]=saved
+        writes=0
+        assert(not pcall(state.restore,bad) and writes==0)
+      end
+      -- No record: every other field must be zero.
+      memory[hunt]=0
+      local orphan=state.capture()
+      memory[hunt]=1
+      assert(not pcall(state.restore,orphan))
+      state.restore(good)
+    ''')
+
+
+def test_patrol_route_records_round_trip_and_reject_bad_values():
+    state().execute('''
+      -- Player 2, route 3: uid, target, point, step -1, x, y, tick, distance, stalls.
+      local route=native.patrolRoutes+(2*9+3)*36
+      local values={41234,4,11,-1,112,95,70000,9,1}
+      for index,value in ipairs(values) do memory[route+(index-1)*4]=value end
+      local bytes=state.capture()
+      for offset=0,32,4 do memory[route+offset]=0 end
+      state.restore(bytes)
+      for index,value in ipairs(values) do assert(memory[route+(index-1)*4]==value) end
+      assert(state.capture()==bytes)
+      for _,bad in ipairs({{4,9},{8,16},{12,2},{16,400},{32,3}}) do
+        local saved=memory[route+bad[1]]
+        memory[route+bad[1]]=bad[2]
+        local wrong=state.capture()
+        memory[route+bad[1]]=saved
+        assert(not pcall(state.restore,wrong))
+      end
+      -- A free entry must be all zero.
+      for offset=0,32,4 do memory[route+offset]=0 end
+      memory[route+16]=5
+      local stray=state.capture()
+      assert(not pcall(state.restore,stray))
+    ''')
+
+
+def test_patrol_records_require_state_and_restore_with_the_feature_off():
+    state().execute('''
+      memory[native.configuration+4*352]=0
+      assert(not state.callbacks.isRequired())
+      memory[native.patrolFormationFallback]=3
+      assert(state.callbacks.isRequired())
+      memory[native.patrolFormationFallback]=0
+      memory[native.patrolExtraGroups+4*4]=2
+      assert(state.callbacks.isRequired())
+      local record=native.detachedGroups+(3*8+1)*48
+      memory[record]=1040;memory[record+4]=24736;memory[record+8]=1
+      local bytes=state.capture()
+      memory[native.patrolExtraGroups+4*4]=0
+      for offset=0,44,4 do memory[record+offset]=0 end
+      assert(not state.callbacks.isRequired())
+      local reader={loadKind='save',exists=function()return true end,get=function()return bytes end}
+      state.callbacks:validate(reader)
+      state.callbacks:deserialize(reader)
+      assert(memory[record]==1040 and memory[record+8]==1)
     ''')

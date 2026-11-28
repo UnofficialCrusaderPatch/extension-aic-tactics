@@ -1,28 +1,17 @@
 local M = {}
 
 function M.attach(native)
-  local installed, targetingInstalled, raidsInstalled = false, false, false
+  local installed, raidsInstalled = false, false
   local game = native.game
-  local sites = game and game.combatSites
-  local originals = game and game.combatOriginals
-  local calls = game and game.combatCalls
-  local context = require('native-context')
-
-  function native.preflightTargets()
-    assert(type(configFinal) == 'table', 'AIC Tactics: resolved framework configuration is unavailable')
-    for name, config in pairs(configFinal) do
-      if name:match('^ucp2%-legacy%-') then
-        assert(not config.ai_attacktarget or config.ai_attacktarget.enabled ~= true,
-          require('messages').legacyOff('ai_attacktarget', 'nativeTargetPolicy'))
-      end
-    end
-    if not targetingInstalled then
-      context.verify(sites.targetChoice,'target choice',originals.targetChoice)
-    end
+  local sites, originals, calls = game.combatSites, game.combatOriginals, game.combatCalls
+  local function loadSites()
+    sites, originals, calls = game.combatSites, game.combatOriginals, game.combatCalls
   end
+  local context = require('native-context')
 
   function native.preflightCombat()
     if installed then return end
+    loadSites()
     for _, name in ipairs({'unitReset','unitCount','unitComplete','unitDamage','entityDamage','fireDamage',
         'launch','randomWave','tunnelers'}) do
       context.verify(sites[name],name,originals[name])
@@ -34,23 +23,24 @@ function M.attach(native)
 
   function native.preflightRaids()
     if raidsInstalled then return end
+    loadSites()
     for _, name in ipairs({'buildingReset','buildingCount','buildingComplete'}) do
       context.verify(sites[name],name,originals[name])
     end
   end
 
   local function jump(site, target, length)
-    local code = {0xE9, target - site - 5}
+    local code = {core.jmpTo(target)}
     for index = 6, length do code[#code + 1] = 0x90 end
     core.writeCode(site, code)
   end
-  local function call(site, target) core.writeCode(site, {0xE8, target - site - 5}) end
+  local function call(site, target) core.writeCode(site, {core.callTo(target)}) end
   local function detour(site, length, entry, originalAddress)
     local code = {}
     for index = 0, length - 1 do code[#code + 1] = core.readByte(site + index) end
     local trampoline = core.allocateCode(length + 5)
     core.writeCode(trampoline, code)
-    core.writeCode(trampoline + length, {0xE9, site - trampoline - 5})
+    core.writeCode(trampoline + length, {core.jmpTo(site + length)})
     core.writeInteger(originalAddress, trampoline)
     jump(site, entry, length)
   end
@@ -95,27 +85,12 @@ function M.attach(native)
     raidsInstalled = true
   end
 
-  function native.enableNativeTargetPolicy(value)
-    local choices = {Native = 0, Nearest = 1, Richest = 2, Weakest = 3}
-    assert(choices[value] ~= nil, 'AIC Tactics: nativeTargetPolicy must be Native, Nearest, Richest or Weakest')
-    if value == 'Native' then return end
-    native.preflightTargets()
-    assert(not targetingInstalled, 'AIC Tactics: native target policy is already configured')
-    core.writeInteger(native.legacyTargetPolicy, choices[value])
-    local hook = core.allocateAssembly([[
-      cmp dword [policy], 1
-      je nearest
-      cmp dword [policy], 2
-      je richest
-      cmp dword [policy], 3
-      je weakest
-      cmp eax, 4
-      jne notPlayer
-      jmp player
-    ]], {policy=native.legacyTargetPolicy, nearest=sites.nearest, richest=sites.richest,
-      weakest=sites.weakest, notPlayer=sites.notPlayer, player=sites.player})
-    jump(sites.targetChoice, hook, 5)
-    targetingInstalled = true
+  -- Legacy ai_attacktarget's short jump at the native target choice. Its
+  -- choice is the native selection that Inherit policies and fallbacks use.
+  function native.legacyTargetChoice()
+    local site = game.targetSelection and game.targetSelection + 306 or sites and sites.targetChoice
+    if not site or core.readByte(site) ~= 0xEB or core.readByte(site + 2) ~= 0x90 then return 0 end
+    return ({[0x11] = 1, [0x3F] = 2, [0x52] = 3})[core.readByte(site + 1)] or 0
   end
 
   function native.activateCombat()
@@ -205,6 +180,7 @@ function M.attach(native)
     ]], {reserved=native.isReserveUnit, resume=(sites.tunnelers+7), nextUnit=sites.nextTunneler})
     -- Every admission above precedes mutations. Original damage bodies stay in
     -- their existing owners; the trampolines only replay displaced prologues.
+    core.writeInteger(native.legacyTargetPolicy, native.legacyTargetChoice())
     jump(sites.unitReset, reset, 7)
     jump(sites.unitCount, count, 8)
     jump(sites.unitComplete, complete, 5)

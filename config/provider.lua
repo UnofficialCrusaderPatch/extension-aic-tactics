@@ -7,6 +7,9 @@ local owner = 'aic-tactics'
 function M.register(loader, backend)
   assert(type(backend) == 'table' and type(backend.prepare) == 'function',
     'AIC Tactics requires a native configuration backend')
+  local function check(condition, message)
+    if not condition then loader:rejectInvalidAICValue(message) end
+  end
   local states = {}
   local function handles(ai, spec, resetting)
     if backend.multiplayerLocked and backend.multiplayerLocked() then return true end
@@ -36,7 +39,7 @@ function M.register(loader, backend)
       handles = handles,
       prepare = function(ai, spec, readNative, resetting)
         local previous = states[ai]
-        local candidate, compiled = schema.prepare(previous, spec, readNative, resetting)
+        local candidate, compiled = schema.prepare(previous, spec, readNative, resetting, check)
         local operation = backend.prepare(ai, schema.copy(candidate), compiled)
         assert(type(operation) == 'table' and type(operation.commit) == 'function'
           and type(operation.rollback) == 'function', 'Invalid AIC Tactics backend operation')

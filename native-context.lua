@@ -1,12 +1,10 @@
 local M = {}
 
--- Use the same cached discovery entry point as established UCP 3.0.7 modules.
--- Complete identifying contexts and decoded ABI/layout checks remain in each
--- binding owner. Do not follow a successful match with a full-process rescan.
+-- Bind during module enable or personality admission, before installing hooks.
 function M.find(name, signature)
-  local ok,site=pcall(core.AOBScan,signature)
-  assert(ok and type(site)=='number' and site>0 and site%1==0,
-    'AIC Tactics: missing native '..name)
+  local found, site = pcall(core.AOBScan, signature)
+  assert(found and type(site) == 'number' and site > 0 and site % 1 == 0,
+    'AIC Tactics: native ' .. name .. ' ' .. (found and 'has an invalid address' or 'not found'))
   return site
 end
 

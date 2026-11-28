@@ -20,11 +20,11 @@ meaning or disabling an opted-in policy.
 
 | Control | Default | Effective behavior / precedence |
 | --- | --- | --- |
-| `AttackTargetPolicy` | `Inherit` | Reuse `TargetChoice`; explicit policies replace opponent selection only. `LastAggressor` falls back to `TargetChoice` without a valid incident. |
-| `AttackTargetCommitment` | `Default` | Resolve to `PerAttack` for a new target policy **or `DuringAttack` preparation**. Otherwise retain Native/Legacy commitment. Explicit `UntilDefeated` takes precedence over later incidents and changing rankings. |
+| `AttackTargetPolicy` | `Inherit` | Reuse `TargetChoice`; explicit policies choose one opponent per attack. `{Choice: ..., UntilDefeated: true}` keeps it across attacks. `LastAggressor` falls back to `TargetChoice` without a valid incident. |
+| `AttackTargetCommitment` | `Default` | Compatibility field for earlier packs. `DuringAttack` still keeps the deployed target fixed. New packs put duration in `AttackTargetPolicy`. |
 | `AttackPreparation` | `Native` | `DuringAttack` permits one reserve using the existing next-wave requirement; it also keeps the deployed target fixed. It does not change opponent ranking, raid policy or recruitment weights. |
 | `AttackActivation` | `Immediate` | `AfterProvocation` blocks offensive armies and raids until a qualifying incident; awakening lasts for the match. Defense and protective sorties continue. |
-| `RaidTargetPolicy` | `Native` | New policies use the existing total raid budget, roster and retarget interval. Auxiliary raid settings require a new policy; `RaidFocus` needs `Opportunistic`. |
+| `RaidTargetPolicy` | `Native` | New policies use the existing total raid budget, roster and retarget interval. `RandomNearby` draws a reachable building, then clears nearby buildings. `RaidFocus` works with `Opportunistic` or `RandomNearby`. |
 
 `Default` remains the authored commitment when preparation resolves it to
 `PerAttack`. Switching preparation back to `Native` therefore restores the old
@@ -154,14 +154,13 @@ simulation state. Preset weights and maximum group count still need measured fix
 ## Save, replay and performance gates
 
 Configuration ABI is 344 bytes per character. State format 7 includes native AIC
-configuration, package fingerprint, census snapshots, incidents, commitments,
+configuration, census snapshots, incidents, commitments,
 reserve/raid identities and scheduler cursors. All payload fields validate before
 state writes. Map Extensions 1.1.0 adds required-provider admission and read-only
 capture; the dependent recorder change carries those entries through its existing
 custom ZIP and native restore path. Existing recordings require their exact original
 artifacts; this development format does not upgrade older policy saves silently.
 
-Startup verifies installed package contents through the framework VFS and SHA256.
 No hashes, logging, files or dynamic allocation run in native policy callbacks.
 Fixed memory/work bounds are implementation properties, **not measured speed or
 replay acceptance**. Native/default equivalence, gameplay handovers, two physical

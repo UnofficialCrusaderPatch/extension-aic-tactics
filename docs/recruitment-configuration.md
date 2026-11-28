@@ -19,7 +19,7 @@ native acceptance on their own.
 | `RecruitProbSortieStrong` | Integer 0–100 | 0 |
 | `RecruitConditions` | Dense ordered list of 0–8 complete rows | Empty list |
 | `DefRecruitComposition` | `Native`, `PreserveSlots` | `Native` |
-| `RecruitInitialDefenseMonths` | Integer 0–30 | 6 |
+| `RecruitInitialDefenseMonths` | Integer 0–30 | The game's initial timer (6, or Legacy's value) |
 
 For each strength class, the base row combines the existing
 `RecruitProbDef<State>`, `RecruitProbRaid<State>` and
@@ -29,6 +29,10 @@ occurred. Existing values remain stored by aicloader; this provider does not
 create a second authored copy. Native retains the original validation and
 decision flow. WeightedRoles supersedes native three-role selection and
 sortie-first priority; a sortie weight of zero is not equivalent to Native.
+Authoring any `RecruitProbSortie*` field, including zero, selects WeightedRoles
+when `RecruitPolicy` is omitted from that update. Situational rules, composition
+and the per-AI grace value still require an explicit
+`RecruitPolicy: WeightedRoles` when no sortie share is authored.
 
 Each condition has `When`, `Defense`, `Raid`, `Attack`, and `Sortie`. The four
 weights are required integer percentages totaling 100. `When` optionally

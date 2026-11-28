@@ -14,11 +14,9 @@ def test_legacy_actions_use_all_gui_languages_and_keep_exact_option_names():
       local seen={}
       for _,code in ipairs({'ch','de','en','es','fa','fr','hu','ru','tr'}) do
         language=code
-        local off=messages.legacyOff('ai_attacktarget','nativeTargetPolicy')
-        assert(off:find('ai_attacktarget',1,true) and off:find('nativeTargetPolicy',1,true))
-        assert(not off:find('%%s') and not seen[off])
-        assert(messages.legacyOn('ai_defense'):find('ai_defense',1,true))
-        seen[off]=true
+        local on=messages.legacyOn('ai_defense')
+        assert(on:find('ai_defense',1,true) and not on:find('%%s') and not seen[on])
+        seen[on]=true
       end
       language='zh-CN'; local chinese=messages.legacyOn('ai_defense')
       language='ch'; assert(messages.legacyOn('ai_defense')==chinese)
